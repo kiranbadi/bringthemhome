@@ -1,0 +1,11 @@
+.page-shell {
+  box-sizing: border-box;
+  display: grid;
+  min-height: calc(100vh - 64px);
+  place-items: start center;
+  padding: 32px 20px;
+}
+
+mat-card {
+  width: min(100%, 560px);
+}
