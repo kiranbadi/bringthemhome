@@ -1,0 +1,19 @@
+<mat-toolbar class="navigation-header">
+  <a class="brand" routerLink="/" aria-label="Bring Them Home">
+    <mat-icon aria-hidden="true">home</mat-icon>
+    <span>bringthemhome</span>
+  </a>
+
+  <nav class="navigation-links" aria-label="Primary navigation">
+    @for (link of links; track link.route) {
+      <a
+        matButton
+        [routerLink]="link.route"
+        routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        {{ link.label }}
+      </a>
+    }
+  </nav>
+</mat-toolbar>
