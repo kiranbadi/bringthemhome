@@ -2,198 +2,264 @@
 
 <main class="advanced-search-page">
   <form class="advanced-search-form" [formGroup]="advancedSearchForm" (ngSubmit)="submit()">
-    <section class="child-search-panel" aria-labelledby="child-search-title">
-      <header class="panel-title">
-        <h2 id="child-search-title">Search Missing Children or Adults</h2>
-        <p class="panel-description">
-          Search by reported date, race, gender, age, and other criteria.
-        </p>
-      </header>
+    <section class="advanced-search-layout" aria-label="Advanced search">
+      <section class="criteria-panel" aria-labelledby="criteria-title">
+        <header class="panel-title">
+          <h2 id="criteria-title">Search Criteria</h2>
+          <p class="panel-description">Choose any filters that help narrow the search.</p>
+        </header>
 
-      <div class="child-search-grid" aria-label="Child search criteria">
-        <div class="field reported-start">
-          <label for="reported-start-date">Reported Start Date</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="reported-start-date" matInput type="date" formControlName="reportedStartDate" />
-          </mat-form-field>
+        <div class="child-search-grid" aria-label="Search criteria fields">
+          <div class="field reported-start">
+            <label for="reported-start-date">Reported Start Date</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="reported-start-date"
+                matInput
+                type="date"
+                formControlName="reportedStartDate"
+              />
+            </mat-form-field>
+          </div>
+
+          <div class="field reported-end">
+            <label for="reported-end-date">Reported End Date</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="reported-end-date"
+                matInput
+                type="date"
+                formControlName="reportedEndDate"
+              />
+            </mat-form-field>
+          </div>
+
+          @if (reportedDateRangeIncomplete()) {
+            <p class="field-warning">
+              Reported End Date is required when Reported Start Date is selected.
+            </p>
+          }
+
+          <div class="field race">
+            <label for="race">Race</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="race" formControlName="race">
+                <mat-option value="">Any Race</mat-option>
+                @for (race of races; track race) {
+                  <mat-option [value]="race">{{ race }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field gender">
+            <label for="gender">Gender</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="gender" formControlName="gender">
+                <mat-option value="">Any Gender</mat-option>
+                @for (gender of genders; track gender) {
+                  <mat-option [value]="gender">{{ gender }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field eye-color">
+            <label for="eye-color">Eye Color</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="eye-color" formControlName="eyeColor">
+                <mat-option value="">Any Eye Color</mat-option>
+                @for (eyeColor of eyeColors; track eyeColor) {
+                  <mat-option [value]="eyeColor">{{ eyeColor }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field hair-color">
+            <label for="hair-color">Hair Color</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="hair-color" formControlName="hairColor">
+                <mat-option value="">Any Hair Color</mat-option>
+                @for (hairColor of hairColors; track hairColor) {
+                  <mat-option [value]="hairColor">{{ hairColor }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field first-name">
+            <label for="first-name">First Name</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="first-name"
+                matInput
+                formControlName="firstName"
+                autocomplete="given-name"
+              />
+            </mat-form-field>
+          </div>
+
+          <div class="field middle-name">
+            <label for="middle-name">Middle Name</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="middle-name"
+                matInput
+                formControlName="middleName"
+                autocomplete="additional-name"
+              />
+            </mat-form-field>
+          </div>
+
+          <div class="field last-name">
+            <label for="last-name">Last Name</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="last-name"
+                matInput
+                formControlName="lastName"
+                autocomplete="family-name"
+              />
+            </mat-form-field>
+          </div>
+
+          <div class="field age-missing">
+            <label for="age-missing">Age Missing</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="age-missing" formControlName="ageMissing">
+                <mat-option value="">Any Age</mat-option>
+                @for (age of ageOptions; track age) {
+                  <mat-option [value]="age">{{ age }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field age-now">
+            <label for="age-now">Age Now</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="age-now" formControlName="ageNow">
+                <mat-option value="">Any Age</mat-option>
+                @for (age of ageOptions; track age) {
+                  <mat-option [value]="age">{{ age }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field agency">
+            <label for="agency">Agency</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input id="agency" matInput formControlName="agency" />
+            </mat-form-field>
+          </div>
+
+          <div class="field photo-available">
+            <label for="photo-available">Photo Available</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="photo-available" formControlName="photoAvailable">
+                <mat-option value="">Any</mat-option>
+                @for (option of photoAvailabilityOptions; track option) {
+                  <mat-option [value]="option">{{ option }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field alert-type">
+            <label for="alert-type">Alert Type</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="alert-type" formControlName="alertType">
+                <mat-option value="">Any Alert</mat-option>
+                @for (alertType of alertTypes; track alertType) {
+                  <mat-option [value]="alertType">{{ alertType }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field city">
+            <label for="city">City</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input id="city" matInput formControlName="city" autocomplete="address-level2" />
+            </mat-form-field>
+          </div>
+
+          <div class="field state">
+            <label for="state">State</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="state" formControlName="state">
+                <mat-option value="">Any State</mat-option>
+                @for (state of states; track state) {
+                  <mat-option [value]="state">{{ state }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field country">
+            <label for="country">Country</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="country" formControlName="country">
+                <mat-option value="United States">United States</mat-option>
+                <mat-option value="Canada">Canada</mat-option>
+                <mat-option value="Mexico">Mexico</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field sort-by">
+            <label for="sort-by">Sort By</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-select id="sort-by" formControlName="sortBy">
+                <mat-option value="mostRecent">Most Recent</mat-option>
+                <mat-option value="az">A - Z</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
         </div>
+      </section>
 
-        <div class="field reported-end">
-          <label for="reported-end-date">Reported End Date</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="reported-end-date" matInput type="date" formControlName="reportedEndDate" />
-          </mat-form-field>
+      <aside class="selected-criteria-panel" aria-label="Selected search criteria">
+        <header class="summary-heading">
+          <h2>Selected Criteria</h2>
+          <p>Review the filters that will be submitted.</p>
+        </header>
+
+        @if (activeCriteria().length > 0) {
+          <dl class="criteria-summary">
+            @for (criteria of activeCriteria(); track criteria.key) {
+              <div>
+                <span>
+                  <dt>{{ criteria.label }}</dt>
+                  <dd>{{ criteria.value }}</dd>
+                </span>
+                @if (criteria.canRemove) {
+                  <button
+                    matIconButton
+                    type="button"
+                    (click)="removeCriteria(criteria.key)"
+                    [attr.aria-label]="'Remove ' + criteria.label"
+                  >
+                    <mat-icon aria-hidden="true">close</mat-icon>
+                  </button>
+                }
+              </div>
+            }
+          </dl>
+        } @else {
+          <p class="empty-summary">No criteria selected yet.</p>
+        }
+
+        <div class="form-actions">
+          <button matButton="filled" type="submit">
+            <mat-icon aria-hidden="true">search</mat-icon>
+            Submit
+          </button>
+          <button matButton type="button" (click)="reset()">Clear</button>
         </div>
-
-        <div class="field race">
-          <label for="race">Race</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="race" formControlName="race">
-              <mat-option value="">Any Race</mat-option>
-              @for (race of races; track race) {
-                <mat-option [value]="race">{{ race }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field gender">
-          <label for="gender">Gender</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="gender" formControlName="gender">
-              <mat-option value="">Any Gender</mat-option>
-              @for (gender of genders; track gender) {
-                <mat-option [value]="gender">{{ gender }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field eye-color">
-          <label for="eye-color">Eye Color</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="eye-color" formControlName="eyeColor">
-              <mat-option value="">Any Eye Color</mat-option>
-              @for (eyeColor of eyeColors; track eyeColor) {
-                <mat-option [value]="eyeColor">{{ eyeColor }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field hair-color">
-          <label for="hair-color">Hair Color</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="hair-color" formControlName="hairColor">
-              <mat-option value="">Any Hair Color</mat-option>
-              @for (hairColor of hairColors; track hairColor) {
-                <mat-option [value]="hairColor">{{ hairColor }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field first-name">
-          <label for="first-name">First Name</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="first-name" matInput formControlName="firstName" autocomplete="given-name" />
-          </mat-form-field>
-        </div>
-
-        <div class="field middle-name">
-          <label for="middle-name">Middle Name</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="middle-name" matInput formControlName="middleName" autocomplete="additional-name" />
-          </mat-form-field>
-        </div>
-
-        <div class="field last-name">
-          <label for="last-name">Last Name</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="last-name" matInput formControlName="lastName" autocomplete="family-name" />
-          </mat-form-field>
-        </div>
-
-        <div class="field age-missing">
-          <label for="age-missing">Age Missing</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="age-missing" formControlName="ageMissing">
-              <mat-option value="">Any Age</mat-option>
-              @for (age of ageOptions; track age) {
-                <mat-option [value]="age">{{ age }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field age-now">
-          <label for="age-now">Age Now</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="age-now" formControlName="ageNow">
-              <mat-option value="">Any Age</mat-option>
-              @for (age of ageOptions; track age) {
-                <mat-option [value]="age">{{ age }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field agency">
-          <label for="agency">Agency</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="agency" matInput formControlName="agency" />
-          </mat-form-field>
-        </div>
-
-        <div class="field photo-available">
-          <label for="photo-available">Photo Available</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="photo-available" formControlName="photoAvailable">
-              <mat-option value="">Any</mat-option>
-              @for (option of photoAvailabilityOptions; track option) {
-                <mat-option [value]="option">{{ option }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field alert-type">
-          <label for="alert-type">Alert Type</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="alert-type" formControlName="alertType">
-              <mat-option value="">Any Alert</mat-option>
-              @for (alertType of alertTypes; track alertType) {
-                <mat-option [value]="alertType">{{ alertType }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field city">
-          <label for="city">City</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <input id="city" matInput formControlName="city" autocomplete="address-level2" />
-          </mat-form-field>
-        </div>
-
-        <div class="field state">
-          <label for="state">State</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="state" formControlName="state">
-              <mat-option value="">Any State</mat-option>
-              @for (state of states; track state) {
-                <mat-option [value]="state">{{ state }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field country">
-          <label for="country">Country</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="country" formControlName="country">
-              <mat-option value="United States">United States</mat-option>
-              <mat-option value="Canada">Canada</mat-option>
-              <mat-option value="Mexico">Mexico</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="field sort-by">
-          <label for="sort-by">Sort By</label>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-select id="sort-by" formControlName="sortBy">
-              <mat-option value="mostRecent">Most Recent</mat-option>
-              <mat-option value="az">A - Z</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button matButton="filled" type="submit">Submit</button>
-        <button matButton type="button" (click)="reset()">Reset</button>
-      </div>
+      </aside>
     </section>
   </form>
 </main>
