@@ -1,0 +1,140 @@
+<app-navigation-header />
+
+<main class="contact-page">
+  <header class="contact-heading">
+    <div>
+      <h1>Contact Us</h1>
+      <p>
+        Reach the Bring Them Home team for account help, report support, or partnership questions.
+      </p>
+    </div>
+  </header>
+
+  <section class="contact-layout" aria-label="Contact options and message form">
+    <section class="contact-form-panel" aria-labelledby="message-title">
+      <div class="section-heading">
+        <h2 id="message-title">Send a Message</h2>
+        <p>Share enough detail for the right team member to respond.</p>
+      </div>
+
+      @if (submitted) {
+        <div class="success-message" role="status">
+          <mat-icon aria-hidden="true">task_alt</mat-icon>
+          <span>Your message has been logged. The team will follow up as soon as possible.</span>
+        </div>
+      }
+
+      <form class="contact-form" [formGroup]="contactForm" (ngSubmit)="submit()">
+        <div class="field-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Full Name</mat-label>
+            <input matInput formControlName="fullName" autocomplete="name" />
+            @if (contactForm.controls.fullName.hasError('required')) {
+              <mat-error>Full name is required.</mat-error>
+            } @else if (contactForm.controls.fullName.hasError('minlength')) {
+              <mat-error>Enter at least 2 characters.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" autocomplete="email" />
+            @if (contactForm.controls.email.hasError('required')) {
+              <mat-error>Email is required.</mat-error>
+            } @else if (contactForm.controls.email.hasError('email')) {
+              <mat-error>Enter a valid email.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Phone</mat-label>
+            <input matInput formControlName="phone" inputmode="tel" autocomplete="tel" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Inquiry Type</mat-label>
+            <mat-select formControlName="inquiryType">
+              @for (type of inquiryTypes; track type) {
+                <mat-option [value]="type">{{ type }}</mat-option>
+              }
+            </mat-select>
+            @if (contactForm.controls.inquiryType.hasError('required')) {
+              <mat-error>Select an inquiry type.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Subject</mat-label>
+          <input matInput formControlName="subject" />
+          @if (contactForm.controls.subject.hasError('required')) {
+            <mat-error>Subject is required.</mat-error>
+          } @else if (contactForm.controls.subject.hasError('minlength')) {
+            <mat-error>Enter at least 4 characters.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Message</mat-label>
+          <textarea matInput formControlName="message" rows="6"></textarea>
+          @if (contactForm.controls.message.hasError('required')) {
+            <mat-error>Message is required.</mat-error>
+          } @else if (contactForm.controls.message.hasError('minlength')) {
+            <mat-error>Enter at least 20 characters.</mat-error>
+          }
+        </mat-form-field>
+
+        <label class="honeypot" aria-hidden="true" tabindex="-1">
+          Website
+          <input formControlName="website" autocomplete="off" tabindex="-1" />
+        </label>
+
+        <div class="form-actions">
+          <button matButton="filled" type="submit">
+            <mat-icon aria-hidden="true">send</mat-icon>
+            Send Message
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="contact-sidebar" aria-label="Direct contact information">
+      <section class="info-panel urgent-panel">
+        <mat-icon aria-hidden="true">emergency</mat-icon>
+        <div>
+          <h2>Immediate Danger</h2>
+          <p>Call local emergency services first if someone is in immediate danger.</p>
+        </div>
+      </section>
+
+      <section class="info-panel">
+        <mat-icon aria-hidden="true">support_agent</mat-icon>
+        <div>
+          <h2>Report Support</h2>
+          <p>reports@bringthemhome.org</p>
+          <p>(555) 010-4420</p>
+        </div>
+      </section>
+
+      <section class="info-panel">
+        <mat-icon aria-hidden="true">schedule</mat-icon>
+        <div>
+          <h2>Response Window</h2>
+          <p>Monday through Friday</p>
+          <p>9:00 AM to 6:00 PM Eastern</p>
+        </div>
+      </section>
+
+      <section class="info-panel">
+        <mat-icon aria-hidden="true">shield</mat-icon>
+        <div>
+          <h2>Privacy</h2>
+          <p>
+            Only include sensitive report details when you are comfortable sharing them with the
+            support team.
+          </p>
+        </div>
+      </section>
+    </aside>
+  </section>
+</main>

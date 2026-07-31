@@ -1,0 +1,1081 @@
+<app-navigation-header />
+
+<main class="report-page">
+  <header class="report-heading">
+    <div>
+      <h1>Create Missing Person Report</h1>
+      <p>Complete the sections you know. Required fields keep the report reviewable.</p>
+    </div>
+    <a matButton routerLink="/myaccount">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      My Account
+    </a>
+  </header>
+
+  @if (submitted) {
+    <section class="success-panel" role="status">
+      <mat-icon aria-hidden="true">task_alt</mat-icon>
+      <div>
+        <h2>Report Submitted</h2>
+        <p>
+          Your report has been sent for review. The support team may contact you for verification.
+        </p>
+      </div>
+    </section>
+  }
+
+  <mat-stepper class="report-stepper" orientation="vertical" [linear]="false" #stepper>
+    <mat-step [stepControl]="mediaForm">
+      <ng-template matStepLabel>Pictures and Videos</ng-template>
+
+      <form class="step-content" [formGroup]="mediaForm">
+        <section class="upload-grid" aria-label="Media upload">
+          <div class="upload-panel">
+            <div class="section-title">
+              <mat-icon aria-hidden="true">photo_library</mat-icon>
+              <h2>Photos</h2>
+            </div>
+            <label class="upload-zone">
+              <input type="file" accept="image/*" multiple (change)="addPhotos($event)" />
+              <mat-icon aria-hidden="true">add_photo_alternate</mat-icon>
+              <span>Upload clear face, full-body, and recent photos</span>
+            </label>
+
+            @if (photoFiles.length > 0) {
+              <ul class="file-list" aria-label="Uploaded photos">
+                @for (file of photoFiles; track file.name + $index) {
+                  <li>
+                    <span>{{ file.name }}</span>
+                    <small>{{ file.size }}</small>
+                    <button
+                      matIconButton
+                      type="button"
+                      (click)="removePhoto($index)"
+                      aria-label="Remove photo"
+                    >
+                      <mat-icon aria-hidden="true">close</mat-icon>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="upload-panel">
+            <div class="section-title">
+              <mat-icon aria-hidden="true">videocam</mat-icon>
+              <h2>Videos</h2>
+            </div>
+            <label class="upload-zone">
+              <input type="file" accept="video/*" multiple (change)="addVideos($event)" />
+              <mat-icon aria-hidden="true">video_call</mat-icon>
+              <span>Upload recent clips showing voice, walk, or mannerisms</span>
+            </label>
+
+            @if (videoFiles.length > 0) {
+              <ul class="file-list" aria-label="Uploaded videos">
+                @for (file of videoFiles; track file.name + $index) {
+                  <li>
+                    <span>{{ file.name }}</span>
+                    <small>{{ file.size }}</small>
+                    <button
+                      matIconButton
+                      type="button"
+                      (click)="removeVideo($index)"
+                      aria-label="Remove video"
+                    >
+                      <mat-icon aria-hidden="true">close</mat-icon>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Media Notes</mat-label>
+          <textarea matInput formControlName="mediaNotes" rows="3"></textarea>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="consentToUseMedia">
+          I confirm I have permission to submit these images and videos for review.
+        </mat-checkbox>
+        @if (mediaForm.controls.consentToUseMedia.hasError('required') && mediaForm.touched) {
+          <p class="field-error">Media consent is required before submitting.</p>
+        }
+
+        <div class="step-actions">
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Identity</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <h2>Identity</h2>
+          <div class="field-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>First Name</mat-label>
+              <input matInput formControlName="firstName" autocomplete="given-name" />
+              @if (detailsForm.controls.firstName.hasError('required')) {
+                <mat-error>First name is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Middle Name</mat-label>
+              <input matInput formControlName="middleName" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Last Name</mat-label>
+              <input matInput formControlName="lastName" autocomplete="family-name" />
+              @if (detailsForm.controls.lastName.hasError('required')) {
+                <mat-error>Last name is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nickname or Alias</mat-label>
+              <input matInput formControlName="nickname" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date of Birth</mat-label>
+              <input matInput type="date" formControlName="dateOfBirth" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Age When Missing</mat-label>
+              <input matInput inputmode="numeric" formControlName="ageWhenMissing" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Current Age</mat-label>
+              <input matInput inputmode="numeric" formControlName="currentAge" />
+            </mat-form-field>
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" (click)="stepper.selectedIndex = 0">
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Back to Media
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Physical Description</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <h2>Physical Description</h2>
+          <div class="field-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Gender</mat-label>
+              <mat-select formControlName="gender">
+                @for (gender of genders; track gender) {
+                  <mat-option [value]="gender">{{ gender }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Sex at Birth</mat-label>
+              <mat-select formControlName="sexAtBirth">
+                @for (option of sexOptions; track option) {
+                  <mat-option [value]="option">{{ option }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Race or Ethnicity</mat-label>
+              <mat-select formControlName="raceEthnicity">
+                @for (race of raceOptions; track race) {
+                  <mat-option [value]="race">{{ race }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Height</mat-label>
+              <input matInput formControlName="height" placeholder="5 ft 6 in" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Weight</mat-label>
+              <input matInput formControlName="weight" placeholder="140 lb" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Hair Color</mat-label>
+              <mat-select formControlName="hairColor">
+                @for (color of hairColors; track color) {
+                  <mat-option [value]="color">{{ color }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Eye Color</mat-label>
+              <mat-select formControlName="eyeColor">
+                @for (color of eyeColors; track color) {
+                  <mat-option [value]="color">{{ color }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Complexion</mat-label>
+              <input matInput formControlName="complexion" />
+            </mat-form-field>
+          </div>
+
+          <div class="textarea-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Scars, Marks, Tattoos</mat-label>
+              <textarea matInput formControlName="scarsMarksTattoos" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Medical Conditions</mat-label>
+              <textarea matInput formControlName="medicalConditions" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Medications</mat-label>
+              <textarea matInput formControlName="medications" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Disabilities or Support Needs</mat-label>
+              <textarea matInput formControlName="disabilities" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Social Media</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <div class="section-header">
+            <h2>Social Media and Online Presence</h2>
+            <button matButton type="button" (click)="addSocialProfile()">
+              <mat-icon aria-hidden="true">add</mat-icon>
+              Add Profile
+            </button>
+          </div>
+
+          <div class="record-list" formArrayName="socialProfiles">
+            @for (profile of socialProfiles.controls; track profile; let profileIndex = $index) {
+              <section class="record-panel" [formGroupName]="profileIndex">
+                <div class="record-heading">
+                  <h3>Profile {{ profileIndex + 1 }}</h3>
+                  <button
+                    matIconButton
+                    type="button"
+                    (click)="removeSocialProfile(profileIndex)"
+                    [disabled]="socialProfiles.length === 1"
+                    aria-label="Remove social profile"
+                  >
+                    <mat-icon aria-hidden="true">delete</mat-icon>
+                  </button>
+                </div>
+
+                <div class="field-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Platform</mat-label>
+                    <input
+                      matInput
+                      formControlName="platform"
+                      placeholder="Instagram, Facebook, TikTok, X"
+                    />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Profile Link</mat-label>
+                    <input matInput formControlName="profileUrl" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Handle</mat-label>
+                    <input matInput formControlName="handle" placeholder="@username" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Online Alias</mat-label>
+                    <input matInput formControlName="onlineAlias" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Messaging App</mat-label>
+                    <input
+                      matInput
+                      formControlName="messagingApp"
+                      placeholder="Snapchat, Discord, WhatsApp"
+                    />
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Profile Notes</mat-label>
+                  <textarea matInput formControlName="notes" rows="2"></textarea>
+                </mat-form-field>
+              </section>
+            }
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Educational History</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <div class="section-header">
+            <h2>Educational History</h2>
+            <button matButton type="button" (click)="addEducationRecord()">
+              <mat-icon aria-hidden="true">add</mat-icon>
+              Add School
+            </button>
+          </div>
+
+          <div class="section-note">Add one record for each school or education program known.</div>
+
+          <div class="record-list" formArrayName="educationHistory">
+            @for (record of educationHistory.controls; track record; let educationIndex = $index) {
+              <section class="record-panel" [formGroupName]="educationIndex">
+                <div class="record-heading">
+                  <h3>Education Record {{ educationIndex + 1 }}</h3>
+                  <button
+                    matIconButton
+                    type="button"
+                    (click)="removeEducationRecord(educationIndex)"
+                    [disabled]="educationHistory.length === 1"
+                    aria-label="Remove education record"
+                  >
+                    <mat-icon aria-hidden="true">delete</mat-icon>
+                  </button>
+                </div>
+
+                <div class="field-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>School Name</mat-label>
+                    <input matInput formControlName="schoolName" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>School District</mat-label>
+                    <input matInput formControlName="schoolDistrict" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Grade Level</mat-label>
+                    <input matInput formControlName="gradeLevel" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Student ID</mat-label>
+                    <input matInput formControlName="studentId" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Education Status</mat-label>
+                    <mat-select formControlName="educationStatus">
+                      @for (status of educationStatuses; track status) {
+                        <mat-option [value]="status">{{ status }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>School Contacts</mat-label>
+                    <input
+                      matInput
+                      formControlName="schoolContacts"
+                      placeholder="Teacher, counselor, office"
+                    />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Start Date</mat-label>
+                    <input matInput type="date" formControlName="startDate" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>End Date</mat-label>
+                    <input matInput type="date" formControlName="endDate" />
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Education Notes</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="notes"
+                    rows="2"
+                    placeholder="Attendance changes, activities, friends, pickup routines"
+                  ></textarea>
+                </mat-form-field>
+              </section>
+            }
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Employment History</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <h2>Employment History</h2>
+          <div class="field-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Current Employer</mat-label>
+              <input matInput formControlName="currentEmployer" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Job Title</mat-label>
+              <input matInput formControlName="jobTitle" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Work Location</mat-label>
+              <input matInput formControlName="workLocation" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Work Schedule</mat-label>
+              <input
+                matInput
+                formControlName="workSchedule"
+                placeholder="Days, shifts, commute time"
+              />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Supervisor Contact</mat-label>
+              <input matInput formControlName="supervisorContact" />
+            </mat-form-field>
+          </div>
+
+          <div class="textarea-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Previous Employers</mat-label>
+              <textarea matInput formControlName="previousEmployers" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Employment Notes</mat-label>
+              <textarea
+                matInput
+                formControlName="employmentNotes"
+                rows="3"
+                placeholder="Recent job changes, coworkers, paydays, regular stops"
+              ></textarea>
+            </mat-form-field>
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Last Seen</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <h2>Last Seen</h2>
+          <div class="field-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Last Seen Date</mat-label>
+              <input matInput type="date" formControlName="lastSeenDate" />
+              @if (detailsForm.controls.lastSeenDate.hasError('required')) {
+                <mat-error>Last seen date is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Last Seen Time</mat-label>
+              <input matInput type="time" formControlName="lastSeenTime" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Last Seen Location</mat-label>
+              <input matInput formControlName="lastSeenLocation" />
+              @if (detailsForm.controls.lastSeenLocation.hasError('required')) {
+                <mat-error>Location is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>City</mat-label>
+              <input matInput formControlName="city" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>State</mat-label>
+              <mat-select formControlName="state">
+                @for (state of states; track state) {
+                  <mat-option [value]="state">{{ state }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Zipcode</mat-label>
+              <input matInput formControlName="zipcode" inputmode="numeric" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Country</mat-label>
+              <input matInput formControlName="country" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Latitude</mat-label>
+              <input
+                matInput
+                formControlName="lastSeenLatitude"
+                inputmode="decimal"
+                placeholder="40.7128"
+              />
+              @if (
+                detailsForm.controls.lastSeenLatitude.hasError('min') ||
+                detailsForm.controls.lastSeenLatitude.hasError('max')
+              ) {
+                <mat-error>Latitude must be between -90 and 90.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Longitude</mat-label>
+              <input
+                matInput
+                formControlName="lastSeenLongitude"
+                inputmode="decimal"
+                placeholder="-74.0060"
+              />
+              @if (
+                detailsForm.controls.lastSeenLongitude.hasError('min') ||
+                detailsForm.controls.lastSeenLongitude.hasError('max')
+              ) {
+                <mat-error>Longitude must be between -180 and 180.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="textarea-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Clothing Last Seen Wearing</mat-label>
+              <textarea matInput formControlName="clothing" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Accessories or Personal Items</mat-label>
+              <textarea matInput formControlName="accessories" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Circumstances</mat-label>
+              <textarea matInput formControlName="circumstances" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Possible Destination</mat-label>
+              <textarea matInput formControlName="possibleDestination" rows="3"></textarea>
+            </mat-form-field>
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Possible Sightings</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <div class="section-header">
+            <h2>Possible Sighting Locations</h2>
+            <button matButton type="button" (click)="addPossibleSighting()">
+              <mat-icon aria-hidden="true">add_location_alt</mat-icon>
+              Add Sighting
+            </button>
+          </div>
+
+          <div class="record-list" formArrayName="possibleSightings">
+            @for (
+              sighting of possibleSightings.controls;
+              track sighting;
+              let sightingIndex = $index
+            ) {
+              <section class="record-panel" [formGroupName]="sightingIndex">
+                <div class="record-heading">
+                  <h3>Sighting {{ sightingIndex + 1 }}</h3>
+                  <button
+                    matIconButton
+                    type="button"
+                    (click)="removePossibleSighting(sightingIndex)"
+                    [disabled]="possibleSightings.length === 1"
+                    aria-label="Remove possible sighting"
+                  >
+                    <mat-icon aria-hidden="true">delete</mat-icon>
+                  </button>
+                </div>
+
+                <div class="field-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Sighting Date</mat-label>
+                    <input matInput type="date" formControlName="sightingDate" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Sighting Time</mat-label>
+                    <input matInput type="time" formControlName="sightingTime" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Location Name</mat-label>
+                    <input
+                      matInput
+                      formControlName="locationName"
+                      placeholder="Store, station, park"
+                    />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Address or Cross Streets</mat-label>
+                    <input matInput formControlName="address" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>City</mat-label>
+                    <input matInput formControlName="city" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>State</mat-label>
+                    <mat-select formControlName="state">
+                      @for (state of states; track state) {
+                        <mat-option [value]="state">{{ state }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Latitude</mat-label>
+                    <input
+                      matInput
+                      formControlName="latitude"
+                      inputmode="decimal"
+                      placeholder="40.7128"
+                    />
+                    @if (
+                      sighting.controls.latitude.hasError('min') ||
+                      sighting.controls.latitude.hasError('max')
+                    ) {
+                      <mat-error>Latitude must be between -90 and 90.</mat-error>
+                    }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Longitude</mat-label>
+                    <input
+                      matInput
+                      formControlName="longitude"
+                      inputmode="decimal"
+                      placeholder="-74.0060"
+                    />
+                    @if (
+                      sighting.controls.longitude.hasError('min') ||
+                      sighting.controls.longitude.hasError('max')
+                    ) {
+                      <mat-error>Longitude must be between -180 and 180.</mat-error>
+                    }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Reported By</mat-label>
+                    <input
+                      matInput
+                      formControlName="reportedBy"
+                      placeholder="Name, agency, tip source"
+                    />
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Sighting Notes</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="notes"
+                    rows="2"
+                    placeholder="What was seen, confidence level, direction of travel"
+                  ></textarea>
+                </mat-form-field>
+              </section>
+            }
+          </div>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Next
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="detailsForm">
+      <ng-template matStepLabel>Case and Contact</ng-template>
+
+      <form class="step-content" [formGroup]="detailsForm">
+        <section class="form-section">
+          <h2>Case and Contact</h2>
+          <div class="field-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Transportation</mat-label>
+              <input matInput formControlName="transportation" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Companions</mat-label>
+              <input matInput formControlName="companions" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Law Enforcement Agency</mat-label>
+              <input matInput formControlName="lawEnforcementAgency" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Case Number</mat-label>
+              <input matInput formControlName="caseNumber" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Officer Name</mat-label>
+              <input matInput formControlName="officerName" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Officer Phone</mat-label>
+              <input matInput formControlName="officerPhone" inputmode="tel" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Reporter Relationship</mat-label>
+              <input matInput formControlName="reporterRelationship" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Reporter Name</mat-label>
+              <input matInput formControlName="reporterName" />
+              @if (detailsForm.controls.reporterName.hasError('required')) {
+                <mat-error>Reporter name is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Reporter Phone</mat-label>
+              <input matInput formControlName="reporterPhone" inputmode="tel" />
+              @if (detailsForm.controls.reporterPhone.hasError('required')) {
+                <mat-error>Reporter phone is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Reporter Email</mat-label>
+              <input matInput type="email" formControlName="reporterEmail" />
+              @if (detailsForm.controls.reporterEmail.hasError('required')) {
+                <mat-error>Reporter email is required.</mat-error>
+              } @else if (detailsForm.controls.reporterEmail.hasError('email')) {
+                <mat-error>Enter a valid email.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Urgent Safety Notes</mat-label>
+            <textarea matInput formControlName="urgentSafetyNotes" rows="3"></textarea>
+          </mat-form-field>
+        </section>
+        <div class="step-actions section-step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Previous
+          </button>
+          <button matButton="filled" type="button" matStepperNext>
+            Preview
+            <mat-icon aria-hidden="true">visibility</mat-icon>
+          </button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step>
+      <ng-template matStepLabel>Preview and Submit</ng-template>
+
+      <section class="step-content preview">
+        <div class="preview-summary">
+          <article>
+            <h2>Media</h2>
+            <p>{{ mediaCount() }} file(s) selected.</p>
+            <p>{{ mediaForm.controls.mediaNotes.value || 'No media notes added.' }}</p>
+          </article>
+
+          <article>
+            <h2>Person</h2>
+            <dl>
+              <div>
+                <dt>Name</dt>
+                <dd>
+                  {{ detailsForm.controls.firstName.value || 'Not provided' }}
+                  {{ detailsForm.controls.middleName.value }}
+                  {{ detailsForm.controls.lastName.value }}
+                </dd>
+              </div>
+              <div>
+                <dt>Age</dt>
+                <dd>{{ detailsForm.controls.ageWhenMissing.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>Gender</dt>
+                <dd>{{ detailsForm.controls.gender.value || 'Not provided' }}</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article>
+            <h2>Last Seen</h2>
+            <dl>
+              <div>
+                <dt>Date</dt>
+                <dd>{{ detailsForm.controls.lastSeenDate.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>Location</dt>
+                <dd>{{ detailsForm.controls.lastSeenLocation.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>City / State</dt>
+                <dd>
+                  {{ detailsForm.controls.city.value || 'Not provided' }}
+                  {{ detailsForm.controls.state.value }}
+                </dd>
+              </div>
+              <div>
+                <dt>Coordinates</dt>
+                <dd>
+                  @if (
+                    detailsForm.controls.lastSeenLatitude.value ||
+                    detailsForm.controls.lastSeenLongitude.value
+                  ) {
+                    {{ detailsForm.controls.lastSeenLatitude.value || 'Latitude missing' }},
+                    {{ detailsForm.controls.lastSeenLongitude.value || 'Longitude missing' }}
+                  } @else {
+                    Not provided
+                  }
+                </dd>
+              </div>
+            </dl>
+          </article>
+
+          <article>
+            <h2>Possible Sightings</h2>
+            @if (filledPossibleSightings().length > 0) {
+              <dl>
+                @for (sighting of filledPossibleSightings(); track sighting) {
+                  <div>
+                    <dt>{{ sighting.locationName || sighting.address || 'Sighting Location' }}</dt>
+                    <dd>
+                      {{
+                        sighting.sightingDate ||
+                          sighting.city ||
+                          sighting.reportedBy ||
+                          'Details provided'
+                      }}
+                    </dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <p>Not provided</p>
+            }
+          </article>
+
+          <article>
+            <h2>Online</h2>
+            @if (filledSocialProfiles().length > 0) {
+              <dl>
+                @for (profile of filledSocialProfiles(); track profile) {
+                  <div>
+                    <dt>{{ profile.platform || 'Profile' }}</dt>
+                    <dd>
+                      {{
+                        profile.handle ||
+                          profile.profileUrl ||
+                          profile.onlineAlias ||
+                          'Details provided'
+                      }}
+                    </dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <p>Not provided</p>
+            }
+          </article>
+
+          <article>
+            <h2>Education</h2>
+            @if (filledEducationRecords().length > 0) {
+              <dl>
+                @for (record of filledEducationRecords(); track record) {
+                  <div>
+                    <dt>{{ record.schoolName || 'School' }}</dt>
+                    <dd>
+                      {{
+                        record.educationStatus ||
+                          record.gradeLevel ||
+                          record.schoolDistrict ||
+                          'Details provided'
+                      }}
+                    </dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <p>Not provided</p>
+            }
+          </article>
+
+          <article>
+            <h2>Employment</h2>
+            <dl>
+              <div>
+                <dt>Employer</dt>
+                <dd>{{ detailsForm.controls.currentEmployer.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>Role</dt>
+                <dd>{{ detailsForm.controls.jobTitle.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>Work Location</dt>
+                <dd>{{ detailsForm.controls.workLocation.value || 'Not provided' }}</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article>
+            <h2>Reporter</h2>
+            <dl>
+              <div>
+                <dt>Name</dt>
+                <dd>{{ detailsForm.controls.reporterName.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd>{{ detailsForm.controls.reporterPhone.value || 'Not provided' }}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{{ detailsForm.controls.reporterEmail.value || 'Not provided' }}</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+
+        <mat-divider />
+
+        <div class="step-actions">
+          <button matButton type="button" matStepperPrevious>
+            <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            Back to Details
+          </button>
+          <button matButton type="button" (click)="stepper.selectedIndex = 0">
+            <mat-icon aria-hidden="true">photo_library</mat-icon>
+            Back to Media
+          </button>
+          <button matButton="filled" type="button" (click)="submitReport()">
+            <mat-icon aria-hidden="true">send</mat-icon>
+            Submit Report
+          </button>
+        </div>
+      </section>
+    </mat-step>
+  </mat-stepper>
+</main>

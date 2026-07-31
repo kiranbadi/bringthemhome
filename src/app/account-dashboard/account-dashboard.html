@@ -1,0 +1,52 @@
+<app-navigation-header />
+
+<main class="account-dashboard">
+  <header class="dashboard-heading">
+    <div>
+      <h1>My Account</h1>
+      <p>Account access is active. Use this workspace to create and manage missing person reports.</p>
+    </div>
+    <a matButton="filled" routerLink="/missing-person-report">
+      <mat-icon aria-hidden="true">post_add</mat-icon>
+      Create Report
+    </a>
+  </header>
+
+  <section class="dashboard-grid" aria-label="Account details">
+    <section class="detail-panel">
+      <h2>Reporter Details</h2>
+      <dl>
+        <div>
+          <dt>Name</dt>
+          <dd>Verified Account Holder</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>verified@example.com</dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd>(555) 010-2048</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="detail-panel">
+      <h2>Reporting Access</h2>
+      <dl>
+        <div>
+          <dt>Status</dt>
+          <dd>Approved</dd>
+        </div>
+        <div>
+          <dt>Available Action</dt>
+          <dd>Missing person report submission</dd>
+        </div>
+        <div>
+          <dt>Review Queue</dt>
+          <dd>Submitted reports are reviewed before publishing.</dd>
+        </div>
+      </dl>
+    </section>
+  </section>
+</main>

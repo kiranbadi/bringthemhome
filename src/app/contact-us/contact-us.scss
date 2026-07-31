@@ -1,0 +1,151 @@
+.contact-page {
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 1160px;
+  min-height: calc(100vh - 64px);
+  padding: 20px;
+}
+
+.contact-heading {
+  margin-bottom: 16px;
+}
+
+.contact-heading h1,
+.section-heading h2,
+.info-panel h2 {
+  margin: 0;
+}
+
+.contact-heading h1 {
+  font: var(--mat-sys-headline-small);
+}
+
+.contact-heading p,
+.section-heading p,
+.info-panel p {
+  color: var(--mat-sys-on-surface-variant);
+  margin: 4px 0 0;
+}
+
+.contact-layout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.contact-form-panel,
+.info-panel {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.contact-form-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.section-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.section-heading h2,
+.info-panel h2 {
+  font: var(--mat-sys-title-large);
+}
+
+.contact-form {
+  display: grid;
+  gap: 12px;
+}
+
+.field-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.success-message {
+  align-items: center;
+  background: var(--mat-sys-secondary-container);
+  border-radius: 8px;
+  color: var(--mat-sys-on-secondary-container);
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.honeypot {
+  height: 0;
+  left: -10000px;
+  overflow: hidden;
+  position: absolute;
+  width: 0;
+}
+
+.contact-sidebar {
+  display: grid;
+  gap: 12px;
+}
+
+.info-panel {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  padding: 14px;
+}
+
+.info-panel mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.urgent-panel {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.urgent-panel mat-icon,
+.urgent-panel p {
+  color: var(--mat-sys-on-error-container);
+}
+
+:host ::ng-deep .contact-page .mat-mdc-form-field {
+  width: 100%;
+}
+
+:host ::ng-deep .contact-page .mat-mdc-form-field-infix {
+  min-height: 42px;
+  padding-bottom: 8px;
+  padding-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .contact-page {
+    padding: 16px;
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

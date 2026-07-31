@@ -1,36 +1,18 @@
 <app-navigation-header />
 
 <main class="home-shell">
-  <section class="search-panel" aria-labelledby="search-title">
-    <div class="search-heading">
-      <h1 id="search-title">Find a Person</h1>
-      <p>{{ searchSummary }}</p>
-    </div>
-
+  <section class="search-panel" aria-label="Missing person search">
     <form class="search-form" [formGroup]="searchForm" (ngSubmit)="search()">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Full Name</mat-label>
-        <input matInput type="search" formControlName="fullName" autocomplete="name" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Zipcode</mat-label>
-        <input matInput type="search" formControlName="zipcode" inputmode="numeric" autocomplete="postal-code" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>City</mat-label>
-        <input matInput type="search" formControlName="city" autocomplete="address-level2" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>State</mat-label>
-        <mat-select formControlName="state">
-          <mat-option value="">Any State</mat-option>
-          @for (state of states; track state) {
-            <mat-option [value]="state">{{ state }}</mat-option>
-          }
-        </mat-select>
+        <mat-label>Search missing persons</mat-label>
+        <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+        <input
+          matInput
+          type="search"
+          formControlName="query"
+          autocomplete="off"
+          placeholder="Name, zipcode, city, or state"
+        />
       </mat-form-field>
 
       <div class="search-actions">
@@ -38,14 +20,18 @@
           <mat-icon aria-hidden="true">search</mat-icon>
           Search
         </button>
-        <button matButton type="button" (click)="clearSearch()">Clear</button>
       </div>
     </form>
   </section>
 
   <section class="missing-person-grid" aria-label="Missing persons">
     @for (person of pagedMissingPersons; track person.id) {
-      <mat-card class="person-card" appearance="outlined">
+      <mat-card
+        class="person-card"
+        appearance="outlined"
+        [routerLink]="['/missing-person', person.id]"
+        tabindex="0"
+      >
         <div class="carousel">
           <img [src]="currentPhoto(person)" [alt]="person.fullName" />
 
@@ -54,7 +40,7 @@
             matIconButton
             type="button"
             [attr.aria-label]="'Previous photo for ' + person.fullName"
-            (click)="previousPhoto(person)"
+            (click)="$event.stopPropagation(); previousPhoto(person)"
           >
             <mat-icon aria-hidden="true">chevron_left</mat-icon>
           </button>
@@ -64,7 +50,7 @@
             matIconButton
             type="button"
             [attr.aria-label]="'Next photo for ' + person.fullName"
-            (click)="nextPhoto(person)"
+            (click)="$event.stopPropagation(); nextPhoto(person)"
           >
             <mat-icon aria-hidden="true">chevron_right</mat-icon>
           </button>
@@ -83,7 +69,7 @@
         </mat-card-content>
 
         <mat-card-actions>
-          <button matButton type="button" (click)="sharePerson(person)">
+          <button matButton type="button" (click)="$event.stopPropagation(); sharePerson(person)">
             <mat-icon aria-hidden="true">share</mat-icon>
             Share
           </button>

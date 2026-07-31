@@ -1,0 +1,365 @@
+<app-navigation-header />
+
+@if (person; as person) {
+  <main class="person-detail-page">
+    <header class="detail-header">
+      <a matButton routerLink="/">
+        <mat-icon aria-hidden="true">arrow_back</mat-icon>
+        Back to Search
+      </a>
+
+      <div class="header-actions">
+        <button matButton="filled" type="button" (click)="openTipDialog()">
+          <mat-icon aria-hidden="true">tips_and_updates</mat-icon>
+          Submit a Tip
+        </button>
+        <button matButton type="button" (click)="createPoster(person)">
+          <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+          Create Poster
+        </button>
+      </div>
+    </header>
+
+    @if (posterMessage) {
+      <section class="status-message" role="status">
+        <mat-icon aria-hidden="true">task_alt</mat-icon>
+        <span>{{ posterMessage }}</span>
+      </section>
+    }
+
+    @if (tipResponseMessage) {
+      <section class="status-message" role="status">
+        <mat-icon aria-hidden="true">task_alt</mat-icon>
+        <span>{{ tipResponseMessage }}</span>
+      </section>
+    }
+
+    <section class="profile-hero">
+      <div class="media-panel">
+        <div class="photo-frame">
+          @if (activeMedia(person); as media) {
+            @if (media.type === 'photo') {
+              <img [src]="media.url" [alt]="person.fullName" />
+            } @else {
+              <video controls preload="metadata">
+                <source [src]="media.url" type="video/mp4" />
+              </video>
+            }
+          } @else {
+            <img [src]="person.photos[0]" [alt]="person.fullName" />
+          }
+
+          <button
+            class="carousel-button previous"
+            matIconButton
+            type="button"
+            [attr.aria-label]="'Previous media for ' + person.fullName"
+            (click)="previousMedia(person)"
+          >
+            <mat-icon aria-hidden="true">chevron_left</mat-icon>
+          </button>
+          <button
+            class="carousel-button next"
+            matIconButton
+            type="button"
+            [attr.aria-label]="'Next media for ' + person.fullName"
+            (click)="nextMedia(person)"
+          >
+            <mat-icon aria-hidden="true">chevron_right</mat-icon>
+          </button>
+        </div>
+
+        <div class="thumbnail-strip" aria-label="Photos and videos">
+          @for (media of mediaItems(person); track media.url; let index = $index) {
+            <button
+              type="button"
+              class="thumbnail"
+              [class.video-thumbnail]="media.type === 'video'"
+              [class.active-thumbnail]="index === activeMediaIndex"
+              (click)="selectMedia(index)"
+              [attr.aria-label]="'Show ' + media.title"
+            >
+              @if (media.type === 'photo') {
+                <img [src]="media.url" [alt]="person.fullName + ' ' + media.title" />
+              } @else {
+                <mat-icon aria-hidden="true">play_circle</mat-icon>
+                <span>{{ media.title }}</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <section class="summary-panel">
+        <p class="case-status">{{ person.status }}</p>
+        <h1>{{ person.fullName }}</h1>
+        <dl class="summary-list">
+          <div>
+            <dt>Report Number</dt>
+            <dd>{{ person.reportNumber }}</dd>
+          </div>
+          <div>
+            <dt>Last Seen</dt>
+            <dd>{{ person.lastSeenDate }} at {{ person.lastSeenTime }}</dd>
+          </div>
+          <div>
+            <dt>Location</dt>
+            <dd>{{ person.lastSeenLocation }}, {{ person.city }}, {{ person.state }}</dd>
+          </div>
+          <div>
+            <dt>Coordinates</dt>
+            <dd>{{ person.lastSeenLatitude }}, {{ person.lastSeenLongitude }}</dd>
+          </div>
+        </dl>
+
+        <section class="share-panel" aria-label="Share this missing person profile">
+          <h2>Share This Case</h2>
+          <div class="share-grid">
+            @for (channel of shareChannels; track channel.label) {
+              <button matButton type="button" (click)="sharePerson(person, channel)">
+                <mat-icon aria-hidden="true">{{ channel.icon }}</mat-icon>
+                {{ channel.label }}
+              </button>
+            }
+            <button matButton type="button" (click)="copyShareLink(person)">
+              <mat-icon aria-hidden="true">content_copy</mat-icon>
+              Copy Link
+            </button>
+          </div>
+        </section>
+      </section>
+    </section>
+
+    <section class="detail-grid" aria-label="Missing person details">
+      <article class="detail-section">
+        <h2>Identity</h2>
+        <dl>
+          <div>
+            <dt>Nickname</dt>
+            <dd>{{ person.nickname }}</dd>
+          </div>
+          <div>
+            <dt>Date of Birth</dt>
+            <dd>{{ person.dateOfBirth }}</dd>
+          </div>
+          <div>
+            <dt>Age Missing</dt>
+            <dd>{{ person.ageWhenMissing }}</dd>
+          </div>
+          <div>
+            <dt>Current Age</dt>
+            <dd>{{ person.currentAge }}</dd>
+          </div>
+          <div>
+            <dt>Gender</dt>
+            <dd>{{ person.gender }}</dd>
+          </div>
+          <div>
+            <dt>Race / Ethnicity</dt>
+            <dd>{{ person.raceEthnicity }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="detail-section">
+        <h2>Physical Description</h2>
+        <dl>
+          <div>
+            <dt>Height</dt>
+            <dd>{{ person.height }}</dd>
+          </div>
+          <div>
+            <dt>Weight</dt>
+            <dd>{{ person.weight }}</dd>
+          </div>
+          <div>
+            <dt>Hair</dt>
+            <dd>{{ person.hairColor }}</dd>
+          </div>
+          <div>
+            <dt>Eyes</dt>
+            <dd>{{ person.eyeColor }}</dd>
+          </div>
+          <div>
+            <dt>Complexion</dt>
+            <dd>{{ person.complexion }}</dd>
+          </div>
+          <div>
+            <dt>Languages</dt>
+            <dd>{{ person.languages }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="detail-section wide-section">
+        <h2>Medical and Identifiers</h2>
+        <dl>
+          <div>
+            <dt>Scars / Marks / Tattoos</dt>
+            <dd>{{ person.scarsMarksTattoos }}</dd>
+          </div>
+          <div>
+            <dt>Medical Conditions</dt>
+            <dd>{{ person.medicalConditions }}</dd>
+          </div>
+          <div>
+            <dt>Medications</dt>
+            <dd>{{ person.medications }}</dd>
+          </div>
+          <div>
+            <dt>Disabilities</dt>
+            <dd>{{ person.disabilities }}</dd>
+          </div>
+          <div>
+            <dt>Other Identifiers</dt>
+            <dd>{{ person.otherIdentifiers }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="detail-section wide-section">
+        <h2>Last Seen Details</h2>
+        <dl>
+          <div>
+            <dt>Clothing</dt>
+            <dd>{{ person.clothing }}</dd>
+          </div>
+          <div>
+            <dt>Accessories</dt>
+            <dd>{{ person.accessories }}</dd>
+          </div>
+          <div>
+            <dt>Circumstances</dt>
+            <dd>{{ person.circumstances }}</dd>
+          </div>
+          <div>
+            <dt>Possible Destination</dt>
+            <dd>{{ person.possibleDestination }}</dd>
+          </div>
+          <div>
+            <dt>Transportation</dt>
+            <dd>{{ person.transportation }}</dd>
+          </div>
+          <div>
+            <dt>Companions</dt>
+            <dd>{{ person.companions }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="detail-section">
+        <h2>Case and Contact</h2>
+        <dl>
+          <div>
+            <dt>Agency</dt>
+            <dd>{{ person.lawEnforcementAgency }}</dd>
+          </div>
+          <div>
+            <dt>Case Number</dt>
+            <dd>{{ person.caseNumber }}</dd>
+          </div>
+          <div>
+            <dt>Officer</dt>
+            <dd>{{ person.officerName }}</dd>
+          </div>
+          <div>
+            <dt>Officer Phone</dt>
+            <dd>{{ person.officerPhone }}</dd>
+          </div>
+          <div>
+            <dt>Safety Notes</dt>
+            <dd>{{ person.urgentSafetyNotes }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="detail-section">
+        <h2>Employment</h2>
+        <dl>
+          <div>
+            <dt>Employer</dt>
+            <dd>{{ person.employmentHistory.currentEmployer }}</dd>
+          </div>
+          <div>
+            <dt>Role</dt>
+            <dd>{{ person.employmentHistory.jobTitle }}</dd>
+          </div>
+          <div>
+            <dt>Location</dt>
+            <dd>{{ person.employmentHistory.workLocation }}</dd>
+          </div>
+          <div>
+            <dt>Schedule</dt>
+            <dd>{{ person.employmentHistory.workSchedule }}</dd>
+          </div>
+          <div>
+            <dt>Notes</dt>
+            <dd>{{ person.employmentHistory.employmentNotes }}</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="record-section">
+      <h2>Social Media Presence</h2>
+      <div class="record-grid">
+        @for (profile of person.socialProfiles; track profile.platform + profile.handle) {
+          <article class="record-card">
+            <h3>{{ profile.platform }}</h3>
+            <p>{{ profile.handle }}</p>
+            <p>{{ profile.profileUrl || 'No profile URL provided' }}</p>
+            <p>{{ profile.notes }}</p>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="record-section">
+      <h2>Educational History</h2>
+      <div class="record-grid">
+        @for (record of person.educationHistory; track record.schoolName) {
+          <article class="record-card">
+            <h3>{{ record.schoolName }}</h3>
+            <p>{{ record.schoolDistrict }}</p>
+            <p>{{ record.gradeLevel }} · {{ record.educationStatus }}</p>
+            <p>{{ record.dateRange }}</p>
+            <p>{{ record.notes }}</p>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="record-section">
+      <h2>Possible Sighting Locations</h2>
+      <div class="record-grid">
+        @for (sighting of person.possibleSightings; track sighting.locationName + sighting.date) {
+          <article class="record-card">
+            <h3>{{ sighting.locationName }}</h3>
+            <p>{{ sighting.date }} · {{ sighting.time }}</p>
+            <p>{{ sighting.address }}, {{ sighting.city }}, {{ sighting.state }}</p>
+            <p>{{ sighting.latitude }}, {{ sighting.longitude }}</p>
+            <p>{{ sighting.notes }}</p>
+          </article>
+        }
+      </div>
+    </section>
+
+    @if (tipDialogOpen) {
+      <app-tip-submission-dialog
+        [person]="person"
+        (closed)="closeTipDialog()"
+        (submittedTip)="handleTipSubmitted($event)"
+      />
+    }
+  </main>
+} @else {
+  <main class="person-detail-page">
+    <section class="not-found">
+      <h1>Missing Person Not Found</h1>
+      <a matButton="filled" routerLink="/">
+        <mat-icon aria-hidden="true">search</mat-icon>
+        Back to Search
+      </a>
+    </section>
+  </main>
+}
