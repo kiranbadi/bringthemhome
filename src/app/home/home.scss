@@ -1,37 +1,25 @@
 .home-shell {
   box-sizing: border-box;
   min-height: calc(100vh - 64px);
-  padding: 20px;
+  padding: 28px 20px 20px;
 }
 
 .search-panel {
   margin: 0 auto;
-  max-width: 1360px;
-}
-
-.search-heading {
-  align-items: baseline;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-bottom: 12px;
-}
-
-.search-heading h1 {
-  font: var(--mat-sys-headline-small);
-  margin: 0;
-}
-
-.search-heading p {
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
+  max-width: 760px;
+  text-align: center;
 }
 
 .search-form {
   align-items: center;
-  display: grid;
+  display: flex;
   gap: 10px;
-  grid-template-columns: minmax(180px, 1.4fr) minmax(120px, 0.8fr) minmax(140px, 1fr) minmax(150px, 1fr) auto;
+  justify-content: center;
+}
+
+.search-form mat-form-field {
+  flex: 1 1 auto;
+  max-width: 620px;
 }
 
 .search-actions {
@@ -49,9 +37,15 @@
 }
 
 .person-card {
+  cursor: pointer;
   display: flex;
   min-width: 0;
   overflow: hidden;
+}
+
+.person-card:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 3px;
 }
 
 .carousel {
@@ -124,14 +118,6 @@
 }
 
 @media (max-width: 960px) {
-  .search-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .search-actions {
-    grid-column: 1 / -1;
-  }
-
   .missing-person-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -143,7 +129,8 @@
   }
 
   .search-form {
-    grid-template-columns: 1fr;
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .search-actions {

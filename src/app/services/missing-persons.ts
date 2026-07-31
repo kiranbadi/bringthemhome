@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 import {
   MissingPerson,
+  MissingPersonDetail,
   MissingPersonPage,
   MissingPersonSearchCriteria,
 } from '../models/missing-person';
@@ -161,6 +162,12 @@ export class MissingPersonsService {
     pageSize: number,
   ): MissingPersonPage {
     const filtered = MISSING_PERSONS.filter((person) => {
+      if (criteria.query.length > 0) {
+        return [person.fullName, person.zipcode, person.city, person.state].some((value) =>
+          this.matchesText(value, criteria.query),
+        );
+      }
+
       return (
         this.matchesText(person.fullName, criteria.fullName) &&
         this.matchesText(person.zipcode, criteria.zipcode) &&
@@ -177,7 +184,140 @@ export class MissingPersonsService {
     };
   }
 
+  getById(id: number): MissingPersonDetail | undefined {
+    const person = MISSING_PERSONS.find((item) => item.id === id);
+
+    return person ? this.createDetail(person) : undefined;
+  }
+
   private matchesText(value: string, criteria: string): boolean {
     return criteria.length === 0 || value.toLowerCase().includes(criteria.toLowerCase());
+  }
+
+  private createDetail(person: MissingPerson): MissingPersonDetail {
+    return {
+      ...person,
+      reportNumber: `BTH-${String(person.id).padStart(5, '0')}`,
+      status: 'Active Missing Person Case',
+      nickname: person.fullName.split(' ')[0],
+      dateOfBirth: '2009-04-18',
+      ageWhenMissing: '16',
+      currentAge: '17',
+      gender: person.id % 2 === 0 ? 'Male' : 'Female',
+      sexAtBirth: person.id % 2 === 0 ? 'Male' : 'Female',
+      raceEthnicity: person.id % 3 === 0 ? 'Hispanic or Latino' : 'Unknown',
+      height: person.id % 2 === 0 ? '5 ft 10 in' : '5 ft 5 in',
+      weight: person.id % 2 === 0 ? '158 lb' : '124 lb',
+      hairColor: person.id % 2 === 0 ? 'Brown' : 'Black',
+      eyeColor: 'Brown',
+      complexion: 'Medium',
+      languages: 'English, Spanish',
+      scarsMarksTattoos: 'Small scar above left eyebrow. Pierced ears.',
+      medicalConditions: 'Mild asthma. May need inhaler access.',
+      medications: 'Albuterol inhaler as needed.',
+      disabilities: 'No known disabilities reported.',
+      otherIdentifiers: 'Usually carries a black backpack and silver keychain.',
+      lastSeenTime: '7:45 PM',
+      lastSeenLocation: `${person.city} Transit Center`,
+      country: 'United States',
+      lastSeenLatitude: this.coordinateFor(person.id, 40.7128, 0.37),
+      lastSeenLongitude: this.coordinateFor(person.id, -74.006, -0.41),
+      clothing: 'Dark hoodie, blue jeans, white sneakers.',
+      accessories: 'Black backpack, wireless earbuds, silver keychain.',
+      circumstances:
+        'Last observed leaving a public transit area after school. Phone activity stopped later that evening.',
+      possibleDestination: 'May be traveling toward a friend or former school area.',
+      transportation: 'Public transit, rideshare, or walking.',
+      companions: 'Unknown. A witness reported seeing one similarly aged companion nearby.',
+      lawEnforcementAgency: `${person.city} Police Department`,
+      caseNumber: `MP-${person.id}26-${person.zipcode}`,
+      officerName: 'Detective Morgan Ellis',
+      officerPhone: '(555) 010-2731',
+      reporterRelationship: 'Parent or guardian',
+      reporterName: 'Verified Reporter',
+      reporterPhone: '(555) 010-1188',
+      reporterEmail: 'reporter@example.com',
+      urgentSafetyNotes: 'May avoid unfamiliar adults. Approach calmly and contact authorities.',
+      videos: [
+        {
+          title: 'Recent walking clip',
+          type: 'video',
+          url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+        },
+      ],
+      socialProfiles: [
+        {
+          platform: 'Instagram',
+          handle: `@${person.fullName.toLowerCase().replaceAll(' ', '.')}`,
+          profileUrl: 'https://example.com/social-profile',
+          notes: 'Last public post was two days before disappearance.',
+        },
+        {
+          platform: 'Discord',
+          handle: `${person.fullName.split(' ')[0]}#0426`,
+          profileUrl: '',
+          notes: 'Known to use gaming and school study servers.',
+        },
+      ],
+      educationHistory: [
+        {
+          schoolName: `${person.city} Central High School`,
+          schoolDistrict: `${person.city} Public Schools`,
+          gradeLevel: '11th Grade',
+          educationStatus: 'Currently enrolled',
+          dateRange: '2024 - 2026',
+          schoolContacts: 'Guidance counselor and attendance office',
+          notes: 'Participates in after-school activities and normally takes transit home.',
+        },
+        {
+          schoolName: `${person.city} Middle School`,
+          schoolDistrict: `${person.city} Public Schools`,
+          gradeLevel: '8th Grade',
+          educationStatus: 'Graduated',
+          dateRange: '2021 - 2023',
+          schoolContacts: 'Former homeroom teacher',
+          notes: 'Maintained a close friend group from this school.',
+        },
+      ],
+      employmentHistory: {
+        currentEmployer: person.id % 2 === 0 ? 'Neighborhood Market' : 'Not currently employed',
+        jobTitle: person.id % 2 === 0 ? 'Part-time cashier' : 'Student',
+        workLocation: person.id % 2 === 0 ? `${person.city}, ${person.state}` : 'N/A',
+        workSchedule: person.id % 2 === 0 ? 'Weekends, occasional evenings' : 'N/A',
+        supervisorContact: person.id % 2 === 0 ? '(555) 010-9902' : 'N/A',
+        previousEmployers: 'Occasional babysitting and community event volunteering.',
+        employmentNotes: 'No recent workplace conflict reported.',
+      },
+      possibleSightings: [
+        {
+          date: person.lastSeenDate,
+          time: '8:10 PM',
+          locationName: `${person.city} Transit Platform`,
+          address: `Near downtown ${person.city}`,
+          city: person.city,
+          state: person.state,
+          latitude: this.coordinateFor(person.id, 40.7359, 0.31),
+          longitude: this.coordinateFor(person.id, -73.9911, -0.35),
+          reportedBy: 'Transit employee',
+          notes: 'Possible sighting near outbound buses. Confidence medium.',
+        },
+        {
+          date: 'Two days later',
+          time: '3:20 PM',
+          locationName: 'Convenience store',
+          address: 'Near a major bus corridor',
+          city: person.city,
+          state: person.state,
+          latitude: this.coordinateFor(person.id, 40.7552, 0.29),
+          longitude: this.coordinateFor(person.id, -73.984, -0.33),
+          reportedBy: 'Community tip',
+          notes: 'Individual matched clothing description but identity unconfirmed.',
+        },
+      ],
+    };
+  }
+
+  private coordinateFor(id: number, base: number, offset: number): string {
+    return (base + id * offset).toFixed(4);
   }
 }

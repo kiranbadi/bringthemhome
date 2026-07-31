@@ -13,11 +13,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 export class NavigationHeader {
   protected readonly links = [
     { label: 'Home', route: '/' },
-    { label: 'Support Us', route: 'support-us' },
-    { label: 'Our Goal', route: 'goal' },
-    { label: 'Advanced Search', route: 'advanced-search' },
-    { label: 'Login', route: 'login' },
-    { label: 'Register', route: 'register' },
-    { label: 'Contact Us', route: 'contact-us' },
+    { label: 'Account Management', route: '/account-management' },
+    { label: 'Advanced Search', route: '/advanced-search' },
+    { label: 'Support Us', route: '/support-us' },
+    { label: 'Contact Us', route: '/contact-us' },
   ];
 }

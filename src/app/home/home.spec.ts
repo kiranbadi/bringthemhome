@@ -22,13 +22,14 @@ describe('Home', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render independent search fields', () => {
+  it('should render a single broad search field', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const labels = Array.from(compiled.querySelectorAll('mat-label')).map((label) =>
       label.textContent?.trim(),
     );
 
-    expect(labels).toEqual(expect.arrayContaining(['Full Name', 'Zipcode', 'City', 'State']));
+    expect(labels).toContain('Search missing persons');
+    expect(labels).not.toEqual(expect.arrayContaining(['Full Name', 'Zipcode', 'City', 'State']));
   });
 
   it('should render missing person cards', () => {
@@ -43,6 +44,6 @@ describe('Home', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     expect(compiled.querySelector('mat-paginator')).toBeTruthy();
-    expect(compiled.textContent).toContain('Showing 12 missing persons.');
+    expect(compiled.textContent).not.toContain('Showing 12 missing persons.');
   });
 });
