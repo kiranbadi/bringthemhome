@@ -25,8 +25,9 @@ describe('AdvancedSearch', () => {
   it('should render the advanced search controls', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
-    expect(compiled.textContent).toContain('Search Missing Children Posters');
-    expect(compiled.textContent).toContain('Refine:');
-    expect(compiled.textContent).toContain('Search Near Me');
+    expect(compiled.textContent).toContain('Search Criteria');
+    expect(compiled.textContent).toContain('Selected Criteria');
+    expect(compiled.textContent).toContain('Sort By');
+    expect(compiled.textContent).toContain('Most Recent');
   });
 });

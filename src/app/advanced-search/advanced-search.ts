@@ -8,6 +8,29 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 
+const DEFAULT_CRITERIA = {
+  reportedStartDate: '2026-01-30',
+  reportedEndDate: '2026-07-26',
+  firstName: '',
+  middleName: '',
+  lastName: '',
+  city: '',
+  state: '',
+  country: 'United States',
+  ageMissing: '',
+  ageNow: '',
+  agency: '',
+  gender: '',
+  race: '',
+  hairColor: '',
+  eyeColor: '',
+  photoAvailable: '',
+  alertType: '',
+  sortBy: 'mostRecent',
+};
+
+type CriteriaKey = keyof typeof DEFAULT_CRITERIA;
+
 @Component({
   selector: 'app-advanced-search',
   imports: [
@@ -24,6 +47,36 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
 })
 export class AdvancedSearch {
   private readonly formBuilder = inject(FormBuilder);
+
+  private readonly defaultCriteria = DEFAULT_CRITERIA;
+
+  private readonly criteriaLabels: Record<CriteriaKey, string> = {
+    reportedStartDate: 'Reported Start Date',
+    reportedEndDate: 'Reported End Date',
+    firstName: 'First Name',
+    middleName: 'Middle Name',
+    lastName: 'Last Name',
+    city: 'City',
+    state: 'State',
+    country: 'Country',
+    ageMissing: 'Age Missing',
+    ageNow: 'Age Now',
+    agency: 'Agency',
+    gender: 'Gender',
+    race: 'Race',
+    hairColor: 'Hair Color',
+    eyeColor: 'Eye Color',
+    photoAvailable: 'Photo Available',
+    alertType: 'Alert Type',
+    sortBy: 'Sort By',
+  };
+
+  private readonly criteriaDisplayValues: Partial<Record<CriteriaKey, Record<string, string>>> = {
+    sortBy: {
+      mostRecent: 'Most Recent',
+      az: 'A - Z',
+    },
+  };
 
   protected readonly states = [
     'Alabama',
@@ -56,7 +109,13 @@ export class AdvancedSearch {
     'Unknown',
   ];
   protected readonly photoAvailabilityOptions = ['Available', 'Not Available', 'Unknown'];
-  protected readonly alertTypes = ['Amber Alert', 'Endangered Missing', 'Missing', 'Runaway', 'Unknown'];
+  protected readonly alertTypes = [
+    'Amber Alert',
+    'Endangered Missing',
+    'Missing',
+    'Runaway',
+    'Unknown',
+  ];
 
   protected readonly advancedSearchForm = this.formBuilder.nonNullable.group({
     reportedStartDate: ['2026-01-30'],
@@ -80,29 +139,58 @@ export class AdvancedSearch {
   });
 
   protected reset(): void {
-    this.advancedSearchForm.reset({
-      reportedStartDate: '2026-01-30',
-      reportedEndDate: '2026-07-26',
-      firstName: '',
-      middleName: '',
-      lastName: '',
-      city: '',
-      state: '',
-      country: 'United States',
-      ageMissing: '',
-      ageNow: '',
-      agency: '',
-      gender: '',
-      race: '',
-      hairColor: '',
-      eyeColor: '',
-      photoAvailable: '',
-      alertType: '',
-      sortBy: 'mostRecent',
-    });
+    this.advancedSearchForm.reset(this.defaultCriteria);
   }
 
   protected submit(): void {
     this.advancedSearchForm.markAllAsTouched();
+
+    if (this.reportedDateRangeIncomplete()) {
+      return;
+    }
+
+    console.log('Advanced search payload', JSON.stringify(this.searchPayload(), null, 2));
+  }
+
+  protected removeCriteria(key: CriteriaKey): void {
+    this.advancedSearchForm.controls[key].setValue(this.defaultCriteria[key]);
+  }
+
+  protected activeCriteria(): readonly {
+    key: CriteriaKey;
+    label: string;
+    value: string;
+    canRemove: boolean;
+  }[] {
+    const criteria = this.advancedSearchForm.getRawValue();
+
+    return (Object.keys(criteria) as CriteriaKey[])
+      .filter(
+        (key) =>
+          key === 'sortBy' ||
+          (criteria[key].trim().length > 0 && criteria[key] !== this.defaultCriteria[key]),
+      )
+      .map((key) => ({
+        key,
+        label: this.criteriaLabels[key],
+        value: this.criteriaDisplayValues[key]?.[criteria[key]] ?? criteria[key],
+        canRemove: key !== 'sortBy' || criteria[key] !== this.defaultCriteria[key],
+      }));
+  }
+
+  protected reportedDateRangeIncomplete(): boolean {
+    const criteria = this.advancedSearchForm.getRawValue();
+
+    return (
+      criteria.reportedStartDate !== this.defaultCriteria.reportedStartDate &&
+      criteria.reportedEndDate === this.defaultCriteria.reportedEndDate
+    );
+  }
+
+  private searchPayload() {
+    return {
+      criteria: this.advancedSearchForm.getRawValue(),
+      selectedCriteria: this.activeCriteria(),
+    };
   }
 }
