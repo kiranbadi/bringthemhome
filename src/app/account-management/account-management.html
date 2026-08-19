@@ -114,7 +114,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Notes</mat-label>
-          <textarea matInput formControlName="notes" rows="3"></textarea>
+          <textarea matInput formControlName="notes" rows="3" placeholder="Tell us why you want to register"></textarea>
           @if (registerForm.controls.notes.hasError('required')) {
             <mat-error>Notes are required.</mat-error>
           } @else if (registerForm.controls.notes.hasError('minlength')) {
