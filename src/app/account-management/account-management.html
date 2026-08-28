@@ -81,7 +81,34 @@
         <p>Support reviews access before reporting is enabled.</p>
       </div>
 
-      <form class="compact-form" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
+      @if (registrationResponse; as credentials) {
+        <div class="registration-credentials" role="status" aria-labelledby="credentials-title">
+          <div class="credentials-heading">
+            <mat-icon aria-hidden="true">verified</mat-icon>
+            <h3 id="credentials-title">Registration Complete</h3>
+          </div>
+          <p class="save-warning">
+            Save this information now. You will need one of these login IDs and the temporary
+            password to sign in.
+          </p>
+          <dl class="credential-list">
+            <div>
+              <dt>Login ID (email)</dt>
+              <dd>{{ credentials.email }}</dd>
+            </div>
+            <div>
+              <dt>Login ID (phone)</dt>
+              <dd>{{ credentials.phone }}</dd>
+            </div>
+            <div>
+              <dt>Temporary password</dt>
+              <dd>{{ credentials.temporary_password }}</dd>
+            </div>
+          </dl>
+          <p>Keep these credentials in a secure place before leaving this page.</p>
+        </div>
+      } @else {
+        <form class="compact-form" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Email</mat-label>
           <input matInput type="email" formControlName="email" autocomplete="email" />
@@ -114,7 +141,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Notes</mat-label>
-          <textarea matInput formControlName="notes" rows="3"></textarea>
+          <textarea matInput formControlName="notes" rows="3" placeholder="Tell us why you want to register"></textarea>
           @if (registerForm.controls.notes.hasError('required')) {
             <mat-error>Notes are required.</mat-error>
           } @else if (registerForm.controls.notes.hasError('minlength')) {
@@ -127,23 +154,21 @@
           <input formControlName="website" autocomplete="off" tabindex="-1" />
         </label>
 
-        @if (registrationSubmitted) {
-          <div class="success-message" role="status">
-            <p>Support team will reach out to you after validating the details.</p>
-            <a matButton routerLink="/myaccount">
-              <mat-icon aria-hidden="true">badge</mat-icon>
-              View Account Details
-            </a>
+        @if (registrationError) {
+          <div class="error-message" role="alert">
+            <mat-icon aria-hidden="true">error</mat-icon>
+            <p>{{ registrationError }}</p>
           </div>
         }
 
         <div class="form-actions">
-          <button matButton="filled" type="submit">
-            <mat-icon aria-hidden="true">person_add</mat-icon>
-            Register
+          <button matButton="filled" type="submit" [disabled]="registrationPending">
+            <mat-icon aria-hidden="true">{{ registrationPending ? 'hourglass_top' : 'person_add' }}</mat-icon>
+            {{ registrationPending ? 'Registering…' : 'Register' }}
           </button>
         </div>
-      </form>
+        </form>
+      }
     </section>
   </section>
 </main>
