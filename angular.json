@@ -34,6 +34,12 @@
           },
           "configurations": {
             "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -63,7 +69,8 @@
               "buildTarget": "bringthemhome:build:production"
             },
             "development": {
-              "buildTarget": "bringthemhome:build:development"
+              "buildTarget": "bringthemhome:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

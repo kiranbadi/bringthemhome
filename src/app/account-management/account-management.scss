@@ -84,6 +84,72 @@
   margin: 0;
 }
 
+.registration-credentials {
+  background: var(--mat-sys-secondary-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  color: var(--mat-sys-on-secondary-container);
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.registration-credentials p,
+.registration-credentials h3,
+.credential-list {
+  margin: 0;
+}
+
+.credentials-heading,
+.error-message {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.credentials-heading h3 {
+  font: var(--mat-sys-title-medium);
+}
+
+.save-warning {
+  font-weight: 600;
+}
+
+.credential-list {
+  display: grid;
+  gap: 10px;
+}
+
+.credential-list div {
+  background: var(--mat-sys-surface);
+  border-radius: 6px;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.credential-list dt {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-medium);
+}
+
+.credential-list dd {
+  color: var(--mat-sys-on-surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.error-message {
+  background: var(--mat-sys-error-container);
+  border-radius: 8px;
+  color: var(--mat-sys-on-error-container);
+  padding: 10px 12px;
+}
+
+.error-message p {
+  margin: 0;
+}
+
 .honeypot {
   height: 0;
   left: -10000px;

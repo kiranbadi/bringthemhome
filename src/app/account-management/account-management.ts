@@ -1,12 +1,18 @@
 import { Component, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
+import {
+  AccountManagementService,
+  AccountRegistrationResponse,
+} from '../services/account-management';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
+import { finalize } from 'rxjs';
 
 type AccountMode = 'login' | 'forgotPassword';
 
@@ -19,7 +25,6 @@ type AccountMode = 'login' | 'forgotPassword';
     MatInputModule,
     NavigationHeader,
     ReactiveFormsModule,
-    RouterLink,
   ],
   templateUrl: './account-management.html',
   styleUrl: './account-management.scss',
@@ -27,10 +32,13 @@ type AccountMode = 'login' | 'forgotPassword';
 export class AccountManagement {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly accountManagementService = inject(AccountManagementService);
 
   protected accountMode: AccountMode = 'login';
   protected forgotPasswordSubmitted = false;
-  protected registrationSubmitted = false;
+  protected registrationPending = false;
+  protected registrationResponse: AccountRegistrationResponse | undefined;
+  protected registrationError = '';
 
   protected readonly loginForm = this.formBuilder.nonNullable.group({
     identity: ['', [Validators.required, this.emailOrPhoneValidator]],
@@ -81,14 +89,70 @@ export class AccountManagement {
   }
 
   protected submitRegistration(): void {
-    this.registerForm.markAllAsTouched();
-
-    if (this.registerForm.invalid || this.registerForm.controls.website.value.trim().length > 0) {
+    if (this.registrationPending) {
       return;
     }
 
-    this.registrationSubmitted = true;
-    this.registerForm.reset();
+    this.registerForm.markAllAsTouched();
+
+    const website = (this.registerForm.controls.website.value ?? '').trim();
+
+    // Website is a honeypot field.
+    if (this.registerForm.invalid || website.length > 0) {
+      return;
+    }
+
+    const registration = this.registerForm.getRawValue();
+
+    this.registrationPending = true;
+    this.registrationResponse = undefined;
+    this.registrationError = '';
+
+    this.accountManagementService
+      .register({
+        email: registration.email.trim(),
+        phone: registration.phone.trim(),
+        full_name: registration.fullName.trim(),
+        notes: registration.notes.trim(),
+      })
+      .pipe(
+        finalize(() => {
+          this.registrationPending = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          this.registrationPending = false;
+          this.registrationResponse = response;
+        },
+        error: (error: HttpErrorResponse) => {
+          this.registrationError = this.registrationErrorMessage(error);
+        },
+      });
+  }
+
+  private registrationErrorMessage(error: HttpErrorResponse): string {
+    if (error.status === 409) {
+      return 'Registration with this email or phone already exists. Try signing in or use different contact information.';
+    }
+
+    if (error.status === 422 && Array.isArray(error.error?.detail)) {
+      const validationMessages = error.error.detail
+        .map((item: { msg?: unknown }) => (typeof item.msg === 'string' ? item.msg : ''))
+        .filter((message: string) => message.length > 0);
+
+      if (validationMessages.length > 0) {
+        return `Please correct the registration details: ${validationMessages.join(' ')}`;
+      }
+    }
+
+    if (error.status >= 400 && error.status < 500 && typeof error.error?.detail === 'string') {
+      return error.error.detail;
+    }
+
+    return error.status === 0
+      ? 'The registration service could not be reached. Confirm that the API is running and try again.'
+      : 'We could not complete your registration. Please try again later.';
   }
 
   private emailOrPhoneValidator(control: { value: string }) {
