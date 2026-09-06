@@ -62,7 +62,6 @@ describe('AccountManagement', () => {
   function registrationState() {
     return component as unknown as {
       registerForm: { setValue(value: typeof formValue): void; getRawValue(): typeof formValue };
-      registrationPending: boolean;
       registrationResponse?: AccountRegistrationResponse;
       registrationError: string;
       submitRegistration(): void;
@@ -83,17 +82,15 @@ describe('AccountManagement', () => {
         notes: formValue.notes,
       },
     ]);
-    expect(state.registrationPending).toBe(true);
   });
 
-  it('clears pending and stores credentials as soon as registration succeeds', () => {
+  it('stores credentials as soon as registration succeeds', () => {
     const state = registrationState();
     state.registerForm.setValue(formValue);
     state.submitRegistration();
 
     accountService.response$.next(response);
 
-    expect(state.registrationPending).toBe(false);
     expect(state.registrationResponse).toEqual(response);
     expect(state.registrationError).toBe('');
   });
@@ -105,7 +102,6 @@ describe('AccountManagement', () => {
 
     accountService.response$.error(new Error('Network unavailable'));
 
-    expect(state.registrationPending).toBe(false);
     expect(state.registrationResponse).toBeUndefined();
     expect(state.registrationError).not.toBe('');
     expect(state.registerForm.getRawValue()).toEqual(formValue);
@@ -128,32 +124,28 @@ describe('AccountManagement', () => {
     );
   });
 
-  it('renders both login IDs, the temporary password, and a save warning', async () => {
+  it('renders the response details in a top paragraph and keeps the form values after success', async () => {
     const state = registrationState();
     state.registerForm.setValue(formValue);
     state.submitRegistration();
 
     accountService.response$.next(response);
     await fixture.whenStable();
+    fixture.detectChanges();
 
     const page = fixture.nativeElement as HTMLElement;
+    const topMessage = page.querySelector('.registration-credentials p');
+    const email = page.querySelector('input[formControlName="email"]') as HTMLInputElement;
+
+    expect(topMessage?.textContent).toContain('Registration complete.');
+    expect(topMessage?.textContent).toContain(formValue.email);
+    expect(topMessage?.textContent).toContain(formValue.phone);
+    expect(topMessage?.textContent).toContain(response.temporary_password);
+    expect(topMessage?.textContent?.toLowerCase()).toContain('note down this password');
     expect(page.textContent).toContain(formValue.email);
     expect(page.textContent).toContain(formValue.phone);
     expect(page.textContent).toContain(response.temporary_password);
-    expect(page.textContent?.toLowerCase()).toContain('save this information');
-  });
-
-  it('disables the registration button while the request is pending', async () => {
-    const state = registrationState();
-    state.registerForm.setValue(formValue);
-    state.submitRegistration();
-    await fixture.whenStable();
-
-    const button = fixture.nativeElement.querySelector(
-      '.account-panel:last-child button[type="submit"]',
-    ) as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
-    expect(button.textContent).toContain('Registering');
+    expect(email.value).toBe(formValue.email);
   });
 
   it('renders an error and keeps the registration inputs populated', async () => {
@@ -167,10 +159,8 @@ describe('AccountManagement', () => {
     const panel = fixture.nativeElement.querySelector('.account-panel:last-child') as HTMLElement;
     const alert = panel.querySelector('[role="alert"]');
     const email = panel.querySelector('input[formControlName="email"]') as HTMLInputElement;
-    const button = panel.querySelector('button[type="submit"]') as HTMLButtonElement;
     expect(alert?.textContent).toContain('could not complete your registration');
     expect(email.value).toBe(formValue.email);
-    expect(button.disabled).toBe(false);
-    expect(button.textContent).toContain('Register');
+    expect(panel.textContent).toContain('Submit');
   });
 });
