@@ -4,17 +4,18 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 
-export interface AccountRegistrationRequest {
-  readonly email: string;
-  readonly phone: string;
-  readonly full_name: string;
-  readonly notes: string;
-}
+import { RegistrationPayload } from '../core/models/registration-payload.model';
 
-export interface AccountRegistrationResponse extends AccountRegistrationRequest {
-  readonly registration_id: number;
-  readonly login_id: number;
-  readonly temporary_password: string;
+export type AccountRegistrationRequest = RegistrationPayload;
+
+export interface AccountRegistrationResponse {
+  readonly email: string;
+  readonly phone?: string;
+  readonly full_name?: string;
+  readonly notes?: string;
+  readonly registration_id?: number;
+  readonly login_id?: number;
+  readonly temporary_password?: string;
 }
 
 @Injectable({ providedIn: 'root' })

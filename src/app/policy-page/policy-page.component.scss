@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+.policy-shell {
+  max-width: 900px;
+  margin: auto;
+  padding: 32px 20px 56px;
+}
+article {
+  margin-top: 24px;
+  padding: clamp(20px, 4vw, 48px);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 20px;
+  box-shadow: 0 8px 28px #193a5b0a;
+}
+h1 {
+  font: var(--mat-sys-headline-large);
+}
+h2 {
+  font: var(--mat-sys-title-large);
+  margin-top: 28px;
+}
+p {
+  line-height: 1.8;
+  color: var(--mat-sys-on-surface-variant);
+}
+.eyebrow {
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-label-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.draft-notice {
+  padding: 16px;
+  background: var(--mat-sys-secondary-container);
+  border-radius: 10px;
+  color: var(--mat-sys-on-secondary-container);
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+a {
+  color: var(--mat-sys-primary);
+  text-underline-offset: 3px;
+}
+nav a {
+  padding: 10px 0;
+}
+[aria-current='page'] {
+  font-weight: 700;
+}
+a:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 4px;
+}
+footer {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  margin-top: 32px;
+  padding-top: 16px;
+}
+.resource {
+  font-size: 0.85rem;
+}

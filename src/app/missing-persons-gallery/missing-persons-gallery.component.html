@@ -1,0 +1,142 @@
+<app-navigation-header />
+<main class="gallery-shell">
+  <header class="gallery-header">
+    <div>
+      <p class="eyebrow">Help bring them home</p>
+      <h1 #galleryHeading tabindex="-1">Missing persons</h1>
+      <p>Every face has a story. Explore cases and share information that could help.</p>
+    </div>
+    <a class="button primary" routerLink="/missing-person-report">Report a missing person</a>
+  </header>
+
+  <p class="share-status" role="status">{{ shareMessage() }}</p>
+  <section aria-label="Missing persons gallery" [attr.aria-busy]="loading()">
+    @if (loading()) {
+      <p role="status">Loading missing persons…</p>
+      <div class="person-grid" aria-hidden="true">
+        @for (item of skeletons; track item) {
+          <div class="skeleton-card">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        }
+      </div>
+    } @else if (error()) {
+      <div class="state-panel error" role="alert">
+        <h2>Unable to load cases</h2>
+        <p>{{ error() }}</p>
+        <button class="button primary" type="button" (click)="retry()">Try again</button>
+      </div>
+    } @else {
+      <div class="person-grid">
+        @for (person of records(); track person._id) {
+          <article class="person-card" [attr.aria-label]="person.full_name">
+            <img
+              class="person-photo"
+              [src]="image(person)"
+              [alt]="
+                image(person) === placeholder
+                  ? 'Photo unavailable for ' + person.full_name
+                  : 'Photo of ' + person.full_name
+              "
+              (error)="imageFailed(person)"
+              loading="lazy"
+              width="480"
+              height="360"
+            />
+            <div class="card-body">
+              <h2>{{ person.full_name | titlecase }}</h2>
+              <p class="reported">Reported: {{ reportedDate(person) }}</p>
+              <p class="location">{{ location(person) }}</p>
+              <ul class="demographics" aria-label="Personal details">
+                @if (person['age now'] || person['age missing']; as age) {
+                  <li>{{ person['age now'] ? 'Age now' : 'Age missing' }}: {{ age }}</li>
+                }
+                @if (person.gender) {
+                  <li>{{ person.gender }}</li>
+                }
+                @if (person.height) {
+                  <li>Height: {{ person.height }}</li>
+                }
+                @if (person.weight) {
+                  <li>Weight: {{ person.weight }}</li>
+                }
+              </ul>
+              <div class="card-actions">
+                <a
+                  class="button primary tip-link"
+                  routerLink="/contact-us"
+                  [queryParams]="{ type: 'tip', personId: person._id, full_name: person.full_name }"
+                  [attr.aria-label]="'Submit a tip for ' + person.full_name"
+                  >Submit Tip</a
+                >
+                <button
+                  class="button"
+                  type="button"
+                  (click)="share(person)"
+                  [attr.aria-label]="'Share case for ' + person.full_name"
+                >
+                  Share
+                </button>
+                <a
+                  class="details-link"
+                  [routerLink]="['/missing-persons', person._id]"
+                  [queryParams]="{ page: currentPage() }"
+                  [attr.aria-label]="'View details for ' + person.full_name"
+                  >View Details <span aria-hidden="true">→</span></a
+                >
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="state-panel">
+            <h2>No missing persons found</h2>
+            <p>There are no cases to display on this page.</p>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  @if (response(); as page) {
+    @if (page.total_pages > 0) {
+      <nav class="pagination" aria-label="Missing persons pagination">
+        <button
+          class="button"
+          type="button"
+          [disabled]="loading() || !!error() || page.current_page <= 1"
+          (click)="goToPage(page.previous_page ?? page.current_page - 1)"
+        >
+          Previous
+        </button>
+        <p aria-live="polite" aria-atomic="true">
+          Page {{ page.current_page }} of {{ page.total_pages }} (Total Records:
+          {{ page.total_records }})
+        </p>
+        <button
+          class="button"
+          type="button"
+          [disabled]="loading() || !!error() || page.current_page >= page.total_pages"
+          (click)="goToPage(page.next_page ?? page.current_page + 1)"
+        >
+          Next
+        </button>
+        <form class="page-jump" (submit)="$event.preventDefault(); goToPage(jump.valueAsNumber)">
+          <label for="gallery-page">Go to page</label>
+          <input
+            #jump
+            id="gallery-page"
+            type="number"
+            min="1"
+            [max]="page.total_pages"
+            [value]="page.current_page"
+            [disabled]="loading() || !!error()"
+            required
+          />
+          <button class="button" type="submit" [disabled]="loading() || !!error()">Go</button>
+        </form>
+      </nav>
+    }
+  }
+</main>

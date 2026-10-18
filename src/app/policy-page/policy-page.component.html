@@ -1,0 +1,43 @@
+<app-navigation-header />
+<main class="policy-shell">
+  <a class="back-link" routerLink="/account-management">← Back to Account Management</a>
+  <article>
+    <header>
+      <p class="eyebrow">Bring Them Home · Community and trust</p>
+      <h1>{{ title() }}</h1>
+      <p class="draft-notice">
+        Interim draft · Updated October 16, 2026. This content needs operator and legal review
+        before public launch.
+      </p>
+    </header>
+    <nav aria-label="Policy pages">
+      <a routerLink="/terms" [attr.aria-current]="policy() === 'terms' ? 'page' : null"
+        >Terms &amp; Conditions</a
+      >
+      <a routerLink="/privacy" [attr.aria-current]="policy() === 'privacy' ? 'page' : null"
+        >Privacy Policy</a
+      >
+    </nav>
+    @for (section of sections(); track section.title) {
+      <section>
+        <h2>{{ section.title }}</h2>
+        <p>{{ section.text }}</p>
+      </section>
+    }
+    <footer>
+      <p>Have a question about a case, your account, or personal information?</p>
+      <a routerLink="/contact-us">Contact Us</a>
+      @if (policy() === 'privacy') {
+        <p class="resource">
+          Privacy resource:
+          <a
+            href="https://www.ftc.gov/business-guidance/resources/protecting-personal-information-guide-business"
+            target="_blank"
+            rel="noopener"
+            >FTC guidance on protecting personal information (opens in a new tab)</a
+          >.
+        </p>
+      }
+    </footer>
+  </article>
+</main>

@@ -25,6 +25,7 @@
   }
 
   <mat-stepper class="report-stepper" orientation="vertical" [linear]="false" #stepper>
+    <!-- Media Upload Step 1 -->
     <mat-step [stepControl]="mediaForm">
       <ng-template matStepLabel>Pictures and Videos</ng-template>
 
@@ -113,6 +114,8 @@
         </div>
       </form>
     </mat-step>
+
+    <!--End of Media Upload Step 1 -->
 
     <mat-step [stepControl]="detailsForm">
       <ng-template matStepLabel>Identity</ng-template>
