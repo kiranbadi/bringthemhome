@@ -1,20 +1,41 @@
 import { Routes } from '@angular/router';
 
-import { Home } from './home/home';
+import { MissingPersonsGalleryComponent } from './missing-persons-gallery/missing-persons-gallery.component';
+import { MissingPersonsDetailComponent } from './missing-persons-detail/missing-persons-detail.component';
 import { AccountDashboard } from './account-dashboard/account-dashboard';
 import { AdvancedSearch } from './advanced-search/advanced-search';
 import { AccountManagement } from './account-management/account-management';
 import { ContactUs } from './contact-us/contact-us';
 import { MissingPersonReport } from './missing-person-report/missing-person-report';
-import { BasicPage } from './pages/basic-page/basic-page';
+import { PolicyPageComponent } from './policy-page/policy-page.component';
 import { PersonDetail } from './person-detail/person-detail';
 import { SupportUs } from './support-us/support-us';
 
 export const routes: Routes = [
   {
+    path: 'terms',
+    component: PolicyPageComponent,
+    data: { policy: 'terms' },
+    title: 'Terms & Conditions | Bring Them Home',
+  },
+  {
+    path: 'privacy',
+    component: PolicyPageComponent,
+    data: { policy: 'privacy' },
+    title: 'Privacy Policy | Bring Them Home',
+  },
+  {
     path: '',
-    component: Home,
+    component: MissingPersonsGalleryComponent,
     pathMatch: 'full',
+  },
+  {
+    path: 'missing-persons',
+    component: MissingPersonsGalleryComponent,
+  },
+  {
+    path: 'missing-persons/:id',
+    component: MissingPersonsDetailComponent,
   },
   {
     path: 'advanced-search',

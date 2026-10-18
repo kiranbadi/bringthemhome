@@ -2,6 +2,47 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.8.
 
+## Missing persons gallery
+
+The home page and `/missing-persons` display a responsive gallery backed by
+`GET {apiUrl}/api/v1/missing-persons?page=1&page_size=20`. Set `apiUrl` in
+`src/environments/environment.ts` and `environment.production.ts` for each deployment
+(both currently use `http://localhost:8000`). The API must allow requests from the
+frontend origin when served on a different origin.
+
+The gallery supports server pagination, page jumps, loading/empty/error states,
+photo fallbacks, native sharing with clipboard fallback, and case-specific tip
+links to the contact form. `/missing-persons/:id?page=N` loads the case from its
+source page. If the record has moved, it searches remaining API pages sequentially;
+a future lookup-by-ID endpoint would make this fallback more efficient.
+
+Gallery contracts and the HTTP client live in `src/app/core`. The older sample
+data service and `/missing-person/:id` route remain available for existing links.
+
+Use a Node version supported by Angular 22 (the bundled Node 24.19 runtime works).
+In environments affected by the native Angular disk-cache crash, `CI=1` disables
+the local disk cache for a build. Production builds also need internet access to
+inline the existing Google Fonts stylesheets.
+
+## Account registration and policies
+
+Account Management hosts a standalone `RegistrationComponent` with role-dependent
+validation, password visibility, international phone serialization, required policy
+acceptance, duplicate-submit protection, and an in-place confirmation view. The
+request model is `src/app/core/models/registration-payload.model.ts`.
+
+The registration endpoint remains `/bringthemhome/registrations`. Its frontend
+request now includes `password`, `role`, `other_role_description`, and
+`terms_accepted` in addition to the existing contact fields. The backend must
+accept and persist these fields, including the chosen account password; its
+implementation is not part of this repository. Requests are logged as formatted
+JSON to the browser console, as requested for this development flow.
+
+`/terms` and `/privacy` render interim policy drafts through `PolicyPageComponent`.
+Their links are configured through `termsUrl` and `privacyPolicyUrl` in the
+environment files. The drafts disclose the current diagnostics and external media
+requests, and identify the operational details that still need confirmation.
+
 ## Development server
 
 To start a local development server, run:

@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-contact-us',
@@ -25,6 +26,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class ContactUs {
   private readonly formBuilder = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
 
   private readonly CONTACT_US_URL = '/bringthemhome/contact';
 
@@ -33,6 +35,7 @@ export class ContactUs {
   private httpClient = inject(HttpClient);
 
   protected readonly inquiryTypes = [
+    'Missing person tip',
     'Report support',
     'Account help',
     'Technical issue',
@@ -50,6 +53,16 @@ export class ContactUs {
     message: ['', [Validators.required, Validators.minLength(20)]],
     website: [''],
   });
+
+  constructor() {
+    const query = this.route.snapshot.queryParamMap;
+    if (query.get('type') === 'tip' && query.get('personId')) {
+      this.contactForm.patchValue({
+        inquiry_type: 'Missing person tip',
+        subject: `Tip for ${query.get('full_name') || 'missing person'} (${query.get('personId')})`,
+      });
+    }
+  }
 
   protected submit(): void {
     if (this.contactForm.invalid) {

@@ -29,7 +29,11 @@ describe('AccountManagementService', () => {
 
     const request: AccountRegistrationRequest = {
       email: 'kiranbadi6@yahoo.com',
-      phone: '6462013106',
+      phone: '+16462013106',
+      password: 'A-test-password',
+      role: 'GENERAL_PUBLIC',
+      other_role_description: null,
+      terms_accepted: true,
       full_name: 'Kiran Badi4',
       notes: 'This is a test note',
     };
