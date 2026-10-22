@@ -82,7 +82,6 @@
                 <a
                   class="details-link"
                   [routerLink]="['/missing-persons', person._id]"
-                  [queryParams]="{ page: currentPage() }"
                   [attr.aria-label]="'View details for ' + person.full_name"
                   >View Details <span aria-hidden="true">→</span></a
                 >
