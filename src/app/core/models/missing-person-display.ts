@@ -2,7 +2,7 @@ import { MissingPerson } from './missing-person.model';
 
 export const PERSON_PLACEHOLDER = '/missing-person-placeholder.svg';
 
-export function personLocation(person: MissingPerson): string {
+export function personLocation(person: Partial<MissingPerson>): string {
   const parts = [person.city, person.location, person.state]
     .map((value) => value?.trim() ?? '')
     .filter(Boolean);
@@ -16,7 +16,7 @@ export function personLocation(person: MissingPerson): string {
   );
 }
 
-export function personReportedDate(person: MissingPerson): string {
+export function personReportedDate(person: Partial<MissingPerson>): string {
   const raw = person['date reported']?.trim() || person.reported_at?.trim();
   if (!raw) return 'Date unavailable';
   // Parse date-only values locally to avoid shifting a day west of UTC.

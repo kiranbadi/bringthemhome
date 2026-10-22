@@ -58,8 +58,8 @@ describe('MissingPersonsGalleryComponent', () => {
     expect(element().querySelector('img')?.getAttribute('src')).toContain(
       'missing-person-placeholder.svg',
     );
-    expect(element().querySelector('a.details-link')?.getAttribute('href')).toContain(
-      '/missing-persons/case-1?page=1',
+    expect(element().querySelector('a.details-link')?.getAttribute('href')).toBe(
+      '/missing-persons/case-1',
     );
     expect(element().querySelector('a.tip-link')?.getAttribute('href')).toContain(
       'personId=case-1',
@@ -130,15 +130,13 @@ describe('MissingPersonsGalleryComponent', () => {
       expect(share).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'JANE DOE',
-          url: expect.stringContaining('/missing-persons/case-1?page=1'),
+          url: expect.stringMatching(/\/missing-persons\/case-1$/),
         }),
       );
       expect(writeText).not.toHaveBeenCalled();
       share.mockRejectedValue(new Error('Unavailable'));
       await fixture.componentInstance.share(record);
-      expect(writeText).toHaveBeenCalledWith(
-        expect.stringContaining('/missing-persons/case-1?page=1'),
-      );
+      expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/\/missing-persons\/case-1$/));
       await fixture.whenStable();
       expect(element().querySelector('[role="status"]')?.textContent).toContain('copied');
       share.mockRejectedValue(new DOMException('Cancelled', 'AbortError'));

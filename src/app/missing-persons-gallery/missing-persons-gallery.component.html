@@ -4,7 +4,7 @@
     <div>
       <p class="eyebrow">Help bring them home</p>
       <h1 #galleryHeading tabindex="-1">Missing persons</h1>
-      <p>Every face has a story. Explore cases and share information that could help.</p>
+      <p>Every face has a story and help bring someone home.</p>
     </div>
     <a class="button primary" routerLink="/missing-person-report">Report a missing person</a>
   </header>
@@ -82,7 +82,6 @@
                 <a
                   class="details-link"
                   [routerLink]="['/missing-persons', person._id]"
-                  [queryParams]="{ page: currentPage() }"
                   [attr.aria-label]="'View details for ' + person.full_name"
                   >View Details <span aria-hidden="true">→</span></a
                 >

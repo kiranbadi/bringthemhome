@@ -119,9 +119,7 @@ export class MissingPersonsGalleryComponent implements OnInit {
     const browser = this.document.defaultView;
     if (!browser) return;
     const path = this.router.serializeUrl(
-      this.router.createUrlTree(['/missing-persons', person._id], {
-        queryParams: { page: this.currentPage() },
-      }),
+      this.router.createUrlTree(['/missing-persons', person._id]),
     );
     const url = new URL(path, this.document.baseURI).href;
     const navigator = browser.navigator;

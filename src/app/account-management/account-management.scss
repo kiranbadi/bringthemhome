@@ -108,3 +108,17 @@
     flex-direction: column;
   }
 }
+
+.login-error {
+  background: var(--mat-sys-error-container);
+  border-radius: 8px;
+  color: var(--mat-sys-on-error-container);
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.form-actions mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
