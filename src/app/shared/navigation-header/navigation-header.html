@@ -15,5 +15,17 @@
         {{ link.label }}
       </a>
     }
+    @if (currentUser$ | async) {
+      <button
+        matButton
+        type="button"
+        (click)="logout()"
+        [disabled]="loggingOut()"
+        [attr.aria-busy]="loggingOut()"
+      >
+        <mat-icon aria-hidden="true">logout</mat-icon>
+        {{ loggingOut() ? 'Logging out…' : 'Logout' }}
+      </button>
+    }
   </nav>
 </mat-toolbar>

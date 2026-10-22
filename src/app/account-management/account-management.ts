@@ -2,6 +2,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
+  OnInit,
+  signal,
   ElementRef,
   inject,
   ViewChild,
@@ -12,6 +15,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AccountManagementService } from '../services/account-management';
 
 import { RegistrationComponent } from '../registration/registration.component';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
@@ -26,6 +34,7 @@ type AccountMode = 'login' | 'forgotPassword';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     NavigationHeader,
     ReactiveFormsModule,
     RegistrationComponent,
@@ -33,9 +42,15 @@ type AccountMode = 'login' | 'forgotPassword';
   templateUrl: './account-management.html',
   styleUrl: './account-management.scss',
 })
-export class AccountManagement {
+export class AccountManagement implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+
+  private readonly accountService = inject(AccountManagementService);
+  private readonly destroyRef = inject(DestroyRef);
+  protected readonly loginPending = signal(false);
+  protected readonly loginError = signal('');
+  private loginSucceeded = false;
 
   protected accountMode: AccountMode = 'login';
   protected forgotPasswordSubmitted = false;
@@ -43,7 +58,7 @@ export class AccountManagement {
   private readonly cdr = inject(ChangeDetectorRef);
 
   protected readonly loginForm = this.formBuilder.nonNullable.group({
-    identity: ['', [Validators.required, this.emailOrPhoneValidator]],
+    identity: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
@@ -51,7 +66,15 @@ export class AccountManagement {
     identity: ['', [Validators.required, this.emailOrPhoneValidator]],
   });
 
+  ngOnInit(): void {
+    if (this.accountService.isAuthenticated()) {
+      void this.router.navigate(['/account/management']);
+    }
+  }
+
   protected showForgotPassword(): void {
+    if (this.loginPending()) return;
+    this.loginError.set('');
     this.accountMode = 'forgotPassword';
     this.forgotPasswordSubmitted = false;
   }
@@ -63,13 +86,48 @@ export class AccountManagement {
   }
 
   protected submitLogin(): void {
+    if (this.loginPending() || this.loginSucceeded) return;
     this.loginForm.markAllAsTouched();
+    if (this.loginForm.invalid) return;
 
-    if (this.loginForm.invalid) {
-      return;
-    }
-
-    void this.router.navigate(['/myaccount']);
+    const { identity, password } = this.loginForm.getRawValue();
+    this.loginError.set('');
+    this.loginPending.set(true);
+    this.loginForm.disable({ emitEvent: false });
+    this.accountService
+      .login({ email: identity, password })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.loginPending.set(false);
+          if (!this.loginSucceeded) this.loginForm.enable({ emitEvent: false });
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.loginSucceeded = true;
+          void this.router.navigate(['/account/management']);
+        },
+        error: (error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 429) {
+            this.loginError.set(
+              'Too many login attempts. Please try again after 10 minutes or Reset the password',
+            );
+          } else if (
+            error instanceof HttpErrorResponse &&
+            (error.status === 400 || error.status === 401)
+          ) {
+            const message = error.error?.error_message;
+            this.loginError.set(
+              typeof message === 'string' && message.trim()
+                ? message
+                : 'Invalid email or password.',
+            );
+          } else {
+            this.loginError.set('Unable to sign in. Please try again.');
+          }
+        },
+      });
   }
 
   protected submitForgotPassword(): void {

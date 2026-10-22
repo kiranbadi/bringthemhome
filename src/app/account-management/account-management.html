@@ -11,17 +11,28 @@
       @if (accountMode === 'login') {
         <div class="panel-heading">
           <h2 id="login-title">Sign In</h2>
-          <p>Use your email or phone number.</p>
+          <p>Use your email and password.</p>
         </div>
 
-        <form class="compact-form" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+        <form
+          class="compact-form"
+          [formGroup]="loginForm"
+          (ngSubmit)="submitLogin()"
+          [attr.aria-busy]="loginPending()"
+        >
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Email or Phone</mat-label>
-            <input #loginIdentity matInput formControlName="identity" autocomplete="username" />
+            <mat-label>Email</mat-label>
+            <input
+              #loginIdentity
+              type="email"
+              matInput
+              formControlName="identity"
+              autocomplete="username"
+            />
             @if (loginForm.controls.identity.hasError('required')) {
-              <mat-error>Email or phone is required.</mat-error>
-            } @else if (loginForm.controls.identity.hasError('emailOrPhone')) {
-              <mat-error>Enter a valid email or phone.</mat-error>
+              <mat-error>Email is required.</mat-error>
+            } @else if (loginForm.controls.identity.hasError('email')) {
+              <mat-error>Enter a valid email.</mat-error>
             }
           </mat-form-field>
 
@@ -40,12 +51,31 @@
             }
           </mat-form-field>
 
+          @if (loginError()) {
+            <p class="login-error" role="alert">{{ loginError() }}</p>
+          }
+
           <div class="form-actions">
-            <button matButton="filled" type="submit">
-              <mat-icon aria-hidden="true">login</mat-icon>
-              Sign In
+            <button
+              matButton="filled"
+              type="submit"
+              [disabled]="loginPending() || loginForm.disabled"
+            >
+              @if (loginPending()) {
+                <mat-spinner diameter="18" aria-label="Signing in" />
+              } @else {
+                <mat-icon aria-hidden="true">login</mat-icon>
+              }
+              {{ loginPending() ? 'Signing in…' : 'Sign In' }}
             </button>
-            <button matButton type="button" (click)="showForgotPassword()">Forgot Password?</button>
+            <button
+              matButton
+              type="button"
+              [disabled]="loginPending()"
+              (click)="showForgotPassword()"
+            >
+              Forgot Password?
+            </button>
           </div>
         </form>
       } @else {

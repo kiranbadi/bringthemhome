@@ -9,90 +9,49 @@
       <button type="button" (click)="retry()">Try again</button>
     </div>
   } @else if (person(); as record) {
-    <article>
+    <article class="person-summary" aria-labelledby="person-name">
       <img
-        [src]="failedImage() ? placeholder : record.embedded_images?.data_urls?.[0] || placeholder"
-        [alt]="'Photo of ' + record.full_name"
+        [src]="failedImage() ? placeholder : image(record)"
+        [alt]="'Photo of ' + name(record)"
         (error)="failedImage.set(true)"
         width="480"
         height="360"
       />
-      <section>
-        <h1>{{ record.full_name | titlecase }}</h1>
-        <p>{{ location(record) }}</p>
-        <p>Reported: {{ reportedDate(record) }}</p>
-        <dl>
-          @if (record['age now']) {
-            <div>
-              <dt>Age now</dt>
-              <dd>{{ record['age now'] }}</dd>
-            </div>
-          }
-          @if (record['age missing']) {
-            <div>
-              <dt>Age missing</dt>
-              <dd>{{ record['age missing'] }}</dd>
-            </div>
-          }
-          @if (record.gender) {
-            <div>
-              <dt>Gender</dt>
-              <dd>{{ record.gender }}</dd>
-            </div>
-          }
-          @if (record.race) {
-            <div>
-              <dt>Race</dt>
-              <dd>{{ record.race }}</dd>
-            </div>
-          }
-          @if (record.height) {
-            <div>
-              <dt>Height</dt>
-              <dd>{{ record.height }}</dd>
-            </div>
-          }
-          @if (record.weight) {
-            <div>
-              <dt>Weight</dt>
-              <dd>{{ record.weight }}</dd>
-            </div>
-          }
-          @if (record['eye color']) {
-            <div>
-              <dt>Eye color</dt>
-              <dd>{{ record['eye color'] }}</dd>
-            </div>
-          }
-          @if (record['hair color']) {
-            <div>
-              <dt>Hair color</dt>
-              <dd>{{ record['hair color'] }}</dd>
-            </div>
-          }
-          @if (record.agency) {
-            <div>
-              <dt>Agency</dt>
-              <dd>{{ record.agency }}</dd>
-            </div>
-          }
-          @if (record['agency phone']) {
-            <div>
-              <dt>Agency phone</dt>
-              <dd>{{ record['agency phone'] }}</dd>
-            </div>
-          }
+      <section class="summary-content">
+        <p class="eyebrow">Missing person case</p>
+        <h1 id="person-name">{{ name(record) | titlecase }}</h1>
+        <p class="last-location">{{ location(record) }}</p>
+        <dl class="summary-fields">
+          <div>
+            <dt>Age at disappearance</dt>
+            <dd>
+              {{ record.demographics?.missingAge ?? record['age missing'] ?? 'Not provided' }}
+            </dd>
+          </div>
+          <div>
+            <dt>Current age</dt>
+            <dd>{{ currentAge(record) }}</dd>
+          </div>
+          <div>
+            <dt>Reporting agency</dt>
+            <dd>{{ record.summary?.reportingAgency || record.agency || 'Not provided' }}</dd>
+          </div>
+          <div>
+            <dt>Reported date</dt>
+            <dd>{{ reportedDate(record) }}</dd>
+          </div>
         </dl>
         <a
           class="tip-link"
           routerLink="/contact-us"
-          [queryParams]="{ type: 'tip', personId: record._id, full_name: record.full_name }"
+          [queryParams]="{ type: 'tip', personId: record._id, full_name: name(record) }"
           >Submit Tip</a
         >
       </section>
     </article>
+    <app-case-profile-sections [record]="record" />
   } @else {
-    <h1 style="margin-top: 2rem;">Case unavailable</h1>
+    <h1 class="unavailable-heading">Case unavailable</h1>
     <p>This case could not be found.</p>
   }
 </main>

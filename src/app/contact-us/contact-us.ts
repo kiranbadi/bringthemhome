@@ -1,5 +1,11 @@
-import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroupDirective,
+  ReactiveFormsModule,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,6 +15,32 @@ import { MatSelectModule } from '@angular/material/select';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
+
+interface ContactPayload {
+  full_name: string;
+  email: string;
+  phone: string;
+  inquiry_type: string;
+  subject: string;
+  message: string;
+}
+
+interface ContactResponse {
+  full_name: string;
+}
+
+const trimmedText =
+  (minimum: number): ValidatorFn =>
+  (control) => {
+    const value = (control.value as string).trim();
+    return !value
+      ? { required: true }
+      : value.length < minimum
+        ? { minlength: { requiredLength: minimum, actualLength: value.length } }
+        : null;
+  };
 
 @Component({
   selector: 'app-contact-us',
@@ -30,9 +62,13 @@ export class ContactUs {
 
   private readonly CONTACT_US_URL = '/bringthemhome/contact';
 
-  protected submitted = false;
+  private readonly destroyRef = inject(DestroyRef);
+  protected readonly submitting = signal(false);
+  protected readonly submitted = signal(false);
+  protected readonly submittedName = signal('');
+  protected readonly submissionError = signal('');
 
-  private httpClient = inject(HttpClient);
+  private readonly httpClient = inject(HttpClient);
 
   protected readonly inquiryTypes = [
     'Missing person tip',
@@ -45,13 +81,22 @@ export class ContactUs {
   ];
 
   protected readonly contactForm = this.formBuilder.nonNullable.group({
-    full_name: ['', [Validators.required, Validators.minLength(2)]],
+    full_name: ['', [trimmedText(2)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: [''],
-    inquiry_type: ['', Validators.required],
-    subject: ['', [Validators.required, Validators.minLength(4)]],
-    message: ['', [Validators.required, Validators.minLength(20)]],
-    website: [''],
+    phone: ['', [Validators.required, Validators.pattern(/^(?=(?:\D*\d){7,15}\D*$)\+?[\d ()-]+$/)]],
+    inquiry_type: [
+      '',
+      [
+        Validators.required,
+        (control) =>
+          !control.value || this.inquiryTypes.includes(control.value)
+            ? null
+            : { inquiryType: true },
+      ],
+    ],
+    subject: ['', [trimmedText(4)]],
+    message: ['', [trimmedText(20)]],
+    website: ['', Validators.pattern(/^$/)],
   });
 
   constructor() {
@@ -64,49 +109,44 @@ export class ContactUs {
     }
   }
 
+  protected cancel(formDirective: FormGroupDirective): void {
+    if (this.submitting() || this.submitted()) return;
+    formDirective.resetForm();
+    this.submissionError.set('');
+  }
+
   protected submit(): void {
+    if (this.submitting() || this.submitted()) return;
     if (this.contactForm.invalid) {
       this.contactForm.markAllAsTouched();
       return;
     }
-    const payload = this.contactForm.getRawValue();
-    if (payload.website.trim().length > 0) {
-      console.log('returning from here ', payload.website);
-      return;
-    }
-    // @ts-ignore
-    delete payload.website;
-    console.log('Contact us payload', {
-      full_name: payload.full_name,
-      email: payload.email,
-      phone: payload.phone,
-      inquiry_type: payload.inquiry_type,
-      subject: payload.subject,
-      message: payload.message,
-    });
-    this.saveContactForm(payload);
-    Object.keys(this.contactForm.controls).forEach((key) => {
-      const control = this.contactForm.get(key);
-      control?.markAsPristine();
-      control?.markAsUntouched();
-      control?.updateValueAndValidity({ emitEvent: false });
-    });
-    this.contactForm.reset();
-  }
 
-  // make an HTTP POST request to the server with the contact form data
-  private saveContactForm(payload: any) {
-    // add json headers to the request
-    const headers = { 'Content-Type': 'application/json' };
-    this.httpClient.post(this.CONTACT_US_URL, payload, { headers }).subscribe({
-      next: (response) => {
-        console.log('Contact form submitted successfully', response);
-        // response is json object with a full_name property we need to return to the user in a thank you message
-        this.submitted = true;
-      },
-      error: (error) => {
-        console.error('Error submitting contact form', error);
-      },
-    });
+    const { full_name, email, phone, inquiry_type, subject, message } =
+      this.contactForm.getRawValue();
+    const payload: ContactPayload = { full_name, email, phone, inquiry_type, subject, message };
+    this.submitting.set(true);
+    this.submissionError.set('');
+    this.contactForm.disable({ emitEvent: false });
+    console.log(JSON.stringify(payload));
+
+    this.httpClient
+      .post<ContactResponse>(this.CONTACT_US_URL, payload)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.submitting.set(false);
+          if (!this.submitted()) this.contactForm.enable({ emitEvent: false });
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          this.submittedName.set(response.full_name);
+          this.submitted.set(true);
+        },
+        error: () => {
+          this.submissionError.set('We could not send your message. Please try again.');
+        },
+      });
   }
 }

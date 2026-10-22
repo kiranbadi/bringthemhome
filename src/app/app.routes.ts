@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard, guestGuard } from './core/auth/auth.guard';
 
 import { MissingPersonsGalleryComponent } from './missing-persons-gallery/missing-persons-gallery.component';
 import { MissingPersonsDetailComponent } from './missing-persons-detail/missing-persons-detail.component';
@@ -48,11 +49,12 @@ export const routes: Routes = [
   {
     path: 'account-management',
     component: AccountManagement,
+    canActivate: [guestGuard],
   },
   {
     path: 'login',
-    redirectTo: 'account-management',
-    pathMatch: 'full',
+    component: AccountManagement,
+    canActivate: [guestGuard],
   },
   {
     path: 'register',
@@ -60,12 +62,19 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'account/management',
+    component: AccountDashboard,
+    canActivate: [authGuard],
+  },
+  {
     path: 'myaccount',
     component: AccountDashboard,
+    canActivate: [authGuard],
   },
   {
     path: 'missing-person-report',
     component: MissingPersonReport,
+    canActivate: [authGuard],
   },
   {
     path: 'support-us',

@@ -14,7 +14,10 @@ describe('AccountManagement', () => {
         provideRouter([]),
         {
           provide: AccountManagementService,
-          useValue: { register: () => of({ email: 'jane@example.com' }) },
+          useValue: {
+            isAuthenticated: () => false,
+            register: () => of({ email: 'jane@example.com' }),
+          },
         },
       ],
     }).compileComponents();

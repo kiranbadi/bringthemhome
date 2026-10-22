@@ -5,8 +5,10 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of } from 'rxjs';
 import { MissingPersonsDetailComponent } from './missing-persons-detail.component';
 
+const endpoint = 'http://localhost:8000/api/v1/missing-persons/abc-123';
+
 describe('MissingPersonsDetailComponent', () => {
-  it('loads a shared case from its source API page using its string id', async () => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [MissingPersonsDetailComponent],
       providers: [
@@ -22,68 +24,76 @@ describe('MissingPersonsDetailComponent', () => {
         },
       ],
     });
+  });
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('loads one detail response for summary and all seven sections and preserves Submit Tip', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
     await fixture.whenStable();
     const http = TestBed.inject(HttpTestingController);
-    const req = http.expectOne((r) => r.params.get('page') === '2');
-    req.flush({
-      current_page: 2,
-      total_pages: 2,
-      total_records: 21,
-      page_size: 20,
-      next_page: null,
-      previous_page: 1,
-      records: [
-        {
-          _id: 'abc-123',
-          full_name: 'JANE DOE',
-          city: 'Charlotte',
-          state: 'NC',
-          agency: 'County Police',
-        },
-      ],
+    const request = http.expectOne(endpoint);
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      _id: 'abc-123',
+      summary: {
+        fullName: 'JANE DOE',
+        lastKnownLocation: 'ROWAN, NC',
+        reportingAgency: 'County Police',
+        dateReported: '2017-02-14',
+      },
+      demographics: { missingAge: 0, currentAge: 7 },
     });
     await fixture.whenStable();
-    const element = fixture.nativeElement as HTMLElement;
-    expect(element.textContent).toContain('Jane Doe');
-    expect(element.textContent).toContain('County Police');
-    expect(element.querySelector('.tip-link')?.getAttribute('href')).toContain('personId=abc-123');
-    http.verify();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Jane Doe');
+    expect(root.textContent).toContain('County Police');
+    expect(root.querySelectorAll('mat-expansion-panel')).toHaveLength(7);
+    expect(root.querySelector('.tip-link')?.getAttribute('href')).toContain('personId=abc-123');
+    expect(root.querySelector('.tip-link')?.getAttribute('href')).toContain('full_name=JANE%20DOE');
+    expect(root.textContent).toContain('Unknown');
+    http.expectNone((request) => request.url.endsWith('/api/v1/missing-persons'));
   });
 
-  it('finds a direct link when the case is no longer on the hinted page', async () => {
-    TestBed.configureTestingModule({
-      imports: [MissingPersonsDetailComponent],
-      providers: [
-        provideRouter([]),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            paramMap: of(convertToParamMap({ id: 'moved-case' })),
-            queryParamMap: of(convertToParamMap({})),
-          },
-        },
-      ],
-    });
+  it('supports the confirmed flat response without extra requests', async () => {
+    const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+    await fixture.whenStable();
+    TestBed.inject(HttpTestingController)
+      .expectOne(endpoint)
+      .flush({
+        _id: 'abc-123',
+        full_name: 'LEGACY PERSON',
+        agency: 'Legacy Agency',
+        'hair color': 'Brown',
+        'age missing': '0',
+      });
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Legacy Person');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Legacy Agency');
+  });
+
+  it('preserves the unavailable state on 404', async () => {
+    const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+    await fixture.whenStable();
+    TestBed.inject(HttpTestingController)
+      .expectOne(endpoint)
+      .flush({}, { status: 404, statusText: 'Not Found' });
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Case unavailable');
+  });
+
+  it('preserves error and retry behavior', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
     await fixture.whenStable();
     const http = TestBed.inject(HttpTestingController);
-    http
-      .expectOne((r) => r.params.get('page') === '1')
-      .flush({ current_page: 1, total_pages: 2, total_records: 21, page_size: 20, records: [] });
-    http
-      .expectOne((r) => r.params.get('page') === '2')
-      .flush({
-        current_page: 2,
-        total_pages: 2,
-        total_records: 21,
-        page_size: 20,
-        records: [{ _id: 'moved-case', full_name: 'Found Person' }],
-      });
+    http.expectOne(endpoint).flush({}, { status: 500, statusText: 'Error' });
     await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Found Person');
-    http.verify();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[role="alert"]')).toBeTruthy();
+    Array.from(root.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Try again'))!
+      .click();
+    http.expectOne(endpoint).flush({ _id: 'abc-123', full_name: 'Retry Person' });
+    await fixture.whenStable();
+    expect(root.textContent).toContain('Retry Person');
   });
 });

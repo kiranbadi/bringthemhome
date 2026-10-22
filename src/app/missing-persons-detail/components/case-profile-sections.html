@@ -1,0 +1,352 @@
+@let caseRecord = record();
+@let demographics = caseRecord.demographics;
+@let circumstances = caseRecord.circumstances;
+@let place = circumstances?.lastKnownLocation;
+@let physical = caseRecord.physicalDescription;
+
+<section aria-labelledby="case-details-heading">
+  <div class="section-toolbar">
+    <h2 id="case-details-heading">Case details</h2>
+    <div class="section-actions">
+      <button matButton type="button" aria-controls="case-sections" (click)="accordion.openAll()">
+        Expand All
+      </button>
+      <button matButton type="button" aria-controls="case-sections" (click)="accordion.closeAll()">
+        Collapse All
+      </button>
+    </div>
+  </div>
+
+  <mat-accordion id="case-sections" #accordion="matAccordion" multi>
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">person</mat-icon>
+          <h3>Demographics</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="fields">
+        <app-case-detail-field
+          label="Missing Age"
+          [value]="demographics?.missingAge ?? caseRecord['age missing']"
+        />
+        <app-case-detail-field label="Current Age" [value]="age()" />
+        <app-case-detail-field label="Legal First Name" [value]="demographics?.legalFirstName" />
+        <app-case-detail-field label="Middle Name" [value]="demographics?.middleName" />
+        <app-case-detail-field label="Legal Last Name" [value]="demographics?.legalLastName" />
+        <app-case-detail-field
+          label="Chosen Name / Nickname / Alias"
+          [value]="demographics?.chosenNamesNicknamesAliases"
+        />
+        <app-case-detail-field
+          label="Biological Sex"
+          [value]="demographics?.biologicalSex ?? caseRecord.gender"
+        />
+        <app-case-detail-field label="Height" [value]="height()" />
+        <app-case-detail-field label="Weight" [value]="weight()" />
+        <app-case-detail-field
+          label="Race / Ethnicity"
+          [value]="demographics?.raceEthnicity ?? caseRecord.race"
+        />
+      </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">location_on</mat-icon>
+          <h3>Circumstances</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="fields">
+        <app-case-detail-field
+          label="Date of Last Contact"
+          [value]="circumstances?.dateOfLastContact ?? caseRecord._source?.missing_since"
+        />
+        <app-case-detail-field
+          label="NamUs Case Created Date"
+          [value]="circumstances?.namusCaseCreated"
+        />
+      </div>
+      <h4>Last known location</h4>
+      <div class="fields">
+        <app-case-detail-field
+          label="Last Known Location"
+          [value]="place?.location ?? caseRecord.summary?.lastKnownLocation ?? caseRecord.location"
+        />
+        <div class="map-link">
+          @if (mapUrl(); as url) {
+            <a [href]="url" target="_blank" rel="noopener noreferrer"
+              >View on Map <span class="visually-hidden">(opens in a new tab)</span
+              ><mat-icon aria-hidden="true">open_in_new</mat-icon></a
+            >
+          } @else {
+            <app-case-detail-field label="Location Map Link" />
+          }
+        </div>
+        @if (place?.coordinates?.latitude != null && place?.coordinates?.longitude != null) {
+          <app-case-detail-field label="Latitude" [value]="place?.coordinates?.latitude" />
+          <app-case-detail-field label="Longitude" [value]="place?.coordinates?.longitude" />
+        }
+        <app-case-detail-field label="County" [value]="place?.county" />
+        <app-case-detail-field label="City" [value]="place?.city ?? caseRecord.city" />
+        <app-case-detail-field label="State" [value]="place?.state ?? caseRecord.state" />
+        <app-case-detail-field
+          label="Missing From Tribal Land"
+          [value]="place?.missingFromTribalLand"
+        />
+        <app-case-detail-field
+          label="Primary Residence on Tribal Land"
+          [value]="place?.primaryResidenceOnTribalLand"
+        />
+        <app-case-detail-field
+          class="full-width narrative"
+          label="Circumstances of Disappearance"
+          [value]="circumstances?.circumstancesOfDisappearance"
+        />
+      </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">face</mat-icon>
+          <h3>Physical Description</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="fields">
+        <app-case-detail-field
+          label="Hair Color"
+          [value]="physical?.hairColor ?? caseRecord['hair color']"
+        />
+        <app-case-detail-field
+          label="Wears Prescription Glasses"
+          [value]="physical?.wearsPrescriptionGlasses"
+        />
+        <app-case-detail-field
+          label="Left Eye Color"
+          [value]="physical?.leftEyeColor ?? caseRecord['eye color']"
+        />
+        <app-case-detail-field
+          label="Right Eye Color"
+          [value]="physical?.rightEyeColor ?? caseRecord['eye color']"
+        />
+        <app-case-detail-field
+          class="full-width"
+          label="Head Hair Description"
+          [value]="physical?.headHairDescription"
+        />
+        <app-case-detail-field
+          class="full-width"
+          label="Facial Hair Description"
+          [value]="physical?.facialHairDescription"
+        />
+        <app-case-detail-field
+          class="full-width"
+          label="Eye Description"
+          [value]="physical?.eyeDescription"
+        />
+        <div class="full-width">
+          <h4>Distinctive Physical Features</h4>
+          <app-case-record [value]="physical?.distinctivePhysicalFeatures" />
+        </div>
+      </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">checkroom</mat-icon>
+          <h3>Clothing and Accessories</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="record-list">
+        @for (item of caseRecord.clothingAndAccessories?.items; track $index) {
+          <div class="record-item"><app-case-record [value]="item" /></div>
+        }
+        @if (caseRecord.clothingAndAccessories?.additionalNotes; as notes) {
+          <app-case-detail-field label="Additional Notes" [value]="notes" />
+        }
+        @if (
+          !caseRecord.clothingAndAccessories?.items?.length &&
+          !caseRecord.clothingAndAccessories?.additionalNotes
+        ) {
+          <p class="empty-state">No clothing or accessories information available.</p>
+        }
+      </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">directions_car</mat-icon>
+          <h3>Transportation</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="record-list">
+        @for (vehicle of caseRecord.transportation?.vehicles; track $index) {
+          <div class="record-item"><app-case-record [value]="vehicle" /></div>
+        }
+        @if (caseRecord.transportation?.transportationNotes?.length) {
+          <app-case-detail-field
+            label="Additional Transportation Information"
+            [value]="caseRecord.transportation?.transportationNotes"
+          />
+        }
+        @if (
+          !caseRecord.transportation?.vehicles?.length &&
+          !caseRecord.transportation?.transportationNotes?.length
+        ) {
+          <p class="empty-state">No transportation information available.</p>
+        }
+      </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">photo_library</mat-icon>
+          <h3>Images or Documents</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="media-grid">
+        @for (url of images(); track url; let index = $index) {
+          <button
+            class="image-preview"
+            type="button"
+            (click)="preview(url)"
+            [disabled]="failedImages().has(url)"
+            [attr.aria-label]="'View case image ' + (index + 1) + ' in a larger preview'"
+          >
+            <img
+              [src]="failedImages().has(url) ? placeholder : url"
+              [alt]="'Case image ' + (index + 1)"
+              loading="lazy"
+              (error)="imageFailed(url)"
+              width="240"
+              height="180"
+            />
+            <span>{{
+              failedImages().has(url) ? 'Image unavailable' : 'View image ' + (index + 1)
+            }}</span>
+          </button>
+        }
+      </div>
+      <div class="document-list">
+        @for (document of documents(); track $index) {
+          <div class="document-item">
+            <mat-icon aria-hidden="true">description</mat-icon>
+            <div>
+              <strong>{{ document.name || 'Public document' }}</strong>
+              <p>{{ document.fileType || 'File type not provided' }}</p>
+            </div>
+            <a
+              [href]="document.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="
+                'View document: ' + (document.name || 'public document') + ' (opens in a new tab)'
+              "
+              >View Document</a
+            >
+          </div>
+        }
+      </div>
+      @if (!images().length && !documents().length) {
+        <p class="empty-state">No public images or documents available.</p>
+      } @else if (!documents().length) {
+        <p class="empty-state">No public documents available.</p>
+      }
+    </mat-expansion-panel>
+
+    <mat-expansion-panel>
+      <mat-expansion-panel-header
+        ><mat-panel-title
+          ><mat-icon aria-hidden="true">contact_phone</mat-icon>
+          <h3>Contacts</h3></mat-panel-title
+        ></mat-expansion-panel-header
+      >
+      <div class="record-list">
+        @for (agency of caseRecord.contacts?.investigatingAgencies; track $index) {
+          <div class="fields record-item">
+            <app-case-detail-field label="Reporting Agency" [value]="agency.agencyName" />
+            <app-case-detail-field
+              label="Agency Phone Number"
+              [value]="agency.agencyPhone"
+              [href]="phoneLink(agency.agencyPhone)"
+            />
+            <app-case-detail-field
+              label="Agency Email"
+              [value]="agency.agencyEmail"
+              [href]="emailLink(agency.agencyEmail)"
+            />
+            <app-case-detail-field label="Agency Address" [value]="agency.agencyAddress" />
+            <app-case-detail-field
+              label="Case Number"
+              [value]="agency.agencyCaseNumber ?? caseRecord.caseNumber"
+            />
+          </div>
+        } @empty {
+          <div class="fields">
+            <app-case-detail-field
+              label="Reporting Agency"
+              [value]="caseRecord.summary?.reportingAgency ?? caseRecord.agency"
+            />
+            <app-case-detail-field
+              label="Agency Phone Number"
+              [value]="caseRecord['agency phone']"
+              [href]="phoneLink(caseRecord['agency phone'])"
+            />
+            <app-case-detail-field label="Agency Email" />
+            <app-case-detail-field label="Agency Address" />
+            <app-case-detail-field label="Case Number" [value]="caseRecord.caseNumber" />
+          </div>
+        }
+        <app-case-detail-field
+          label="NamUs Case Number"
+          [value]="caseRecord.contacts?.namusCaseNumber"
+        />
+        <div>
+          <h4>Additional Public Contact Information</h4>
+          @for (contact of publicContacts(); track $index) {
+            <div class="record-item fields">
+              <app-case-detail-field label="Contact Name" [value]="contact['name']" />
+              <app-case-detail-field
+                label="Phone Number"
+                [value]="contact['phone']"
+                [href]="phoneLink(contact['phone'])"
+              />
+              <app-case-detail-field
+                label="Email"
+                [value]="contact['email']"
+                [href]="emailLink(contact['email'])"
+              />
+              <app-case-detail-field label="Address" [value]="contact['address']" />
+              <app-case-detail-field
+                class="full-width"
+                label="Additional Notes"
+                [value]="contact['notes']"
+              />
+            </div>
+          } @empty {
+            <p class="empty-state">Not provided</p>
+          }
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</section>
+
+<ng-template #imagePreview let-url>
+  <h2 mat-dialog-title>Case image</h2>
+  <mat-dialog-content
+    ><img
+      class="large-preview"
+      [src]="failedImages().has(url) ? placeholder : url"
+      alt="Enlarged case photograph"
+      (error)="imageFailed(url)"
+  /></mat-dialog-content>
+  <mat-dialog-actions align="end"
+    ><button matButton mat-dialog-close>Close preview</button></mat-dialog-actions
+  >
+</ng-template>

@@ -149,3 +149,20 @@
     flex-direction: column;
   }
 }
+
+.success-message h2 {
+  font: var(--mat-sys-title-large);
+  margin: 0;
+}
+
+.success-message p {
+  margin: 6px 0 0;
+}
+
+.submission-error {
+  background: var(--mat-sys-error-container);
+  border-radius: 8px;
+  color: var(--mat-sys-on-error-container);
+  margin: 0;
+  padding: 12px;
+}
