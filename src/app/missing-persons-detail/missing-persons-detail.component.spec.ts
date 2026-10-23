@@ -2,7 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { SubmitTipComponent } from '../components/submit-tip/submit-tip.component';
 import { MissingPersonsDetailComponent } from './missing-persons-detail.component';
 
 const endpoint = 'http://localhost:8000/api/v1/missing-persons/abc-123';
@@ -48,8 +50,14 @@ describe('MissingPersonsDetailComponent', () => {
     expect(root.textContent).toContain('Jane Doe');
     expect(root.textContent).toContain('County Police');
     expect(root.querySelectorAll('mat-expansion-panel')).toHaveLength(7);
-    expect(root.querySelector('.tip-link')?.getAttribute('href')).toContain('personId=abc-123');
-    expect(root.querySelector('.tip-link')?.getAttribute('href')).toContain('full_name=JANE%20DOE');
+    (root.querySelector('.tip-link') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1));
+    const dialog = TestBed.inject(MatDialog).openDialogs[0];
+    expect(dialog.componentInstance).toBeInstanceOf(SubmitTipComponent);
+    expect(dialog.componentInstance.record._id).toBe('abc-123');
+    expect(dialog.componentInstance.fullName).toBe('JANE DOE');
+    dialog.close();
     expect(root.textContent).toContain('Unknown');
     http.expectNone((request) => request.url.endsWith('/api/v1/missing-persons'));
   });
@@ -57,15 +65,13 @@ describe('MissingPersonsDetailComponent', () => {
   it('supports the confirmed flat response without extra requests', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
     await fixture.whenStable();
-    TestBed.inject(HttpTestingController)
-      .expectOne(endpoint)
-      .flush({
-        _id: 'abc-123',
-        full_name: 'LEGACY PERSON',
-        agency: 'Legacy Agency',
-        'hair color': 'Brown',
-        'age missing': '0',
-      });
+    TestBed.inject(HttpTestingController).expectOne(endpoint).flush({
+      _id: 'abc-123',
+      full_name: 'LEGACY PERSON',
+      agency: 'Legacy Agency',
+      'hair color': 'Brown',
+      'age missing': '0',
+    });
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Legacy Person');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Legacy Agency');
@@ -95,5 +101,47 @@ describe('MissingPersonsDetailComponent', () => {
     http.expectOne(endpoint).flush({ _id: 'abc-123', full_name: 'Retry Person' });
     await fixture.whenStable();
     expect(root.textContent).toContain('Retry Person');
+  });
+  it('checks unsaved changes for Escape and backdrop dismissal', async () => {
+    const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+    await fixture.whenStable();
+    TestBed.inject(HttpTestingController)
+      .expectOne(endpoint)
+      .flush({ _id: 'abc-123', full_name: 'Jane Doe' });
+    await fixture.whenStable();
+    (fixture.nativeElement.querySelector('.tip-link') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1));
+    const dialog = TestBed.inject(MatDialog).openDialogs[0];
+    const component = dialog.componentInstance as SubmitTipComponent;
+    component.choose('STANDARD');
+    component.form.controls.description.setValue('Relevant information');
+    component.form.markAsDirty();
+    document
+      .querySelector('mat-dialog-container')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await fixture.whenStable();
+    expect(component.discardPrompt()).toBe(true);
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1);
+    component.discardPrompt.set(false);
+    (document.querySelector('.cdk-overlay-backdrop') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(component.discardPrompt()).toBe(true);
+    const closed = firstValueFrom(dialog.afterClosed());
+    component.confirmDiscard();
+    await closed;
+    await fixture.whenStable();
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
+  });
+  it('does not open a case dialog after leaving the detail page while the chunk loads', async () => {
+    const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+    await fixture.whenStable();
+    TestBed.inject(HttpTestingController).expectOne(endpoint).flush({ _id: 'abc-123' });
+    await fixture.whenStable();
+    const dialogs = TestBed.inject(MatDialog);
+    const pending = fixture.componentInstance.openSubmitTip({ _id: 'abc-123' });
+    fixture.destroy();
+    await pending;
+    expect(dialogs.openDialogs).toHaveLength(0);
   });
 });

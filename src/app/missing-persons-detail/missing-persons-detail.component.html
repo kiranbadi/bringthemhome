@@ -41,12 +41,17 @@
             <dd>{{ reportedDate(record) }}</dd>
           </div>
         </dl>
-        <a
+        <button
           class="tip-link"
-          routerLink="/contact-us"
-          [queryParams]="{ type: 'tip', personId: record._id, full_name: name(record) }"
-          >Submit Tip</a
+          type="button"
+          [disabled]="openingTip()"
+          (click)="openSubmitTip(record)"
         >
+          {{ openingTip() ? 'Opening…' : 'Submit Tip' }}
+        </button>
+        @if (tipError()) {
+          <p role="alert">{{ tipError() }}</p>
+        }
       </section>
     </article>
     <app-case-profile-sections [record]="record" />
