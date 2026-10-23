@@ -3,6 +3,7 @@ import { TitleCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   OnInit,
   inject,
@@ -50,7 +51,7 @@ export class MissingPersonsDetailComponent implements OnInit {
   readonly person = signal<MissingPersonDetail | null>(null);
   readonly loading = signal(true);
   readonly error = signal('');
-  readonly failedImage = signal(false);
+  private readonly failedImages = signal(new Set<string>());
   readonly openingTip = signal(false);
   readonly tipError = signal('');
   readonly placeholder = PERSON_PLACEHOLDER;
@@ -64,13 +65,26 @@ export class MissingPersonsDetailComponent implements OnInit {
     record.full_name ||
     record._source?.full_name ||
     'Name not provided';
-  readonly image = (record: MissingPersonDetail) =>
-    publicImageUrl(record.summary?.primaryImageUrl) ||
-    publicImageUrl(record.embedded_images?.data_urls?.[0]) ||
-    publicImageUrl(record._source?.embedded_images?.data_urls?.[0]) ||
-    publicImageUrl(record._source?.image_urls?.[0]) ||
-    publicImageUrl(record._source?.photo_url) ||
-    this.placeholder;
+  readonly image = computed(() => {
+    const record = this.person();
+    if (!record) return this.placeholder;
+    const candidates = [
+      record.summary?.primaryImageUrl,
+      ...(record.embedded_images?.data_urls ?? []),
+      ...(record._source?.embedded_images?.data_urls ?? []),
+      ...(record._source?.image_urls ?? []),
+      record._source?.photo_url,
+    ];
+    return candidates
+      .map(publicImageUrl)
+      .find((url): url is string => !!url && !this.failedImages().has(url)) ?? this.placeholder;
+  });
+
+  imageFailed(): void {
+    const url = this.image();
+    if (url === this.placeholder) return;
+    this.failedImages.update((failed) => new Set([...failed, url]));
+  }
 
   ngOnInit(): void {
     combineLatest([
@@ -85,7 +99,7 @@ export class MissingPersonsDetailComponent implements OnInit {
           this.loading.set(true);
           this.error.set('');
           this.person.set(null);
-          this.failedImage.set(false);
+          this.failedImages.set(new Set());
           return this.service.findMissingPerson(id).pipe(
             tap((person) => {
               this.person.set(person);

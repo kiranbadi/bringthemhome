@@ -75,7 +75,7 @@ export function locationMapUrl(location: CaseLocation | null | undefined): strin
 
 export function publicImageUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
-  if (/^data:image\/(png|jpeg|gif|webp);base64,[a-z\d+/=\s]+$/i.test(value)) return value;
+  if (/^data:image\/(png|jpe?g|gif|webp);base64,[a-z\d+/=\s]+$/i.test(value)) return value;
   try {
     const url = new URL(value);
     return ['https:', 'http:'].includes(url.protocol) ? url.href : null;

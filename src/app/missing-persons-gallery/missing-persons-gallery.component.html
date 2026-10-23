@@ -3,12 +3,18 @@
   <header class="gallery-header">
     <div>
       <p class="eyebrow">Help bring them home</p>
-      <h1 #galleryHeading tabindex="-1">Missing persons</h1>
+      <h1 #galleryHeading tabindex="-1">{{ isSearch() ? 'Search results' : 'Missing persons' }}</h1>
       <p>Every face has a story and help bring someone home.</p>
     </div>
     <a class="button primary" routerLink="/missing-person-report">Report a missing person</a>
   </header>
 
+  @if (isSearch()) {
+    <p>
+      <a class="button" routerLink="/advanced-search" queryParamsHandling="preserve">Edit search</a>
+      <a class="button" routerLink="/missing-persons">Clear search</a>
+    </p>
+  }
   <p class="share-status" role="status">{{ shareMessage() }}</p>
   <section aria-label="Missing persons gallery" [attr.aria-busy]="loading()">
     @if (loading()) {
@@ -50,11 +56,20 @@
               <p class="reported">Reported: {{ reportedDate(person) }}</p>
               <p class="location">{{ location(person) }}</p>
               <ul class="demographics" aria-label="Personal details">
-                @if (person['age now'] || person['age missing']; as age) {
-                  <li>{{ person['age now'] ? 'Age now' : 'Age missing' }}: {{ age }}</li>
+                @if (
+                  (person.current_age ?? person['age now']) != null &&
+                  (person.current_age ?? person['age now']) !== ''
+                ) {
+                  <li>Age now: {{ person.current_age ?? person['age now'] }}</li>
                 }
-                @if (person.gender) {
-                  <li>{{ person.gender }}</li>
+                @if (
+                  (person.age_when_missing ?? person['age missing']) != null &&
+                  (person.age_when_missing ?? person['age missing']) !== ''
+                ) {
+                  <li>Age missing: {{ person.age_when_missing ?? person['age missing'] }}</li>
+                }
+                @if (person.sex || person.gender) {
+                  <li>{{ person.sex || person.gender }}</li>
                 }
                 @if (person.height) {
                   <li>Height: {{ person.height }}</li>

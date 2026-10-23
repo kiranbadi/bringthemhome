@@ -1,13 +1,15 @@
+import { BehaviorSubject } from 'rxjs';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { MissingPersonsGalleryComponent } from './missing-persons-gallery.component';
 
 describe('MissingPersonsGalleryComponent', () => {
   let fixture: ComponentFixture<MissingPersonsGalleryComponent>;
   let http: HttpTestingController;
+  let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   const endpoint = 'http://localhost:8000/api/v1/missing-persons';
   const record = {
     _id: 'case-1',
@@ -39,9 +41,15 @@ describe('MissingPersonsGalleryComponent', () => {
     );
 
   beforeEach(async () => {
+    queryParams = new BehaviorSubject(convertToParamMap({}));
     await TestBed.configureTestingModule({
       imports: [MissingPersonsGalleryComponent],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ActivatedRoute, useValue: { queryParamMap: queryParams.asObservable() } },
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(MissingPersonsGalleryComponent);
@@ -116,6 +124,57 @@ describe('MissingPersonsGalleryComponent', () => {
     );
     expect(element().textContent).toContain('Date unavailable');
     expect(element().textContent).not.toContain('undefined');
+  });
+
+  it('renders search records and retains filters when paging with detail links by id', async () => {
+    request().flush(page());
+    queryParams.next(
+      convertToParamMap({ search: 'true', state: 'NC', photo_available: 'false', page: '1' }),
+    );
+    const searchRequest = http.expectOne((r) => r.url === `${endpoint}/search`);
+    expect(searchRequest.request.params.get('state')).toBe('NC');
+    expect(searchRequest.request.params.get('photo_available')).toBe('false');
+    searchRequest.flush({
+      ...page(),
+      records: [
+        {
+          _id: 'search-id',
+          full_name: 'JANE DOE',
+          photo_url: null,
+          reported_at: '2026-07-19',
+          missing_since: null,
+          age_when_missing: 0,
+          current_age: 14,
+          sex: 'Female',
+          race: 'White',
+          missing_from_city: null,
+          missing_from_state: 'NC',
+        },
+      ],
+    });
+    await fixture.whenStable();
+    expect(element().textContent).toContain('Search results');
+    expect(element().textContent).toContain('Age missing: 0');
+    expect(element().textContent).toContain('Age now: 14');
+    expect(element().textContent).toContain('Female');
+    expect(element().textContent).toContain('NC');
+    expect(element().querySelector('a.details-link')?.getAttribute('href')).toBe(
+      '/missing-persons/search-id',
+    );
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    button('Next').click();
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { page: 2 }, queryParamsHandling: 'merge' }),
+    );
+    queryParams.next(
+      convertToParamMap({ search: 'true', state: 'NC', photo_available: 'false', page: '2' }),
+    );
+    const next = http.expectOne(
+      (r) => r.url === `${endpoint}/search` && r.params.get('page') === '2',
+    );
+    expect(next.request.params.get('state')).toBe('NC');
+    next.flush(page(2));
   });
 
   it('shares through the Web Share API and copies the case link when sharing fails', async () => {
