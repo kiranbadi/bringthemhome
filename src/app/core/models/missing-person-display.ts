@@ -3,7 +3,11 @@ import { MissingPerson } from './missing-person.model';
 export const PERSON_PLACEHOLDER = '/missing-person-placeholder.svg';
 
 export function personLocation(person: Partial<MissingPerson>): string {
-  const parts = [person.city, person.location, person.state]
+  const parts = [
+    person.missing_from_city ?? person.city,
+    person.location,
+    person.missing_from_state ?? person.state,
+  ]
     .map((value) => value?.trim() ?? '')
     .filter(Boolean);
   return (

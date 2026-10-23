@@ -77,6 +77,38 @@ describe('MissingPersonsDetailComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Legacy Agency');
   });
 
+  it('tries all distinct embedded photos before the placeholder and resets on reload', async () => {
+    const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+    await fixture.whenStable();
+    const http = TestBed.inject(HttpTestingController);
+    const primary = 'https://example.com/broken.jpg';
+    const first = 'data:image/png;base64,AAAA';
+    const second = 'data:image/jpeg;base64,BBBB';
+    http.expectOne(endpoint).flush({
+      _id: 'abc-123',
+      summary: { primaryImageUrl: primary },
+      embedded_images: { data_urls: ['invalid', first, second] },
+      _source: { embedded_images: { data_urls: [first] } },
+    });
+    await fixture.whenStable();
+    const image = fixture.nativeElement.querySelector('.person-summary > img') as HTMLImageElement;
+    expect(image.getAttribute('src')).toBe(primary);
+    for (const expected of [first, second, '/missing-person-placeholder.svg']) {
+      image.dispatchEvent(new Event('error'));
+      await fixture.whenStable();
+      expect(image.getAttribute('src')).toBe(expected);
+    }
+    image.dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+    expect(image.getAttribute('src')).toBe('/missing-person-placeholder.svg');
+    fixture.componentInstance.retry();
+    http.expectOne(endpoint).flush({
+      _id: 'abc-123', embedded_images: { data_urls: [first] },
+    });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.person-summary > img').getAttribute('src')).toBe(first);
+  });
+
   it('preserves the unavailable state on 404', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
     await fixture.whenStable();

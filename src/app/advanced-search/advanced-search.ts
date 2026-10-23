@@ -6,19 +6,22 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
+import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 
 const DEFAULT_CRITERIA = {
-  reportedStartDate: '2026-01-30',
-  reportedEndDate: '2026-07-26',
+  reportedStartDate: '',
+  reportedEndDate: '',
   firstName: '',
   middleName: '',
   lastName: '',
   city: '',
   state: '',
   country: '',
-  ageMissing: '',
-  ageNow: '',
+  ageMissingMin: '',
+  ageMissingMax: '',
+  ageNowMin: '',
+  ageNowMax: '',
   agency: '',
   gender: '',
   race: '',
@@ -26,10 +29,33 @@ const DEFAULT_CRITERIA = {
   eyeColor: '',
   photoAvailable: '',
   alertType: '',
-  sortBy: 'mostRecent',
+  sortBy: 'most_recent',
 };
 
 type CriteriaKey = keyof typeof DEFAULT_CRITERIA;
+
+const CRITERIA_PARAMS: Record<CriteriaKey, string> = {
+  reportedStartDate: 'reported_start_date',
+  reportedEndDate: 'reported_end_date',
+  firstName: 'first_name',
+  middleName: 'middle_name',
+  lastName: 'last_name',
+  city: 'city',
+  state: 'state',
+  country: 'country',
+  agency: 'agency',
+  gender: 'gender',
+  race: 'race',
+  ageMissingMin: 'age_missing_min',
+  ageMissingMax: 'age_missing_max',
+  ageNowMin: 'age_now_min',
+  ageNowMax: 'age_now_max',
+  hairColor: 'hair_color',
+  eyeColor: 'eye_color',
+  photoAvailable: 'photo_available',
+  alertType: 'alert_type',
+  sortBy: 'sort_by',
+};
 
 @Component({
   selector: 'app-advanced-search',
@@ -46,6 +72,7 @@ type CriteriaKey = keyof typeof DEFAULT_CRITERIA;
   styleUrl: './advanced-search.scss',
 })
 export class AdvancedSearch {
+  private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
 
   private readonly defaultCriteria = DEFAULT_CRITERIA;
@@ -59,8 +86,10 @@ export class AdvancedSearch {
     city: 'City',
     state: 'State',
     country: 'Country',
-    ageMissing: 'Age Missing',
-    ageNow: 'Age Now',
+    ageMissingMin: 'Age Missing Minimum',
+    ageMissingMax: 'Age Missing Maximum',
+    ageNowMin: 'Age Now Minimum',
+    ageNowMax: 'Age Now Maximum',
     agency: 'Agency',
     gender: 'Gender',
     race: 'Race',
@@ -73,61 +102,38 @@ export class AdvancedSearch {
 
   private readonly criteriaDisplayValues: Partial<Record<CriteriaKey, Record<string, string>>> = {
     sortBy: {
-      mostRecent: 'Most Recent',
-      az: 'A - Z',
+      most_recent: 'Most Recent',
     },
   };
 
-  protected readonly states = [
-    'Alabama',
-    'Alaska',
-    'Arizona',
-    'California',
-    'Colorado',
-    'Florida',
-    'Georgia',
-    'Illinois',
-    'Massachusetts',
-    'New York',
-    'Oregon',
-    'Texas',
-    'Washington',
-  ];
+  protected readonly states =
+    'AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY'.split(
+      ' ',
+    );
 
   protected readonly races = ['American Indian', 'Asian', 'Black', 'Hispanic', 'White', 'Other'];
   protected readonly genders = ['Female', 'Male', 'Nonbinary', 'Unknown'];
   protected readonly hairColors = ['Black', 'Blonde', 'Brown', 'Gray', 'Red', 'Other'];
   protected readonly eyeColors = ['Black', 'Blue', 'Brown', 'Green', 'Hazel', 'Other'];
-  protected readonly ageOptions = [
-    '0 - 2',
-    '3 - 5',
-    '6 - 9',
-    '10 - 12',
-    '13 - 15',
-    '16 - 18',
-    '19+',
-    'Unknown',
+  protected readonly photoAvailabilityOptions = [
+    { label: 'Available', value: 'true' },
+    { label: 'Not Available', value: 'false' },
   ];
-  protected readonly photoAvailabilityOptions = ['Available', 'Not Available', 'Unknown'];
-  protected readonly alertTypes = [
-    'Amber Alert',
-    'Endangered Missing',
-    'Missing',
-    'Runaway',
-    'Unknown',
-  ];
+  protected readonly alertTypes = ['AMBER'];
 
   protected readonly advancedSearchForm = this.formBuilder.nonNullable.group({
-    reportedStartDate: ['2026-01-30'],
-    reportedEndDate: ['2026-07-26'],
+    reportedStartDate: [''],
+    reportedEndDate: [''],
     firstName: [''],
     middleName: [''],
     lastName: [''],
     city: [''],
     state: [''],
     country: [''],
-    ageMissing: [''],
-    ageNow: [''],
+    ageMissingMin: [''],
+    ageMissingMax: [''],
+    ageNowMin: [''],
+    ageNowMax: [''],
     agency: [''],
     gender: [''],
     race: [''],
@@ -135,8 +141,16 @@ export class AdvancedSearch {
     eyeColor: [''],
     photoAvailable: [''],
     alertType: [''],
-    sortBy: ['mostRecent'],
+    sortBy: ['most_recent'],
   });
+
+  constructor() {
+    const params = inject(ActivatedRoute).snapshot.queryParamMap;
+    for (const key of Object.keys(CRITERIA_PARAMS) as CriteriaKey[]) {
+      const value = params.get(CRITERIA_PARAMS[key]);
+      if (value !== null) this.advancedSearchForm.controls[key].setValue(value);
+    }
+  }
 
   protected reset(): void {
     this.advancedSearchForm.reset(this.defaultCriteria);
@@ -149,7 +163,15 @@ export class AdvancedSearch {
       return;
     }
 
-    console.log('Advanced search payload', JSON.stringify(this.searchPayload(), null, 2));
+    if (this.invalidRanges()) return;
+    const criteria = this.advancedSearchForm.getRawValue();
+    const queryParams: Record<string, string | number> = { search: 'true', page: 1, page_size: 20 };
+
+    for (const key of Object.keys(CRITERIA_PARAMS) as CriteriaKey[]) {
+      const value = String(criteria[key] ?? '').trim();
+      if (value) queryParams[CRITERIA_PARAMS[key]] = value;
+    }
+    void this.router.navigate(['/missing-persons'], { queryParams });
   }
 
   protected removeCriteria(key: CriteriaKey): void {
@@ -168,12 +190,13 @@ export class AdvancedSearch {
       .filter(
         (key) =>
           key === 'sortBy' ||
-          (criteria[key].trim().length > 0 && criteria[key] !== this.defaultCriteria[key]),
+          (String(criteria[key] ?? '').trim().length > 0 &&
+            criteria[key] !== this.defaultCriteria[key]),
       )
       .map((key) => ({
         key,
         label: this.criteriaLabels[key],
-        value: this.criteriaDisplayValues[key]?.[criteria[key]] ?? criteria[key],
+        value: this.criteriaDisplayValues[key]?.[criteria[key]] ?? String(criteria[key] ?? ''),
         canRemove: key !== 'sortBy' || criteria[key] !== this.defaultCriteria[key],
       }));
   }
@@ -181,16 +204,22 @@ export class AdvancedSearch {
   protected reportedDateRangeIncomplete(): boolean {
     const criteria = this.advancedSearchForm.getRawValue();
 
-    return (
-      criteria.reportedStartDate !== this.defaultCriteria.reportedStartDate &&
-      criteria.reportedEndDate === this.defaultCriteria.reportedEndDate
-    );
+    return Boolean(criteria.reportedStartDate && !criteria.reportedEndDate);
   }
 
-  private searchPayload() {
-    return {
-      criteria: this.advancedSearchForm.getRawValue(),
-      selectedCriteria: this.activeCriteria(),
-    };
+  protected invalidRanges(): boolean {
+    const c = this.advancedSearchForm.getRawValue();
+    if (c.reportedStartDate && c.reportedEndDate && c.reportedStartDate > c.reportedEndDate)
+      return true;
+    return [
+      [c.ageMissingMin, c.ageMissingMax],
+      [c.ageNowMin, c.ageNowMax],
+    ].some(
+      ([min, max]) =>
+        [min, max].some(
+          (v) => String(v ?? '') !== '' && (!Number.isInteger(Number(v)) || Number(v) < 0),
+        ) ||
+        (String(min ?? '') !== '' && String(max ?? '') !== '' && Number(min) > Number(max)),
+    );
   }
 }

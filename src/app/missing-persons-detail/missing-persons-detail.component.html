@@ -11,9 +11,9 @@
   } @else if (person(); as record) {
     <article class="person-summary" aria-labelledby="person-name">
       <img
-        [src]="failedImage() ? placeholder : image(record)"
+        [src]="image()"
         [alt]="'Photo of ' + name(record)"
-        (error)="failedImage.set(true)"
+        (error)="imageFailed()"
         width="480"
         height="360"
       />

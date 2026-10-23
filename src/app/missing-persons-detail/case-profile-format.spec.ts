@@ -41,6 +41,9 @@ describe('Case profile display', () => {
     expect(displayValue('Unknown')).toBe('Unknown');
     expect(displayValue({ private: 'hidden' })).toBe('Not provided');
   });
+  it('accepts the jpg MIME alias returned by embedded case photos', () => {
+    expect(publicImageUrl('data:image/jpg;base64,/9j/AAAA')).toBe('data:image/jpg;base64,/9j/AAAA');
+  });
   it('only accepts safe image URLs', () => {
     expect(publicImageUrl('javascript:alert(1)')).toBeNull();
     expect(publicImageUrl('data:text/html;base64,a')).toBeNull();

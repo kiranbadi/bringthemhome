@@ -11,10 +11,12 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { EMPTY, Subject, catchError, switchMap, tap } from 'rxjs';
 import {
   MissingPerson,
+  MissingPersonSearchFilters,
+  SEARCH_FILTER_KEYS,
   PaginatedMissingPersonsResponse,
 } from '../core/models/missing-person.model';
 import {
@@ -34,6 +36,9 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsGalleryComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private filters: MissingPersonSearchFilters = {};
+  readonly isSearch = signal(false);
   private readonly service = inject(MissingPersonService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -67,7 +72,10 @@ export class MissingPersonsGalleryComponent implements OnInit {
           this.shareMessage.set('');
         }),
         switchMap((page) =>
-          this.service.getMissingPersons(page, this.pageSize).pipe(
+          (this.isSearch()
+            ? this.service.searchMissingPersons(this.filters, page, this.pageSize)
+            : this.service.getMissingPersons(page, this.pageSize)
+          ).pipe(
             tap((response) => {
               this.response.set(response);
               this.failedImages.set(new Set());
@@ -83,7 +91,17 @@ export class MissingPersonsGalleryComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
-    this.requests.next(1);
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const filters: Record<string, string> = {};
+      for (const key of SEARCH_FILTER_KEYS) {
+        const value = params.get(key)?.trim();
+        if (value) filters[key] = value;
+      }
+      this.filters = filters as MissingPersonSearchFilters;
+      this.isSearch.set(params.get('search') === 'true' || Object.keys(filters).length > 0);
+      const page = Number(params.get('page') ?? 1);
+      this.requests.next(Number.isInteger(page) && page > 0 ? page : 1);
+    });
   }
 
   goToPage(page: number): void {
@@ -95,7 +113,15 @@ export class MissingPersonsGalleryComponent implements OnInit {
       page === this.currentPage()
     )
       return;
-    this.requests.next(page);
+    if (this.isSearch()) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { page },
+        queryParamsHandling: 'merge',
+      });
+    } else {
+      this.requests.next(page);
+    }
     const heading = this.galleryHeading?.nativeElement;
     heading?.focus({ preventScroll: true });
     heading?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
@@ -108,7 +134,9 @@ export class MissingPersonsGalleryComponent implements OnInit {
   image(person: MissingPerson): string {
     return this.failedImages().has(person._id)
       ? this.placeholder
-      : person.embedded_images?.data_urls?.[0]?.trim() || this.placeholder;
+      : person.photo_url?.trim() ||
+          person.embedded_images?.data_urls?.[0]?.trim() ||
+          this.placeholder;
   }
 
   imageFailed(person: MissingPerson): void {
@@ -134,7 +162,8 @@ export class MissingPersonsGalleryComponent implements OnInit {
         this.shareMessage.set('Case shared.');
         return;
       } catch (error) {
-        if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') return;
+        if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError')
+          return;
       }
     }
     try {

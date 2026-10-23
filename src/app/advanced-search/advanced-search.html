@@ -124,30 +124,58 @@
             </mat-form-field>
           </div>
 
-          <div class="field age-missing">
-            <label for="age-missing">Age Missing</label>
+          <div class="field">
+            <label for="ageMissingMin">Age Missing Minimum</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-select id="age-missing" formControlName="ageMissing">
-                <mat-option value="">Any Age</mat-option>
-                @for (age of ageOptions; track age) {
-                  <mat-option [value]="age">{{ age }}</mat-option>
-                }
-              </mat-select>
+              <input
+                id="ageMissingMin"
+                matInput
+                type="number"
+                min="0"
+                step="1"
+                formControlName="ageMissingMin"
+              />
             </mat-form-field>
           </div>
-
-          <div class="field age-now">
-            <label for="age-now">Age Now</label>
+          <div class="field">
+            <label for="ageMissingMax">Age Missing Maximum</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-select id="age-now" formControlName="ageNow">
-                <mat-option value="">Any Age</mat-option>
-                @for (age of ageOptions; track age) {
-                  <mat-option [value]="age">{{ age }}</mat-option>
-                }
-              </mat-select>
+              <input
+                id="ageMissingMax"
+                matInput
+                type="number"
+                min="0"
+                step="1"
+                formControlName="ageMissingMax"
+              />
             </mat-form-field>
           </div>
-
+          <div class="field">
+            <label for="ageNowMin">Age Now Minimum</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="ageNowMin"
+                matInput
+                type="number"
+                min="0"
+                step="1"
+                formControlName="ageNowMin"
+              />
+            </mat-form-field>
+          </div>
+          <div class="field">
+            <label for="ageNowMax">Age Now Maximum</label>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <input
+                id="ageNowMax"
+                matInput
+                type="number"
+                min="0"
+                step="1"
+                formControlName="ageNowMax"
+              />
+            </mat-form-field>
+          </div>
           <div class="field agency">
             <label for="agency">Agency</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -161,7 +189,7 @@
               <mat-select id="photo-available" formControlName="photoAvailable">
                 <mat-option value="">Any</mat-option>
                 @for (option of photoAvailabilityOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
@@ -204,8 +232,8 @@
               <mat-select id="country" formControlName="country">
                 <mat-option value="">Select Country</mat-option>
                 <mat-option value="United States">United States</mat-option>
-<!--                <mat-option value="Canada">Canada</mat-option>-->
-<!--                <mat-option value="Mexico">Mexico</mat-option>-->
+                <!--                <mat-option value="Canada">Canada</mat-option>-->
+                <!--                <mat-option value="Mexico">Mexico</mat-option>-->
               </mat-select>
             </mat-form-field>
           </div>
@@ -214,8 +242,7 @@
             <label for="sort-by">Sort By</label>
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-select id="sort-by" formControlName="sortBy">
-                <mat-option value="mostRecent">Most Recent</mat-option>
-                <mat-option value="az">A - Z</mat-option>
+                <mat-option value="most_recent">Most Recent</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -253,6 +280,12 @@
           <p class="empty-summary">No criteria selected yet.</p>
         }
 
+        @if (invalidRanges()) {
+          <p class="field-warning" role="alert">
+            Enter valid date and age ranges. Minimum ages must be non-negative whole numbers and
+            cannot exceed maximum ages.
+          </p>
+        }
         <div class="form-actions">
           <button matButton="filled" type="submit">
             <mat-icon aria-hidden="true">search</mat-icon>
