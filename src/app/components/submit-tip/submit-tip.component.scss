@@ -1,0 +1,141 @@
+:host {
+  display: block;
+  color: var(--mat-sys-on-surface);
+}
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  padding-right: 12px;
+}
+h2 {
+  flex: 1;
+}
+.dialog-header button {
+  margin-top: 14px;
+  flex-shrink: 0;
+}
+mat-dialog-content {
+  max-height: 65dvh;
+}
+.subtitle {
+  margin-top: 0;
+}
+.case-info,
+.agency-card {
+  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  padding: 16px;
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+}
+dt {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.options {
+  display: grid;
+  gap: 12px;
+}
+.option-card {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--mat-sys-surface-container-lowest);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.option-card:hover {
+  background: var(--mat-sys-primary-container);
+}
+.option-card mat-icon {
+  flex-shrink: 0;
+  color: var(--mat-sys-primary);
+}
+.option-card strong,
+.option-card span span {
+  display: block;
+}
+.option-card strong {
+  color: var(--mat-sys-primary);
+  margin-bottom: 6px;
+}
+mat-form-field {
+  width: 100%;
+  margin: 6px 0;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+fieldset {
+  min-width: 0;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  margin: 16px 0;
+  padding: 14px;
+}
+legend {
+  font-weight: 600;
+}
+.notice {
+  background: var(--mat-sys-surface-container-low);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 16px 0;
+}
+h4,
+.notice p {
+  margin: 0;
+}
+h4 {
+  margin-bottom: 6px;
+}
+.error {
+  color: var(--mat-sys-error);
+}
+a {
+  color: var(--mat-sys-primary);
+  overflow-wrap: anywhere;
+}
+.policy-links,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.evidence label {
+  display: block;
+  margin-bottom: 10px;
+}
+input[type='file'] {
+  max-width: 100%;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 3px;
+}
+h3:focus {
+  outline: none;
+}
+@media (max-width: 600px) {
+  .field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .option-card {
+    padding: 14px;
+  }
+  mat-dialog-content {
+    padding: 0 16px 16px;
+  }
+}

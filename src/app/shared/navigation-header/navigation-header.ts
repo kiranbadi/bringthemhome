@@ -41,8 +41,8 @@ export class NavigationHeader {
 
   protected readonly links = [
     { label: 'Home', route: '/' },
-    { label: 'Account Management', route: '/account/management' },
-    { label: 'Advanced Search', route: '/advanced-search' },
+    { label: 'Account', route: '/account/management' },
+    { label: 'Search', route: '/advanced-search' },
     { label: 'Support Us', route: '/support-us' },
     { label: 'Contact Us', route: '/contact-us' },
   ];

@@ -1,3 +1,4 @@
+import { MatDialog } from '@angular/material/dialog';
 import { TitleCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -18,6 +19,7 @@ import {
   map,
   startWith,
   switchMap,
+  takeUntil,
   tap,
 } from 'rxjs';
 import { MissingPersonDetail } from '../core/models/missing-person-detail.model';
@@ -40,6 +42,7 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsDetailComponent implements OnInit {
+  private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(MissingPersonService);
   private readonly destroyRef = inject(DestroyRef);
@@ -48,6 +51,8 @@ export class MissingPersonsDetailComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal('');
   readonly failedImage = signal(false);
+  readonly openingTip = signal(false);
+  readonly tipError = signal('');
   readonly placeholder = PERSON_PLACEHOLDER;
   readonly location = (record: MissingPersonDetail) =>
     record.summary?.lastKnownLocation || personLocation(record);
@@ -96,6 +101,43 @@ export class MissingPersonsDetailComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  async openSubmitTip(record: MissingPersonDetail): Promise<void> {
+    if (this.openingTip()) return;
+    this.openingTip.set(true);
+    this.tipError.set('');
+    try {
+      const { SubmitTipComponent } = await import('../components/submit-tip/submit-tip.component');
+      if (this.destroyRef.destroyed || this.person()?._id !== record._id) return;
+      const ref = this.dialog.open(SubmitTipComponent, {
+        data: record,
+        width: '760px',
+        maxWidth: '96vw',
+        maxHeight: '94dvh',
+        disableClose: true,
+        closeOnNavigation: false,
+        restoreFocus: true,
+        ariaLabel: 'Share information about this case',
+      });
+      ref
+        .backdropClick()
+        .pipe(takeUntilDestroyed(this.destroyRef), takeUntil(ref.afterClosed()))
+        .subscribe(() => ref.componentInstance?.requestClose());
+      ref
+        .keydownEvents()
+        .pipe(takeUntilDestroyed(this.destroyRef), takeUntil(ref.afterClosed()))
+        .subscribe((event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            ref.componentInstance?.requestClose();
+          }
+        });
+    } catch {
+      this.tipError.set('The tip form could not be opened. Please try again.');
+    } finally {
+      this.openingTip.set(false);
+    }
   }
 
   retry(): void {

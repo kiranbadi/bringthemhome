@@ -1,0 +1,344 @@
+<div class="dialog-header" [inert]="discardPrompt()">
+  <h2 mat-dialog-title>Share Information About This Case</h2>
+  <button
+    mat-icon-button
+    type="button"
+    aria-label="Close Submit Tip"
+    (click)="requestClose()"
+    [disabled]="submitting()"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+<mat-dialog-content>
+  @if (discardPrompt()) {
+    <section
+      role="alertdialog"
+      aria-labelledby="discard-title"
+      aria-describedby="discard-description"
+      aria-modal="true"
+      class="notice"
+    >
+      <h3 id="discard-title">Discard entered information?</h3>
+      <p id="discard-description">
+        Your information has not been submitted. Closing will discard your draft.
+      </p>
+      <div class="actions">
+        <button matButton="filled" type="button" #keepEditing (click)="discardPrompt.set(false)">
+          Keep editing
+        </button>
+        <button matButton="outlined" type="button" (click)="confirmDiscard()">
+          Discard and close
+        </button>
+      </div>
+    </section>
+  }
+  <div [inert]="discardPrompt()">
+    <p class="subtitle">Your information could help bring someone home.</p>
+    <dl class="case-info">
+      <div>
+        <dt>Missing Person Name</dt>
+        <dd>{{ fullName }}</dd>
+      </div>
+      <div>
+        <dt>Case ID / Case Number</dt>
+        <dd>{{ caseNumber || record._id }}</dd>
+      </div>
+      <div>
+        <dt>Reporting Agency</dt>
+        <dd>{{ agencyName }}</dd>
+      </div>
+    </dl>
+    @if (success(); as response) {
+      <section role="status">
+        <h3 #viewHeading tabindex="-1">Thank You for Sharing Information</h3>
+        <p>
+          Your tip has been submitted successfully. Thank you for helping support the search for
+          missing persons.
+        </p>
+        @if (response.referenceNumber) {
+          <p>Reference number: {{ response.referenceNumber }}</p>
+        }
+      </section>
+    } @else if (!mode()) {
+      <div class="options">
+        <button #viewHeading type="button" class="option-card" (click)="choose('STANDARD')">
+          <mat-icon aria-hidden="true">edit_note</mat-icon
+          ><span
+            ><strong>Submit an Online Tip</strong
+            ><span
+              >Share information about a possible sighting, location, vehicle, or other details that
+              may help locate this person.</span
+            ></span
+          >
+        </button>
+        <button type="button" class="option-card" (click)="choose('ANONYMOUS')">
+          <mat-icon aria-hidden="true">person_off</mat-icon
+          ><span
+            ><strong>Submit Anonymously</strong
+            ><span>Share information without providing your name or contact details.</span></span
+          >
+        </button>
+        <button type="button" class="option-card" (click)="choose('AGENCY')">
+          <mat-icon aria-hidden="true">local_police</mat-icon
+          ><span
+            ><strong>Contact Investigating Agency</strong
+            ><span
+              >Report information directly to the law enforcement agency handling this case.</span
+            ></span
+          >
+        </button>
+      </div>
+      <p class="notice">
+        Anonymous submissions do not require personal contact information. However, complete
+        technical anonymity cannot be guaranteed.
+      </p>
+      @if (!service.available) {
+        <p role="status" class="notice">
+          Online tip submission is not available yet. You can contact the investigating agency
+          directly using the available case contact information.
+        </p>
+      }
+    } @else if (mode() === 'AGENCY') {
+      <section>
+        <h3 #viewHeading tabindex="-1">Contact Investigating Agency</h3>
+        <p>
+          You can contact the investigating agency directly to share information about this case.
+        </p>
+        @for (agency of agencies; track $index) {
+          <dl class="agency-card">
+            <div>
+              <dt>Agency Name</dt>
+              <dd>{{ agency.agencyName || 'Not provided' }}</dd>
+            </div>
+            <div>
+              <dt>Phone Number</dt>
+              <dd>
+                @if (agency.agencyPhone) {
+                  <a [href]="'tel:' + agency.agencyPhone">{{ agency.agencyPhone }}</a>
+                } @else {
+                  Contact information unavailable
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Email Address</dt>
+              <dd>
+                @if (agency.agencyEmail) {
+                  <a [href]="'mailto:' + agency.agencyEmail">{{ agency.agencyEmail }}</a>
+                } @else {
+                  Contact information unavailable
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Agency Address</dt>
+              <dd>{{ agency.agencyAddress || 'Contact information unavailable' }}</dd>
+            </div>
+            <div>
+              <dt>Case Number</dt>
+              <dd>{{ agency.agencyCaseNumber || caseNumber || record._id }}</dd>
+            </div>
+            <div>
+              <dt>Official Agency Website</dt>
+              <dd>Contact information unavailable</dd>
+            </div>
+          </dl>
+        } @empty {
+          <p>Contact information unavailable</p>
+        }
+      </section>
+    } @else {
+      <form
+        id="submit-tip-form"
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        [attr.aria-busy]="submitting()"
+      >
+        <h3 #viewHeading tabindex="-1">
+          {{ mode() === 'ANONYMOUS' ? 'Submit Anonymously' : 'Submit an Online Tip' }}
+        </h3>
+        @if (mode() === 'ANONYMOUS') {
+          <p class="notice">
+            Anonymous submissions do not require personal contact information. However, complete
+            technical anonymity cannot be guaranteed. Certain technical metadata may still be
+            processed according to the website's privacy policy. Choosing this mode removes any
+            entered contact details.
+          </p>
+        }
+        @if (!service.available) {
+          <p role="status" class="notice">
+            Online tip submission is not available yet. This form cannot send your information until
+            backend integration is complete. To share your information now, use Contact
+            Investigating Agency.
+          </p>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>Tip Category</mat-label>
+          <mat-select formControlName="category" required>
+            @for (category of categories; track category) {
+              <mat-option [value]="category">{{ category }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>Select a tip category.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Description of Information</mat-label>
+          <textarea
+            matInput
+            formControlName="description"
+            rows="5"
+            maxlength="5000"
+            required
+          ></textarea>
+          <mat-hint align="end">{{ form.controls.description.value.length }} / 5,000</mat-hint>
+          <mat-error>Enter relevant information, up to 5,000 characters.</mat-error>
+        </mat-form-field>
+        @if (
+          form.controls.category.value === 'Possible Sighting' ||
+          form.controls.category.value === 'Information About Last Known Location' ||
+          form.controls.category.value === 'Vehicle or Transportation Information'
+        ) {
+          <fieldset>
+            <legend>Incident / Sighting Details (optional)</legend>
+            <p>Share what you know. An exact date or location is not required.</p>
+            <div class="field-grid">
+              <mat-form-field appearance="outline"
+                ><mat-label>Date of Incident / Sighting</mat-label
+                ><input matInput type="date" formControlName="incidentDate"
+              /></mat-form-field>
+              <mat-form-field appearance="outline"
+                ><mat-label>Approximate Time</mat-label
+                ><input matInput type="time" formControlName="incidentTime"
+              /></mat-form-field>
+            </div>
+            <mat-form-field appearance="outline"
+              ><mat-label>Location</mat-label><input matInput formControlName="location" /><mat-hint
+                >City, state, address, or landmark</mat-hint
+              ></mat-form-field
+            >
+            <mat-form-field appearance="outline"
+              ><mat-label>Confidence Level</mat-label
+              ><mat-select formControlName="confidenceLevel"
+                ><mat-option value="">Not specified</mat-option
+                ><mat-option value="Very Certain">Very Certain</mat-option
+                ><mat-option value="Somewhat Certain">Somewhat Certain</mat-option
+                ><mat-option value="Unsure">Unsure</mat-option></mat-select
+              ></mat-form-field
+            >
+          </fieldset>
+        }
+        <mat-form-field appearance="outline"
+          ><mat-label>Additional Information (optional)</mat-label
+          ><textarea matInput formControlName="additionalInformation" rows="3"></textarea>
+        </mat-form-field>
+        <fieldset class="evidence">
+          <legend>Supporting Evidence (optional)</legend>
+          <label for="tip-evidence">Images and PDF documents</label>
+          <input
+            id="tip-evidence"
+            type="file"
+            multiple
+            disabled
+            [accept]="policies.tipSubmission.allowedMimeTypes.join(',')"
+            aria-describedby="evidence-unavailable"
+          />
+          <p id="evidence-unavailable">
+            Attachments are unavailable because the backend does not support evidence uploads. No
+            files will be uploaded. Video uploads are not supported.
+          </p>
+        </fieldset>
+        @if (mode() === 'STANDARD') {
+          <fieldset>
+            <legend>Contact Information (optional)</legend>
+            <div class="field-grid">
+              <mat-form-field appearance="outline"
+                ><mat-label>Full Name</mat-label
+                ><input matInput formControlName="fullName" autocomplete="off"
+              /></mat-form-field>
+              <mat-form-field appearance="outline"
+                ><mat-label>Email Address</mat-label
+                ><input
+                  matInput
+                  type="email"
+                  formControlName="email"
+                  autocomplete="off"
+                /><mat-error>Enter a valid email address.</mat-error></mat-form-field
+              >
+              <mat-form-field appearance="outline"
+                ><mat-label>Phone Number</mat-label
+                ><input matInput type="tel" formControlName="phone" autocomplete="off"
+              /></mat-form-field>
+              <mat-form-field appearance="outline"
+                ><mat-label>Preferred Contact Method</mat-label
+                ><mat-select formControlName="preferredContactMethod"
+                  ><mat-option value="">No preference</mat-option
+                  ><mat-option value="EMAIL">Email</mat-option
+                  ><mat-option value="PHONE">Phone</mat-option></mat-select
+                ></mat-form-field
+              >
+            </div>
+            <mat-checkbox formControlName="willingToBeContacted"
+              >I am willing to be contacted if additional information is needed.</mat-checkbox
+            >
+          </fieldset>
+        }
+        <section class="notice">
+          <h4>Sensitive Information</h4>
+          <p>
+            Share only information relevant to this case. Avoid including unnecessary sensitive
+            personal information. Submitted information may be reviewed by authorized personnel.
+          </p>
+        </section>
+        <mat-checkbox formControlName="acknowledged" required
+          >I understand that this form is not for emergencies and that the information I submit may
+          be reviewed by authorized personnel.</mat-checkbox
+        >
+        @if (form.controls.acknowledged.touched && form.controls.acknowledged.invalid) {
+          <p class="error" role="alert">
+            Please confirm the emergency and information-sharing notice.
+          </p>
+        }
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+        @if (submitting()) {
+          <mat-progress-bar mode="indeterminate" aria-label="Submitting tip" />
+          <p role="status">Submitting your tip…</p>
+        }
+      </form>
+    }
+    <aside class="notice emergency">
+      <h4>Emergency Notice</h4>
+      <p>
+        If someone is in immediate danger, call 911 in the United States or your local emergency
+        services. This website is not an emergency response service.
+      </p>
+    </aside>
+    <p class="policy-links">
+      <a [href]="policies.privacyPolicyUrl" target="_blank" rel="noopener"
+        >Privacy Policy (opens in a new tab)</a
+      ><a [href]="policies.termsUrl" target="_blank" rel="noopener"
+        >Terms of Use (opens in a new tab)</a
+      >
+    </p>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions [inert]="discardPrompt()">
+  @if (mode() && !success()) {
+    <button matButton type="button" (click)="back()" [disabled]="submitting()">Back</button>
+  }
+  <button matButton type="button" (click)="requestClose()" [disabled]="submitting()">
+    {{ success() ? 'Close' : 'Cancel' }}
+  </button>
+  @if ((mode() === 'STANDARD' || mode() === 'ANONYMOUS') && !success()) {
+    <button
+      matButton="filled"
+      type="submit"
+      form="submit-tip-form"
+      [disabled]="!service.available || submitting()"
+    >
+      {{ submitting() ? 'Submitting…' : 'Submit Tip' }}
+    </button>
+  }
+</mat-dialog-actions>
