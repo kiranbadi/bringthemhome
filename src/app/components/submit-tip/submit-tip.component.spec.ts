@@ -71,6 +71,20 @@ describe('SubmitTipComponent', () => {
     component.form.controls.description.setValue('a'.repeat(5001));
     expect(component.form.valid).toBe(false);
   });
+  it('uses backend confidence codes for the sighting confidence options', async () => {
+    const { component, fixture, root } = await setup();
+    component.choose('STANDARD');
+    await fixture.whenStable();
+    component.form.controls.category.setValue('Possible Sighting');
+    await fixture.whenStable();
+    const select = root.querySelector<HTMLElement>('[formControlName="confidenceLevel"]')!;
+    select.click();
+    await fixture.whenStable();
+    const options = Array.from(document.querySelectorAll<HTMLElement>('mat-option'));
+    options.find((option) => option.textContent?.includes('Very Certain'))!.click();
+    await fixture.whenStable();
+    expect(component.request().confidenceLevel).toBe('HIGH');
+  });
   it('clears and omits personal contact details in anonymous mode', async () => {
     const { component, fixture, root } = await setup();
     component.choose('STANDARD');
@@ -89,7 +103,7 @@ describe('SubmitTipComponent', () => {
     expect(root.querySelector('a[href="tel:5551234567"]')).toBeTruthy();
     expect(root.querySelector('a[href="mailto:tips@example.org"]')).toBeTruthy();
   });
-  it('disables submission and evidence without backend support', async () => {
+  it('disables submission without endpoint configuration', async () => {
     const { component, fixture, root } = await setup();
     component.choose('STANDARD');
     await fixture.whenStable();
@@ -98,6 +112,59 @@ describe('SubmitTipComponent', () => {
     component.submit();
     expect(submit).not.toHaveBeenCalled();
   });
+  it('enables evidence and sends selected images and videos with the tip', async () => {
+    available = true;
+    const { component, fixture, root } = await setup();
+    component.choose('STANDARD');
+    await fixture.whenStable();
+    const input = root.querySelector<HTMLInputElement>('input[type="file"]')!;
+    expect(input.disabled).toBe(false);
+    const photo = new File(['image'], 'photo.jpg', { type: 'image/jpeg' });
+    const video = new File(['video'], 'video.mp4', { type: 'video/mp4' });
+    Object.defineProperty(input, 'files', { configurable: true, value: [photo, video] });
+    input.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(root.textContent).toContain('photo.jpg');
+    expect(root.textContent).toContain('video.mp4');
+    expect(component.form.dirty).toBe(true);
+    component.form.patchValue({
+      category: 'Possible Sighting',
+      description: 'At station',
+      acknowledged: true,
+    });
+    component.submit();
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ description: 'At station' }), [
+      photo,
+      video,
+    ]);
+  });
+
+  it('rejects unsupported and oversized attachments and allows removal', async () => {
+    available = true;
+    const { component, fixture, root } = await setup();
+    component.choose('STANDARD');
+    await fixture.whenStable();
+    const input = root.querySelector<HTMLInputElement>('input[type="file"]')!;
+    const huge = new File(['x'], 'huge.mp4', { type: 'video/mp4' });
+    Object.defineProperty(huge, 'size', { value: 51 * 1024 * 1024 });
+    Object.defineProperty(input, 'files', {
+      configurable: true,
+      value: [
+        new File(['x'], 'script.html', { type: 'text/html' }),
+        huge,
+        new File(['x'], 'photo.png', { type: 'image/png' }),
+      ],
+    });
+    input.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(root.textContent).toContain('script.html');
+    expect(root.textContent).toContain('huge.mp4');
+    const remove = root.querySelector<HTMLButtonElement>('[aria-label="Remove photo.png"]')!;
+    remove.click();
+    await fixture.whenStable();
+    expect(root.querySelector('[aria-label="Remove photo.png"]')).toBeNull();
+  });
+
   it('preserves data on error, prevents duplicates, and shows only confirmed success', async () => {
     available = true;
     const { component } = await setup();
@@ -132,14 +199,49 @@ describe('SubmitTipComponent', () => {
     component.confirmDiscard();
     expect(close).toHaveBeenCalledOnce();
   });
-  it('handles missing agency contacts without inventing links', async () => {
-    TestBed.overrideProvider(MAT_DIALOG_DATA, { useValue: { _id: 'minimal-case' } });
+  it.each([
+    undefined,
+    { investigatingAgencies: [{ agencyName: 'County Police' }] },
+    { investigatingAgencies: [{ agencyPhone: '  ', agencyEmail: '\t', agencyAddress: '' }] },
+  ])('hides agency contact when no usable contact exists: %j', async (contacts) => {
+    TestBed.overrideProvider(MAT_DIALOG_DATA, {
+      useValue: { _id: 'minimal-case', contacts },
+    });
     const { component, fixture, root } = await setup();
+    expect(root.querySelectorAll('.option-card')).toHaveLength(2);
+    expect(root.textContent).not.toContain('Contact Investigating Agency');
+    expect(root.textContent).not.toContain('You can contact the investigating agency');
+    component.choose('AGENCY');
+    expect(component.mode()).toBeNull();
+    component.choose('STANDARD');
+    await fixture.whenStable();
+    expect(root.textContent).not.toContain('use Contact');
+    component.choose('ANONYMOUS');
+    expect(component.mode()).toBe('ANONYMOUS');
+  });
+  it.each([
+    { agencyPhone: '5551234567' },
+    { agencyEmail: 'tips@example.org' },
+    { agencyAddress: '123 Main Street' },
+  ])('shows agency contact for a supported contact field: %j', async (contact) => {
+    TestBed.overrideProvider(MAT_DIALOG_DATA, {
+      useValue: {
+        _id: 'case-1',
+        contacts: {
+          investigatingAgencies: [
+            { agencyName: 'No contacts' },
+            { agencyName: 'Contactable agency', ...contact },
+          ],
+        },
+      },
+    });
+    const { component, fixture, root } = await setup();
+    expect(root.querySelectorAll('.option-card')).toHaveLength(3);
     component.choose('AGENCY');
     await fixture.whenStable();
-    expect(root.textContent).toContain('minimal-case');
-    expect(root.textContent).toContain('Contact information unavailable');
-    expect(root.querySelector('a[href^="tel:"]')).toBeNull();
+    expect(root.querySelectorAll('.agency-card')).toHaveLength(1);
+    expect(root.textContent).toContain('Contactable agency');
+    expect(root.querySelector('.agency-card')?.textContent).not.toContain('No contacts');
   });
   it('keeps tip content when returning to the options', async () => {
     const { component } = await setup();
