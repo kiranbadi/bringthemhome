@@ -1,5 +1,7 @@
+import { CaseShareService } from '../shared/case-share/case-share.service';
+import { CaseShareComponent } from '../shared/case-share/case-share.component';
 import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
-import { DOCUMENT, TitleCasePipe } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -31,12 +33,13 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
 @Component({
   selector: 'app-missing-persons-gallery',
   standalone: true,
-  imports: [NavigationHeader, RouterLink, TitleCasePipe],
+  imports: [CaseShareComponent, NavigationHeader, RouterLink, TitleCasePipe],
   templateUrl: './missing-persons-gallery.component.html',
   styleUrl: './missing-persons-gallery.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsGalleryComponent implements OnInit {
+  private readonly caseShare = inject(CaseShareService);
   private readonly tipDialog = inject(TipDialogService);
   readonly openingTip = signal(false);
   readonly tipError = signal('');
@@ -45,7 +48,6 @@ export class MissingPersonsGalleryComponent implements OnInit {
   readonly isSearch = signal(false);
   private readonly service = inject(MissingPersonService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly requests = new Subject<number>();
   private requestedPage = 1;
@@ -167,34 +169,10 @@ export class MissingPersonsGalleryComponent implements OnInit {
   }
 
   async share(person: MissingPerson): Promise<void> {
-    const browser = this.document.defaultView;
-    if (!browser) return;
-    const path = this.router.serializeUrl(
-      this.router.createUrlTree(['/missing-persons', person._id]),
+    this.shareMessage.set(
+      await this.caseShare.share(
+        this.caseShare.data(person._id, person.full_name, this.location(person)),
+      ),
     );
-    const url = new URL(path, this.document.baseURI).href;
-    const navigator = browser.navigator;
-    this.shareMessage.set('');
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: person.full_name,
-          text: `Help find ${person.full_name}`,
-          url,
-        });
-        this.shareMessage.set('Case shared.');
-        return;
-      } catch (error) {
-        if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError')
-          return;
-      }
-    }
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(url);
-      this.shareMessage.set('Case link copied to clipboard.');
-    } catch {
-      this.shareMessage.set(`Copy this case link: ${url}`);
-    }
   }
 }

@@ -1,3 +1,4 @@
+import { CaseShareComponent } from '../shared/case-share/case-share.component';
 import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
 import { TitleCasePipe } from '@angular/common';
 import {
@@ -36,7 +37,7 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
 @Component({
   selector: 'app-missing-persons-detail',
   standalone: true,
-  imports: [NavigationHeader, RouterLink, TitleCasePipe, CaseProfileSections],
+  imports: [CaseShareComponent, NavigationHeader, RouterLink, TitleCasePipe, CaseProfileSections],
   templateUrl: './missing-persons-detail.component.html',
   styleUrl: './missing-persons-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

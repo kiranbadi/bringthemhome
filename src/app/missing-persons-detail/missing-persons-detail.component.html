@@ -50,6 +50,12 @@
         >
           {{ openingTip() ? 'Opening…' : 'Submit Tip' }}
         </button>
+        <app-case-share
+          [caseId]="record._id"
+          [name]="name(record)"
+          [location]="location(record)"
+          [image]="image()"
+        />
         @if (tipError()) {
           <p role="alert">{{ tipError() }}</p>
         }
