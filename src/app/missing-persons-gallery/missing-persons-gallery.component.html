@@ -91,14 +91,12 @@
                 >
                   Submit Tip
                 </button>
-                <button
-                  class="button"
-                  type="button"
-                  (click)="share(person)"
-                  [attr.aria-label]="'Share case for ' + person.full_name"
-                >
-                  Share
-                </button>
+                <app-case-share
+                  [image]="image(person)"
+                  [caseId]="person._id"
+                  [name]="person.full_name"
+                  [location]="location(person)"
+                />
                 <a
                   class="details-link"
                   [routerLink]="['/missing-persons', person._id]"
