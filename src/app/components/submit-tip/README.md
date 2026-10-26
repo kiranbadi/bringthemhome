@@ -1,6 +1,6 @@
 # Submit Tip
 
-`SubmitTipComponent` is a standalone Angular Material dialog. The missing-person detail page loads it on demand and passes its existing `MissingPersonDetail` response through `MAT_DIALOG_DATA`. No extra case request is made.
+`SubmitTipComponent` is a standalone Angular Material dialog opened through `TipDialogService`. The gallery fetches the selected case details before opening it directly on the current page. The detail page reuses its loaded `MissingPersonDetail` response. Both pass the same data contract through `MAT_DIALOG_DATA` and share dialog sizing, focus restoration, Escape/backdrop handling, and the tip API. The legacy `/missing-person/:id` route redirects to `/missing-persons/:id`.
 
 ## Modes
 - Standard: reactive tip form with optional contact information and consent to follow-up.

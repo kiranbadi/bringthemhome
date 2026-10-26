@@ -3,6 +3,8 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { SubmitTipComponent } from '../components/submit-tip/submit-tip.component';
 import { vi } from 'vitest';
 import { MissingPersonsGalleryComponent } from './missing-persons-gallery.component';
 
@@ -69,10 +71,37 @@ describe('MissingPersonsGalleryComponent', () => {
     expect(element().querySelector('a.details-link')?.getAttribute('href')).toBe(
       '/missing-persons/case-1',
     );
-    expect(element().querySelector('a.tip-link')?.getAttribute('href')).toContain(
-      'personId=case-1',
-    );
+    expect(element().querySelector('button.tip-link')).toBeTruthy();
     expect(button('Previous').disabled).toBe(true);
+  });
+
+  it('opens the shared tip modal with full case details without navigating', async () => {
+    request().flush(page());
+    await fixture.whenStable();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
+    element().querySelector<HTMLButtonElement>('.tip-link')!.click();
+    const detail = {
+      ...record,
+      contacts: { investigatingAgencies: [{ agencyName: 'Police', agencyPhone: '5551234567' }] },
+    };
+    http.expectOne(`${endpoint}/case-1`).flush(detail);
+    await fixture.whenStable();
+    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1));
+    const dialog = TestBed.inject(MatDialog).openDialogs[0];
+    expect(dialog.componentInstance).toBeInstanceOf(SubmitTipComponent);
+    expect(dialog.componentInstance.record).toEqual(detail);
+    expect(navigate).not.toHaveBeenCalled();
+    TestBed.inject(MatDialog).closeAll();
+  });
+  it('shows a retryable error when tip case details cannot load', async () => {
+    request().flush(page());
+    await fixture.whenStable();
+    element().querySelector<HTMLButtonElement>('.tip-link')!.click();
+    http.expectOne(`${endpoint}/case-1`).flush({}, { status: 503, statusText: 'Unavailable' });
+    await fixture.whenStable();
+    expect(element().textContent).toContain('The tip form could not be opened');
+    expect(element().querySelector<HTMLButtonElement>('.tip-link')!.disabled).toBe(false);
+    expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
 
   it('uses server page metadata for next and previous requests and prevents out-of-range jumps', async () => {
