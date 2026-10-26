@@ -1,3 +1,4 @@
+import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
 import { DOCUMENT, TitleCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -12,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { EMPTY, Subject, catchError, switchMap, tap } from 'rxjs';
+import { EMPTY, Subject, catchError, firstValueFrom, switchMap, tap } from 'rxjs';
 import {
   MissingPerson,
   MissingPersonSearchFilters,
@@ -36,6 +37,9 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsGalleryComponent implements OnInit {
+  private readonly tipDialog = inject(TipDialogService);
+  readonly openingTip = signal(false);
+  readonly tipError = signal('');
   private readonly route = inject(ActivatedRoute);
   private filters: MissingPersonSearchFilters = {};
   readonly isSearch = signal(false);
@@ -141,6 +145,25 @@ export class MissingPersonsGalleryComponent implements OnInit {
 
   imageFailed(person: MissingPerson): void {
     this.failedImages.update((ids) => new Set([...ids, person._id]));
+  }
+
+  async openSubmitTip(person: MissingPerson): Promise<void> {
+    if (this.openingTip()) return;
+    this.openingTip.set(true);
+    this.tipError.set('');
+    try {
+      const record = await firstValueFrom(
+        this.service.findMissingPerson(person._id).pipe(takeUntilDestroyed(this.destroyRef)),
+      );
+      if (this.destroyRef.destroyed) return;
+      if (!record) throw new Error('Case unavailable');
+      await this.tipDialog.open(record, this.destroyRef);
+    } catch {
+      if (!this.destroyRef.destroyed)
+        this.tipError.set('The tip form could not be opened. Please try again.');
+    } finally {
+      this.openingTip.set(false);
+    }
   }
 
   async share(person: MissingPerson): Promise<void> {

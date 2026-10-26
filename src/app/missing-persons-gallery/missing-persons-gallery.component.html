@@ -1,3 +1,6 @@
+@if (tipError()) {
+  <p role="alert">{{ tipError() }}</p>
+}
 <app-navigation-header />
 <main class="gallery-shell">
   <header class="gallery-header">
@@ -79,13 +82,15 @@
                 }
               </ul>
               <div class="card-actions">
-                <a
+                <button
+                  type="button"
                   class="button primary tip-link"
-                  routerLink="/contact-us"
-                  [queryParams]="{ type: 'tip', personId: person._id, full_name: person.full_name }"
+                  [disabled]="openingTip()"
+                  (click)="openSubmitTip(person)"
                   [attr.aria-label]="'Submit a tip for ' + person.full_name"
-                  >Submit Tip</a
                 >
+                  Submit Tip
+                </button>
                 <button
                   class="button"
                   type="button"

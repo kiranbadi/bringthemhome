@@ -9,7 +9,6 @@ import { AccountManagement } from './account-management/account-management';
 import { ContactUs } from './contact-us/contact-us';
 import { MissingPersonReport } from './missing-person-report/missing-person-report';
 import { PolicyPageComponent } from './policy-page/policy-page.component';
-import { PersonDetail } from './person-detail/person-detail';
 import { SupportUs } from './support-us/support-us';
 
 export const routes: Routes = [
@@ -44,7 +43,8 @@ export const routes: Routes = [
   },
   {
     path: 'missing-person/:id',
-    component: PersonDetail,
+    redirectTo: 'missing-persons/:id',
+    pathMatch: 'full',
   },
   {
     path: 'account-management',
