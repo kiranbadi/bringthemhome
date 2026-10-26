@@ -1,10 +1,11 @@
-/** Frontend draft model only. Map to a verified server contract before enabling submission. */
+/** Multipart metadata contract: docs/api/online-tips.md. */
 export interface SubmitTipRequest {
   missingPersonId: string;
   caseNumber?: string;
   submissionType: 'STANDARD' | 'ANONYMOUS';
   tipCategory: string;
   description: string;
+  acknowledged: boolean;
   incidentDate?: string;
   incidentTime?: string;
   location?: string;

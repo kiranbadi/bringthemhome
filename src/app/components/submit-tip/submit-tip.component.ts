@@ -62,8 +62,13 @@ export class SubmitTipComponent {
   readonly success = signal<SubmitTipResponse | null>(null);
   readonly error = signal('');
   readonly discardPrompt = signal(false);
+  readonly files = signal<readonly File[]>([]);
+  readonly attachmentErrors = signal<readonly string[]>([]);
   readonly policies = environment;
   readonly agencies = this.record.contacts?.investigatingAgencies ?? [];
+  readonly contactableAgencies = this.agencies.filter((agency) =>
+    [agency.agencyPhone, agency.agencyEmail, agency.agencyAddress].some((value) => value?.trim()),
+  );
   readonly fullName =
     this.record.summary?.fullName ||
     this.record.full_name ||
@@ -111,6 +116,7 @@ export class SubmitTipComponent {
   }
 
   choose(mode: Mode): void {
+    if (mode === 'AGENCY' && !this.contactableAgencies.length) return;
     this.mode.set(mode);
     if (mode === 'ANONYMOUS') {
       this.form.patchValue({
@@ -142,9 +148,44 @@ export class SubmitTipComponent {
 
   confirmDiscard(): void {
     if (this.submitting()) return;
+    this.files.set([]);
     this.form.reset();
     this.discardPrompt.set(false);
     this.dialog.close();
+  }
+
+  selectFiles(event: Event): void {
+    if (this.submitting() || !this.service.available) return;
+    const input = event.target as HTMLInputElement;
+    const selected = [...this.files()];
+    const errors: string[] = [];
+    const policy = this.policies.tipSubmission;
+    for (const file of Array.from(input.files ?? [])) {
+      if (!(policy.allowedMimeTypes as readonly string[]).includes(file.type)) {
+        errors.push(`${file.name}: unsupported file type.`);
+      } else if (file.size > policy.maxFileSizeBytes) {
+        errors.push(`${file.name}: exceeds the 50 MB per-file limit.`);
+      } else if (selected.length >= policy.maxFiles) {
+        errors.push(`${file.name}: a maximum of 5 attachments is allowed.`);
+      } else if (
+        selected.reduce((total, item) => total + item.size, 0) + file.size >
+        policy.maxTotalSizeBytes
+      ) {
+        errors.push(`${file.name}: exceeds the 100 MB total limit.`);
+      } else {
+        selected.push(file);
+      }
+    }
+    this.files.set(selected);
+    this.attachmentErrors.set(errors);
+    if (selected.length) this.form.markAsDirty();
+    input.value = '';
+  }
+
+  removeFile(index: number): void {
+    if (this.submitting()) return;
+    this.files.update((files) => files.filter((_, i) => i !== index));
+    this.form.markAsDirty();
   }
 
   request(): SubmitTipRequest {
@@ -156,6 +197,7 @@ export class SubmitTipComponent {
       submissionType: this.mode() === 'ANONYMOUS' ? 'ANONYMOUS' : 'STANDARD',
       tipCategory: value.category,
       description: value.description.trim(),
+      acknowledged: value.acknowledged,
       incidentDate: optional(value.incidentDate),
       incidentTime: optional(value.incidentTime),
       location: optional(value.location),
@@ -189,7 +231,7 @@ export class SubmitTipComponent {
     this.error.set('');
     this.form.disable();
     this.service
-      .submit(this.request())
+      .submit(this.request(), this.files())
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
@@ -200,6 +242,7 @@ export class SubmitTipComponent {
       .subscribe({
         next: (response) => {
           this.success.set(response);
+          this.files.set([]);
           this.form.reset();
         },
         error: () =>

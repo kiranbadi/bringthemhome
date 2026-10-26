@@ -79,15 +79,17 @@
             ><span>Share information without providing your name or contact details.</span></span
           >
         </button>
-        <button type="button" class="option-card" (click)="choose('AGENCY')">
-          <mat-icon aria-hidden="true">local_police</mat-icon
-          ><span
-            ><strong>Contact Investigating Agency</strong
+        @if (contactableAgencies.length) {
+          <button type="button" class="option-card" (click)="choose('AGENCY')">
+            <mat-icon aria-hidden="true">local_police</mat-icon
             ><span
-              >Report information directly to the law enforcement agency handling this case.</span
-            ></span
-          >
-        </button>
+              ><strong>Contact Investigating Agency</strong
+              ><span
+                >Report information directly to the law enforcement agency handling this case.</span
+              ></span
+            >
+          </button>
+        }
       </div>
       <p class="notice">
         Anonymous submissions do not require personal contact information. However, complete
@@ -95,8 +97,11 @@
       </p>
       @if (!service.available) {
         <p role="status" class="notice">
-          Online tip submission is not available yet. You can contact the investigating agency
-          directly using the available case contact information.
+          Online tip submission is not available yet.
+          @if (contactableAgencies.length) {
+            You can contact the investigating agency directly using the available case contact
+            information.
+          }
         </p>
       }
     } @else if (mode() === 'AGENCY') {
@@ -105,7 +110,7 @@
         <p>
           You can contact the investigating agency directly to share information about this case.
         </p>
-        @for (agency of agencies; track $index) {
+        @for (agency of contactableAgencies; track $index) {
           <dl class="agency-card">
             <div>
               <dt>Agency Name</dt>
@@ -114,7 +119,7 @@
             <div>
               <dt>Phone Number</dt>
               <dd>
-                @if (agency.agencyPhone) {
+                @if (agency.agencyPhone?.trim()) {
                   <a [href]="'tel:' + agency.agencyPhone">{{ agency.agencyPhone }}</a>
                 } @else {
                   Contact information unavailable
@@ -124,7 +129,7 @@
             <div>
               <dt>Email Address</dt>
               <dd>
-                @if (agency.agencyEmail) {
+                @if (agency.agencyEmail?.trim()) {
                   <a [href]="'mailto:' + agency.agencyEmail">{{ agency.agencyEmail }}</a>
                 } @else {
                   Contact information unavailable
@@ -133,7 +138,7 @@
             </div>
             <div>
               <dt>Agency Address</dt>
-              <dd>{{ agency.agencyAddress || 'Contact information unavailable' }}</dd>
+              <dd>{{ agency.agencyAddress?.trim() || 'Contact information unavailable' }}</dd>
             </div>
             <div>
               <dt>Case Number</dt>
@@ -169,8 +174,10 @@
         @if (!service.available) {
           <p role="status" class="notice">
             Online tip submission is not available yet. This form cannot send your information until
-            backend integration is complete. To share your information now, use Contact
-            Investigating Agency.
+            backend integration is complete.
+            @if (contactableAgencies.length) {
+              To share your information now, use Contact Investigating Agency.
+            }
           </p>
         }
         <mat-form-field appearance="outline">
@@ -221,9 +228,9 @@
               ><mat-label>Confidence Level</mat-label
               ><mat-select formControlName="confidenceLevel"
                 ><mat-option value="">Not specified</mat-option
-                ><mat-option value="Very Certain">Very Certain</mat-option
-                ><mat-option value="Somewhat Certain">Somewhat Certain</mat-option
-                ><mat-option value="Unsure">Unsure</mat-option></mat-select
+                ><mat-option value="HIGH">Very Certain</mat-option
+                ><mat-option value="MEDIUM">Somewhat Certain</mat-option
+                ><mat-option value="LOW">Unsure</mat-option></mat-select
               ></mat-form-field
             >
           </fieldset>
@@ -234,19 +241,37 @@
         </mat-form-field>
         <fieldset class="evidence">
           <legend>Supporting Evidence (optional)</legend>
-          <label for="tip-evidence">Images and PDF documents</label>
+          <label for="tip-evidence">Images, videos and PDF documents</label>
           <input
             id="tip-evidence"
             type="file"
             multiple
-            disabled
+            [disabled]="!service.available || submitting()"
+            (change)="selectFiles($event)"
             [accept]="policies.tipSubmission.allowedMimeTypes.join(',')"
             aria-describedby="evidence-unavailable"
           />
           <p id="evidence-unavailable">
-            Attachments are unavailable because the backend does not support evidence uploads. No
-            files will be uploaded. Video uploads are not supported.
+            JPEG, PNG, WebP, PDF, MP4, WebM or MOV. Up to 5 files, 50 MB each and 100 MB total.
+            Attachments are sent when you submit your tip.
           </p>
+          @for (file of files(); track $index; let index = $index) {
+            <div>
+              <span>{{ file.name }} ({{ (file.size / 1024 / 1024).toFixed(2) }} MB)</span>
+              <button
+                matButton
+                type="button"
+                [disabled]="submitting()"
+                [attr.aria-label]="'Remove ' + file.name"
+                (click)="removeFile(index)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+          @for (message of attachmentErrors(); track $index) {
+            <p class="error" role="alert">{{ message }}</p>
+          }
         </fieldset>
         @if (mode() === 'STANDARD') {
           <fieldset>
