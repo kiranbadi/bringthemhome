@@ -49,6 +49,7 @@ describe('MissingPersonsDetailComponent', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.textContent).toContain('Jane Doe');
     expect(root.textContent).toContain('County Police');
+    expect(root.textContent).toContain('ROWAN, North Carolina');
     expect(root.querySelectorAll('mat-expansion-panel')).toHaveLength(7);
     (root.querySelector('.tip-link') as HTMLButtonElement).click();
     await fixture.whenStable();
@@ -103,10 +104,13 @@ describe('MissingPersonsDetailComponent', () => {
     expect(image.getAttribute('src')).toBe('/missing-person-placeholder.svg');
     fixture.componentInstance.retry();
     http.expectOne(endpoint).flush({
-      _id: 'abc-123', embedded_images: { data_urls: [first] },
+      _id: 'abc-123',
+      embedded_images: { data_urls: [first] },
     });
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('.person-summary > img').getAttribute('src')).toBe(first);
+    expect(fixture.nativeElement.querySelector('.person-summary > img').getAttribute('src')).toBe(
+      first,
+    );
   });
 
   it('preserves the unavailable state on 404', async () => {

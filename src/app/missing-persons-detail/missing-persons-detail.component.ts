@@ -1,3 +1,4 @@
+import { formatLocation } from '../core/models/us-state-display';
 import { CaseShareComponent } from '../shared/case-share/case-share.component';
 import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
 import { TitleCasePipe } from '@angular/common';
@@ -56,7 +57,7 @@ export class MissingPersonsDetailComponent implements OnInit {
   readonly tipError = signal('');
   readonly placeholder = PERSON_PLACEHOLDER;
   readonly location = (record: MissingPersonDetail) =>
-    record.summary?.lastKnownLocation || personLocation(record);
+    formatLocation(record.summary?.lastKnownLocation) || personLocation(record);
   readonly reportedDate = (record: MissingPersonDetail) =>
     record.summary?.dateReported || personReportedDate(record);
   readonly currentAge = currentAge;

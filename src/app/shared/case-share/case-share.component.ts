@@ -10,15 +10,25 @@ import { CaseShareDialog } from './case-share.dialog';
     Share
   </button>`,
   styles: `
+    :host {
+      display: inline-flex;
+    }
     button {
-      font: inherit;
-      font-weight: 700;
-      padding: 0.6rem 1rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 0.4rem;
-      background: white;
-      color: #172e50;
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 44px;
+      font: var(--mat-sys-label-large, inherit);
+      font-weight: 600;
+      line-height: 22px;
+      padding: 10px 18px;
+      border: 1px solid var(--mat-sys-outline-variant, #cbd5e1);
+      border-radius: 8px;
+      background: var(--mat-sys-surface-container-lowest, white);
+      color: var(--mat-sys-primary, #172e50);
       cursor: pointer;
+    }
+    button:hover {
+      background: var(--mat-sys-surface-container, #edf3f9);
     }
     button:focus-visible {
       outline: 3px solid #2563eb;

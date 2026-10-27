@@ -220,7 +220,7 @@
               <mat-select id="state" formControlName="state">
                 <mat-option value="">Any State</mat-option>
                 @for (state of states; track state) {
-                  <mat-option [value]="state">{{ state }}</mat-option>
+                  <mat-option [value]="state">{{ stateName(state) }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>

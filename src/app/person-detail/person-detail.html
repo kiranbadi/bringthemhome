@@ -104,7 +104,7 @@
           </div>
           <div>
             <dt>Location</dt>
-            <dd>{{ person.lastSeenLocation }}, {{ person.city }}, {{ person.state }}</dd>
+            <dd>{{ person.lastSeenLocation }}, {{ person.city }}, {{ stateName(person.state) }}</dd>
           </div>
           <div>
             <dt>Coordinates</dt>
@@ -336,7 +336,7 @@
           <article class="record-card">
             <h3>{{ sighting.locationName }}</h3>
             <p>{{ sighting.date }} · {{ sighting.time }}</p>
-            <p>{{ sighting.address }}, {{ sighting.city }}, {{ sighting.state }}</p>
+            <p>{{ sighting.address }}, {{ sighting.city }}, {{ stateName(sighting.state) }}</p>
             <p>{{ sighting.latitude }}, {{ sighting.longitude }}</p>
             <p>{{ sighting.notes }}</p>
           </article>

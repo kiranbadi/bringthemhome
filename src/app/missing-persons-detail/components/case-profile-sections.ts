@@ -1,3 +1,4 @@
+import { formatLocation, stateName } from '../../core/models/us-state-display';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -41,6 +42,8 @@ import { CaseRecord } from './case-record';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CaseProfileSections {
+  protected readonly formatLocation = formatLocation;
+  protected readonly stateName = stateName;
   readonly record = input.required<MissingPersonDetail>();
   private readonly dialog = inject(MatDialog);
   @ViewChild('imagePreview') private imagePreview!: TemplateRef<{ $implicit: string }>;

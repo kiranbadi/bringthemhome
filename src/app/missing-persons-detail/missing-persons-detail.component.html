@@ -41,21 +41,29 @@
             <dd>{{ reportedDate(record) }}</dd>
           </div>
         </dl>
-        <button
-          id="submit-tip"
-          class="tip-link"
-          type="button"
-          [disabled]="openingTip()"
-          (click)="openSubmitTip(record)"
-        >
-          {{ openingTip() ? 'Opening…' : 'Submit Tip' }}
-        </button>
-        <app-case-share
-          [caseId]="record._id"
-          [name]="name(record)"
-          [location]="location(record)"
-          [image]="image()"
-        />
+        <div class="case-actions" role="group" aria-label="Case actions">
+          <button
+            id="submit-tip"
+            class="tip-link"
+            type="button"
+            [disabled]="openingTip()"
+            (click)="openSubmitTip(record)"
+          >
+            {{ openingTip() ? 'Opening…' : 'Submit Tip' }}
+          </button>
+          <a
+            class="discussion-link"
+            aria-label="Community discussions for this case"
+            [routerLink]="['/missing-persons', record._id, 'discussions']"
+            >Discussions</a
+          >
+          <app-case-share
+            [caseId]="record._id"
+            [name]="name(record)"
+            [location]="location(record)"
+            [image]="image()"
+          />
+        </div>
         @if (tipError()) {
           <p role="alert">{{ tipError() }}</p>
         }

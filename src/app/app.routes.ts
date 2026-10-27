@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guard';
 
 import { MissingPersonsGalleryComponent } from './missing-persons-gallery/missing-persons-gallery.component';
-import { MissingPersonsDetailComponent } from './missing-persons-detail/missing-persons-detail.component';
 import { AccountDashboard } from './account-dashboard/account-dashboard';
 import { AdvancedSearch } from './advanced-search/advanced-search';
 import { AccountManagement } from './account-management/account-management';
@@ -34,8 +33,33 @@ export const routes: Routes = [
     component: MissingPersonsGalleryComponent,
   },
   {
+    path: 'missing-persons/:id/discussions',
+    loadComponent: () =>
+      import('./discussions/discussion-page.component').then((m) => m.DiscussionPageComponent),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./discussions/case-discussion-board.component').then(
+            (m) => m.CaseDiscussionBoardComponent,
+          ),
+      },
+      {
+        path: ':discussionId',
+        loadComponent: () =>
+          import('./discussions/discussion-detail.component').then(
+            (m) => m.DiscussionDetailComponent,
+          ),
+      },
+    ],
+  },
+  {
     path: 'missing-persons/:id',
-    component: MissingPersonsDetailComponent,
+    loadComponent: () =>
+      import('./missing-persons-detail/missing-persons-detail.component').then(
+        (m) => m.MissingPersonsDetailComponent,
+      ),
   },
   {
     path: 'advanced-search',

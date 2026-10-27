@@ -1,3 +1,4 @@
+import { US_STATES, stateName } from '../core/models/us-state-display';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -72,6 +73,7 @@ const CRITERIA_PARAMS: Record<CriteriaKey, string> = {
   styleUrl: './advanced-search.scss',
 })
 export class AdvancedSearch {
+  protected readonly stateName = stateName;
   private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
 
@@ -101,6 +103,7 @@ export class AdvancedSearch {
   };
 
   private readonly criteriaDisplayValues: Partial<Record<CriteriaKey, Record<string, string>>> = {
+    state: US_STATES,
     sortBy: {
       most_recent: 'Most Recent',
     },

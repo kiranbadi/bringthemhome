@@ -45,3 +45,13 @@ Thumbs.db
 .vscode/
 .angular/
 /docs/
+
+# Keep the discussion API handoff and implementation plan in source control.
+!/docs/
+/docs/*
+!/docs/api/
+/docs/api/*
+!/docs/api/discussions.md
+!/docs/plans/
+/docs/plans/*
+!/docs/plans/2026-10-26-discussions.md

@@ -1,3 +1,4 @@
+import { formatLocation } from './us-state-display';
 import { MissingPerson } from './missing-person.model';
 
 export const PERSON_PLACEHOLDER = '/missing-person-placeholder.svg';
@@ -8,7 +9,7 @@ export function personLocation(person: Partial<MissingPerson>): string {
     person.location,
     person.missing_from_state ?? person.state,
   ]
-    .map((value) => value?.trim() ?? '')
+    .map((value) => formatLocation(value))
     .filter(Boolean);
   return (
     parts
