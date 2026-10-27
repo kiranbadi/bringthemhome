@@ -1,3 +1,4 @@
+import { stateName } from '../core/models/us-state-display';
 import { Component, EventEmitter, Input, Output, forwardRef, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -75,6 +76,7 @@ type TipPayload = {
   styleUrl: './person-detail.scss',
 })
 export class PersonDetail {
+  protected readonly stateName = stateName;
   private readonly route = inject(ActivatedRoute);
   private readonly missingPersonsService = inject(MissingPersonsService);
 
@@ -176,7 +178,7 @@ export class PersonDetail {
   }
 
   protected shareText(person: MissingPersonDetail): string {
-    return `Help find ${person.fullName}. Last seen in ${person.city}, ${person.state}.`;
+    return `Help find ${person.fullName}. Last seen in ${person.city}, ${stateName(person.state)}.`;
   }
 
   protected sharePerson(person: MissingPersonDetail, channel: ShareChannel): void {

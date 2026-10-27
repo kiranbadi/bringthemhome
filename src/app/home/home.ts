@@ -1,3 +1,4 @@
+import { stateName } from '../core/models/us-state-display';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +30,7 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
   styleUrl: './home.scss',
 })
 export class Home {
+  protected readonly stateName = stateName;
   private readonly formBuilder = inject(FormBuilder);
   private readonly missingPersonsService = inject(MissingPersonsService);
 

@@ -64,7 +64,7 @@ describe('MissingPersonsGalleryComponent', () => {
     request().flush(page());
     await fixture.whenStable();
     expect(element().textContent).toContain('Jane Doe');
-    expect(element().textContent).toContain('Mecklenburg County, NC');
+    expect(element().textContent).toContain('Mecklenburg County, North Carolina');
     expect(element().querySelector('img')?.getAttribute('src')).toContain(
       'missing-person-placeholder.svg',
     );
@@ -186,7 +186,7 @@ describe('MissingPersonsGalleryComponent', () => {
     expect(element().textContent).toContain('Age missing: 0');
     expect(element().textContent).toContain('Age now: 14');
     expect(element().textContent).toContain('Female');
-    expect(element().textContent).toContain('NC');
+    expect(element().textContent).toContain('North Carolina');
     expect(element().querySelector('a.details-link')?.getAttribute('href')).toBe(
       '/missing-persons/search-id',
     );

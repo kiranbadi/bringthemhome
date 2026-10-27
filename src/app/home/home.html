@@ -64,7 +64,7 @@
         <mat-card-content>
           <div class="person-detail">
             <mat-icon aria-hidden="true">location_on</mat-icon>
-            <span>{{ person.city }}, {{ person.state }} {{ person.zipcode }}</span>
+            <span>{{ person.city }}, {{ stateName(person.state) }} {{ person.zipcode }}</span>
           </div>
         </mat-card-content>
 

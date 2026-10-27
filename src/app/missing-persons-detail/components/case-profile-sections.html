@@ -72,7 +72,11 @@
       <div class="fields">
         <app-case-detail-field
           label="Last Known Location"
-          [value]="place?.location ?? caseRecord.summary?.lastKnownLocation ?? caseRecord.location"
+          [value]="
+            formatLocation(
+              place?.location ?? caseRecord.summary?.lastKnownLocation ?? caseRecord.location
+            )
+          "
         />
         <div class="map-link">
           @if (mapUrl(); as url) {
@@ -90,7 +94,10 @@
         }
         <app-case-detail-field label="County" [value]="place?.county" />
         <app-case-detail-field label="City" [value]="place?.city ?? caseRecord.city" />
-        <app-case-detail-field label="State" [value]="place?.state ?? caseRecord.state" />
+        <app-case-detail-field
+          label="State"
+          [value]="stateName(place?.state ?? caseRecord.state)"
+        />
         <app-case-detail-field
           label="Missing From Tribal Land"
           [value]="place?.missingFromTribalLand"
