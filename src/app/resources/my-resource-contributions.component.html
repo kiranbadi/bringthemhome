@@ -1,0 +1,63 @@
+<app-navigation-header />
+<main>
+  <a class="back-link" routerLink="/account/management">← My Account</a>
+  <header class="heading">
+    <div>
+      <span class="eyebrow">COMMUNITY RESOURCES</span>
+      <h1>My Contributions</h1>
+      <p>Manage your listings, assessments, and suggested corrections.</p>
+    </div>
+    <a matButton="filled" routerLink="/resources/new">＋ Add Resource</a>
+  </header>
+  @if (loading()) {
+    <p role="status">Loading contributions…</p>
+  } @else if (error()) {
+    <p role="alert">{{ error() }}</p>
+    <button matButton (click)="load()">Try again</button>
+  } @else {
+    <h2>Resources submitted</h2>
+    <section class="grid">
+      @for (r of own()?.items; track r.id) {
+        <app-resource-card [resource]="r" />
+      } @empty {
+        <p>You have not submitted resources.</p>
+      }
+    </section>
+    @if (contributions(); as c) {
+      <div class="contribution-columns">
+        <section class="panel">
+          <h2>Accuracy assessments</h2>
+          @for (a of c.assessments.items; track a.resource_id) {
+            <p>
+              <a [routerLink]="['/resources', a.resource_id]">{{ a.resource_name }}</a> ·
+              {{ a.assessment === 'ACCURATE' ? 'Accurate' : 'Inaccurate' }} ·
+              {{ a.updated_at | date: 'mediumDate' }}
+            </p>
+          } @empty {
+            <p>You have no current assessments.</p>
+          }
+        </section>
+        <section class="panel">
+          <h2>Corrections submitted</h2>
+          @for (correction of c.corrections.items; track correction.id) {
+            <article>
+              <a [routerLink]="['/resources', correction.resource_id]">View resource</a>
+              <p class="plain">{{ correction.explanation }}</p>
+              <p>Status: {{ correction.status }}</p>
+              @if (correction.review_note) {
+                <p>Review note: {{ correction.review_note }}</p>
+              }
+            </article>
+          } @empty {
+            <p>You have not suggested corrections.</p>
+          }
+        </section>
+      </div>
+    }
+    <nav class="pages" aria-label="Contributions pages">
+      <button matButton [disabled]="page() === 1" (click)="changePage(-1)">Previous</button
+      ><span>Page {{ page() }}</span
+      ><button matButton [disabled]="!hasNext()" (click)="changePage(1)">Next</button>
+    </nav>
+  }
+</main>

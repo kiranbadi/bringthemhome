@@ -1,0 +1,77 @@
+<app-navigation-header />
+<main class="detail-page">
+  <a class="back-link" routerLink="/resources">← All Resources</a>
+  @if (loading()) {
+    <p role="status">Loading resource…</p>
+  } @else if (error()) {
+    <p role="alert">{{ error() }}</p>
+    <button matButton (click)="retry.next()">Try again</button>
+  } @else if (resource(); as r) {
+    <article class="panel detail-panel">
+      <p class="eyebrow">{{ categories[r.category] }}</p>
+      <h1>{{ r.name }}</h1>
+      <p class="badge">{{ statuses[r.status] }}</p>
+      <p class="plain">{{ r.description }}</p>
+      <dl>
+        <dt>Geographical coverage</dt>
+        <dd>{{ scopes[r.scope] }} · {{ coverage(r) }}</dd>
+        <dt>Public Phone</dt>
+        <dd>
+          @if (r.phone) {
+            <a [href]="phoneLink(r.phone)">{{ r.phone }}</a>
+          } @else {
+            Not provided
+          }
+        </dd>
+        <dt>Public Email</dt>
+        <dd>
+          @if (r.email) {
+            <a [href]="emailLink(r.email)">{{ r.email }}</a>
+          } @else {
+            Not provided
+          }
+        </dd>
+        <dt>Website</dt>
+        <dd>
+          @if (safeUrl(r.website); as url) {
+            <a [href]="url" target="_blank" rel="noopener noreferrer"
+              >{{ r.website }} (opens in new tab)</a
+            >
+          } @else {
+            Not provided
+          }
+        </dd>
+        <dt>Public Office Address</dt>
+        <dd class="plain">{{ r.address || 'Not provided' }}</dd>
+        <dt>Supporting source</dt>
+        <dd>
+          @if (safeUrl(r.source_url); as url) {
+            <a [href]="url" target="_blank" rel="noopener noreferrer"
+              >{{ r.source_url }} (opens in new tab)</a
+            >
+          }
+        </dd>
+        <dt>Community accuracy confirmations</dt>
+        <dd>{{ r.confirmation_count }}</dd>
+        <dt>Inaccuracy assessments</dt>
+        <dd>{{ r.dispute_count }}</dd>
+        <dt>Last confirmed</dt>
+        <dd>{{ (r.last_confirmed_at | date: 'medium') || 'Not yet confirmed' }}</dd>
+        <dt>Last official verification</dt>
+        <dd>{{ (r.last_verified_at | date: 'medium') || 'Not yet officially verified' }}</dd>
+        <dt>Date added</dt>
+        <dd>{{ r.created_at | date: 'mediumDate' }}</dd>
+      </dl>
+      <app-resource-verification [resource]="r" (updated)="resource.set($event)" />
+      @if (auth.isAuthenticated()) {
+        <a matButton [routerLink]="['/resources', r.id, 'correct']">Suggest Correction</a>
+      } @else {
+        <button matButton (click)="loginPrompt.set(true)">Suggest Correction</button>
+      }
+      @if (loginPrompt()) {
+        <p role="status">Please <a routerLink="/login">sign in</a> to suggest a correction.</p>
+      }
+      <app-resource-admin [resource]="r" (updated)="resource.set($event)" />
+    </article>
+  }
+</main>

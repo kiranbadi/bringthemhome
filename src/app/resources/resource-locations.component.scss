@@ -1,0 +1,22 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.locations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+app-searchable-select {
+  min-width: 0;
+}
+p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.8rem;
+}
+@media (max-width: 700px) {
+  .locations {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

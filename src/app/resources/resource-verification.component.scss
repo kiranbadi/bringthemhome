@@ -1,0 +1,41 @@
+:host {
+  display: block;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0 0.65rem;
+  border: 1px solid #dce7f3;
+  border-radius: 8px;
+  background: #f6faff;
+}
+h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  color: #102348;
+}
+p {
+  color: #5a6e8b;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0.35rem 0 0.75rem;
+}
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+form {
+  max-width: 650px;
+  margin-top: 0.85rem;
+}
+h3 {
+  font-size: 0.95rem;
+}
+mat-form-field {
+  display: block;
+  width: 100%;
+}
+p[role='alert'] {
+  color: #a32121;
+}
+button {
+  min-height: 44px;
+}

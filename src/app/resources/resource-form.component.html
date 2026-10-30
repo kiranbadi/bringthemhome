@@ -1,0 +1,73 @@
+<app-navigation-header />
+<main class="resource-editor">
+  <a class="back-link" routerLink="/resources">← All Resources</a>
+  <header class="editor-heading">
+    <p class="eyebrow">COMMUNITY RESOURCES</p>
+    <h1>{{ isCorrection ? 'Suggest Correction' : 'Add Resource' }}</h1>
+    <p>
+      {{
+        isCorrection
+          ? 'Help keep this listing accurate with an update from an official source.'
+          : 'Help families find trusted support. Share a publicly available organization or service.'
+      }}
+    </p>
+  </header>
+  @if (loading()) {
+    <p role="status">Loading current resource…</p>
+  }
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  @if (loadFailed()) {
+    <button matButton (click)="load()">Try again</button>
+  }
+  @if (success()) {
+    <section class="success-panel" role="status" aria-live="polite">
+      <h2>Thank you for sharing a resource</h2>
+      <p>{{ success() }}</p>
+      <a matButton="filled" routerLink="/resources">View resources</a>
+    </section>
+  }
+  @if (!loading() && !loadFailed() && !success()) {
+    <form class="panel editor-panel" [formGroup]="form" (ngSubmit)="submit()">
+      <app-resource-fields [form]="form" />
+      @if (!isCorrection) {
+        <mat-checkbox [formControl]="publicContactConfirmed">
+          I confirm these are publicly available organization contact details.
+        </mat-checkbox>
+        @if (publicContactConfirmed.touched && publicContactConfirmed.invalid) {
+          <p class="error" role="alert">
+            Confirm that the contact details are public before continuing.
+          </p>
+        }
+      }
+      @if (isCorrection) {
+        <mat-form-field appearance="outline" style="width: 100%"
+          ><mat-label>Explanation</mat-label
+          ><textarea
+            matInput
+            [formControl]="explanation"
+            maxlength="2000"
+            rows="3"
+            required
+          ></textarea
+          ><mat-error>Explain the proposed correction.</mat-error></mat-form-field
+        >
+        <p>Your suggestion will be reviewed before the published resource changes.</p>
+      }
+      <footer class="submit-actions">
+        <p class="submit-help">
+          {{
+            isCorrection
+              ? 'Corrections are reviewed before publication.'
+              : 'New listings start as not yet verified.'
+          }}
+        </p>
+        <a matButton routerLink="/resources">Cancel</a>
+        <button matButton="filled" type="submit" [disabled]="busy()">
+          {{ busy() ? 'Please wait…' : isCorrection ? 'Submit Correction' : 'Submit Resource' }}
+        </button>
+      </footer>
+    </form>
+  }
+</main>

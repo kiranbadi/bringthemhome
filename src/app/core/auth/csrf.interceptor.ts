@@ -9,7 +9,7 @@ export const csrfInterceptor: HttpInterceptorFn = (request, next) => {
   const isBackend =
     url.origin === backend.origin &&
     (url.pathname.startsWith(`${environment.apiBaseUrl}/`) ||
-      /^\/api\/(cases\/|discussions(?:\/|$)|comments(?:\/|$)|discussion-uploads\/)/.test(
+      /^\/api\/(resources(?:\/|$)|users\/me\/|admin\/resource|cases\/|discussions(?:\/|$)|comments(?:\/|$)|discussion-uploads\/)/.test(
         url.pathname,
       ));
   const isLogin = url.pathname === `${environment.apiBaseUrl}/auth/login`;

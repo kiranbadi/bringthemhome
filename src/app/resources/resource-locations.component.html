@@ -1,0 +1,39 @@
+<div class="locations" [formGroup]="form">
+  @if (scope !== 'NATIONAL') {
+    <app-searchable-select
+      label="State"
+      emptyLabel="All states"
+      formControlName="state"
+      [options]="states()"
+      [required]="!!scope"
+      (selectionChange)="stateChanged()"
+    />
+  }
+  @if (!scope || scope === 'COUNTY' || scope === 'CITY') {
+    <app-searchable-select
+      label="County"
+      emptyLabel="All counties"
+      formControlName="county"
+      [options]="counties()"
+      [required]="!!scope"
+      (selectionChange)="countyChanged()"
+    />
+  }
+  @if (!scope || scope === 'CITY') {
+    <app-searchable-select
+      label="City"
+      emptyLabel="All cities"
+      formControlName="city"
+      [options]="cities()"
+      [required]="!!scope"
+    />
+  }
+  @if (error()) {
+    <p role="alert">
+      {{ error() }} <button type="button" (click)="retry()">Retry locations</button>
+    </p>
+  }
+  @if (loading() || countyLoading() || cityLoading()) {
+    <p role="status">Loading locations…</p>
+  }
+</div>

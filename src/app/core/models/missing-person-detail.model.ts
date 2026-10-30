@@ -2,6 +2,8 @@ import { EmbeddedImages, MissingPerson } from './missing-person.model';
 
 // Direct representation of the supplied detail response; no cross-source normalization.
 export interface CaseLocation {
+  // Only explicitly public structured geography may be passed to external workflows.
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED' | null;
   location?: string | null;
   address?: string | null;
   intersection?: string | null;

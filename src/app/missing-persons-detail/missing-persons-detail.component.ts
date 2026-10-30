@@ -1,3 +1,4 @@
+import { publicResourceLocation } from '../resources/resource-case-location';
 import { formatLocation } from '../core/models/us-state-display';
 import { CaseShareComponent } from '../shared/case-share/case-share.component';
 import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
@@ -56,6 +57,7 @@ export class MissingPersonsDetailComponent implements OnInit {
   readonly openingTip = signal(false);
   readonly tipError = signal('');
   readonly placeholder = PERSON_PLACEHOLDER;
+  readonly resourceLocation = publicResourceLocation;
   readonly location = (record: MissingPersonDetail) =>
     formatLocation(record.summary?.lastKnownLocation) || personLocation(record);
   readonly reportedDate = (record: MissingPersonDetail) =>

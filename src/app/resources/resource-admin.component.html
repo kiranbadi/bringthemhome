@@ -1,0 +1,108 @@
+@if (isAdmin()) {
+  <section class="moderation" aria-label="Resource administration">
+    <h2>Resource administration</h2>
+    <p>Review suggestions and manage this listing’s visibility and verification status.</p>
+    @if (message()) {
+      <p role="status">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p role="alert">{{ error() }}</p>
+    }
+    <form [formGroup]="form" (ngSubmit)="saveStatus()">
+      <mat-form-field appearance="outline">
+        <mat-label>Verification status</mat-label>
+        <mat-select formControlName="verification_status">
+          @for (status of statuses; track status[0]) {
+            <mat-option [value]="status[0]">{{ status[1] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Listing visibility</mat-label>
+        <mat-select formControlName="listing_status">
+          <mat-option value="ACTIVE">Active</mat-option>
+          <mat-option value="HIDDEN">Hidden</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="wide">
+        <mat-label>Reason for status change</mat-label>
+        <textarea matInput formControlName="reason" maxlength="2000" rows="2" required></textarea>
+        <mat-error>Enter a reason of up to 2000 characters.</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="wide">
+        <mat-label>Supporting source URL</mat-label>
+        <input matInput type="url" formControlName="source_url" maxlength="2048" />
+        <mat-hint>Required for official verification.</mat-hint>
+        <mat-error>Enter an HTTP or HTTPS URL.</mat-error>
+      </mat-form-field>
+      <div class="wide actions">
+        <button matButton="filled" type="submit" [disabled]="!!busy()">Save status</button>
+      </div>
+    </form>
+    <h3>Pending suggestions and reports</h3>
+    @if (loading()) {
+      <p role="status">Loading moderation queue…</p>
+    } @else if (queueError()) {
+      <p role="alert">{{ queueError() }}</p>
+      <button matButton type="button" (click)="load()">Retry moderation queue</button>
+    } @else {
+      @for (suggestion of queue()?.items; track suggestion.id) {
+        <article>
+          <a [routerLink]="['/resources', suggestion.resource_id]">View resource</a>
+          <span class="date">{{ suggestion.created_at | date: 'mediumDate' }}</span>
+          <p class="reason">{{ suggestion.explanation }}</p>
+          <dl>
+            @for (change of suggestion.proposed_changes | keyvalue; track change.key) {
+              <dt>{{ change.key }}</dt>
+              <dd>{{ change.value ?? 'Not provided' }}</dd>
+            }
+          </dl>
+          @if (safeUrl(suggestion.source_url); as url) {
+            <a [href]="url" target="_blank" rel="noopener noreferrer"
+              >Supporting source (opens in new tab)</a
+            >
+          }
+          <div class="actions">
+            <button
+              matButton="outlined"
+              type="button"
+              [disabled]="!!busy()"
+              (click)="review(suggestion.id, 'ACCEPTED')"
+            >
+              Accept suggestion
+            </button>
+            <button
+              matButton
+              type="button"
+              [disabled]="!!busy()"
+              (click)="review(suggestion.id, 'REJECTED')"
+            >
+              Reject suggestion
+            </button>
+          </div>
+        </article>
+      } @empty {
+        <p>No pending suggestions or reports.</p>
+      }
+      <nav class="actions" aria-label="Moderation pages">
+        <button
+          matButton
+          type="button"
+          [disabled]="page() === 1 || !!busy()"
+          (click)="changePage(-1)"
+        >
+          Previous
+        </button>
+        <span>Page {{ page() }}</span>
+        <button
+          matButton
+          type="button"
+          [disabled]="page() * 20 >= (queue()?.total ?? 0) || !!busy()"
+          (click)="changePage(1)"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  </section>
+}
