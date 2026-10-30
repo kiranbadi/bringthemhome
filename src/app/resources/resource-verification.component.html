@@ -1,0 +1,65 @@
+<section aria-label="Community accuracy assessment">
+  <h2>Help keep this resource accurate</h2>
+  <p>Community assessments do not constitute authoritative verification.</p>
+  @if (resource().is_owner) {
+    <p>You submitted this resource and cannot assess its accuracy. You can suggest a correction.</p>
+  } @else {
+    @if (verificationUnavailable()) {
+      <p role="status">You cannot assess this resource.</p>
+    }
+    <div class="actions">
+      <button
+        matButton="outlined"
+        [disabled]="busy() || verificationUnavailable()"
+        [attr.aria-pressed]="resource().current_user_assessment === 'ACCURATE'"
+        (click)="accurate()"
+      >
+        {{
+          resource().current_user_assessment === 'ACCURATE'
+            ? '✓ Information Is Accurate'
+            : 'Confirm Information Accurate'
+        }}
+      </button>
+      <button matButton [disabled]="busy() || reportingUnavailable()" (click)="report()">
+        Report Inaccurate Information
+      </button>
+      @if (resource().current_user_assessment) {
+        <button matButton [disabled]="busy() || verificationUnavailable()" (click)="withdraw()">
+          Withdraw Assessment
+        </button>
+      }
+    </div>
+  }
+  @if (prompt()) {
+    <p role="status">Please <a routerLink="/login">sign in</a> to contribute.</p>
+  }
+  @if (showIssue()) {
+    <form [formGroup]="issue" (ngSubmit)="inaccurate()">
+      <h3>Information Is Inaccurate</h3>
+      <mat-form-field appearance="outline"
+        ><mat-label>Reason / suggested correction</mat-label
+        ><textarea matInput formControlName="reason" rows="3" maxlength="2000" required></textarea
+        ><mat-error>Explain what is inaccurate.</mat-error></mat-form-field
+      >
+      <mat-form-field appearance="outline"
+        ><mat-label>Official supporting URL (optional)</mat-label
+        ><input matInput formControlName="source_url" type="url" /><mat-error
+          >Use an HTTP or HTTPS URL.</mat-error
+        ></mat-form-field
+      >
+      <div class="actions">
+        <button matButton="filled" type="submit" [disabled]="busy() || reportingUnavailable()">
+          Submit Report</button
+        ><button matButton type="button" [disabled]="busy()" (click)="showIssue.set(false)">
+          Cancel
+        </button>
+      </div>
+    </form>
+  }
+  @if (message()) {
+    <p role="status">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p role="alert">{{ error() }}</p>
+  }
+</section>

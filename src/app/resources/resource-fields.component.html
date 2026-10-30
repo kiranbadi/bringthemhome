@@ -1,0 +1,97 @@
+<div [formGroup]="form" class="fields">
+  <p class="warning">
+    Only publicly available organization contact details are allowed. Do not include personal or
+    private contact information.
+  </p>
+  <fieldset class="details-fields">
+    <legend>Resource details</legend>
+    <p class="section-help">Tell families who this organization is and how it can help.</p>
+    <mat-form-field appearance="outline"
+      ><mat-label>Resource Name</mat-label
+      ><input matInput formControlName="name" maxlength="200" required /><mat-error
+        >Enter a name of up to 200 characters.</mat-error
+      ></mat-form-field
+    >
+    <mat-form-field appearance="outline"
+      ><mat-label>Category</mat-label
+      ><mat-select formControlName="category" required>
+        @for (o of categories; track o[0]) {
+          <mat-option [value]="o[0]">{{ o[1] }}</mat-option>
+        }</mat-select
+      ><mat-error>Select a category.</mat-error></mat-form-field
+    >
+    <mat-form-field appearance="outline" class="full-width description-field"
+      ><mat-label>Description</mat-label
+      ><textarea
+        matInput
+        formControlName="description"
+        maxlength="3000"
+        rows="3"
+        required
+      ></textarea
+      ><mat-error>Enter a description of up to 3000 characters.</mat-error></mat-form-field
+    >
+  </fieldset>
+  <fieldset class="coverage-fields">
+    <legend>Area served</legend>
+    <p class="section-help">Choose the geographical area where this resource provides support.</p>
+    <mat-form-field appearance="outline"
+      ><mat-label>Geographical Scope</mat-label
+      ><mat-select formControlName="scope" required (selectionChange)="scopeChanged()">
+        @for (o of scopes; track o[0]) {
+          <mat-option [value]="o[0]">{{ o[1] }}</mat-option>
+        }
+      </mat-select></mat-form-field
+    >
+    <app-resource-locations [form]="form" [scope]="form.controls.scope.value" />
+    @if (form.hasError('coverage') && form.touched) {
+      <p role="alert">Select all locations required for this scope.</p>
+    }
+  </fieldset>
+  <fieldset class="contact-fields">
+    <legend>Public contact information</legend>
+    <p class="section-help">
+      Add at least one phone number, email or website. Other details are optional.
+    </p>
+    <mat-form-field appearance="outline"
+      ><mat-label>Public Phone</mat-label
+      ><input matInput formControlName="phone" type="tel" maxlength="50" /><mat-error
+        >Enter a public phone number (3–50 characters).</mat-error
+      ></mat-form-field
+    >
+    <mat-form-field appearance="outline"
+      ><mat-label>Public Email</mat-label
+      ><input matInput formControlName="email" type="email" maxlength="254" /><mat-error
+        >Enter a valid public email.</mat-error
+      ></mat-form-field
+    >
+    <mat-form-field appearance="outline" class="full-width"
+      ><mat-label>Official Website</mat-label
+      ><input matInput formControlName="website" type="url" maxlength="2048" /><mat-error
+        >Enter a valid HTTP or HTTPS URL.</mat-error
+      ></mat-form-field
+    >
+    @if (form.hasError('contact') && form.touched) {
+      <p role="alert">Supply at least one public phone number, email, or website.</p>
+    }
+    <mat-form-field appearance="outline" class="full-width"
+      ><mat-label>Public Office Address</mat-label
+      ><textarea matInput formControlName="address" maxlength="500" rows="2"></textarea
+      ><mat-error>Use up to 500 characters.</mat-error></mat-form-field
+    >
+  </fieldset>
+  <fieldset class="source-fields">
+    <legend>Supporting source</legend>
+    <p class="section-help">Link to an official page that supports this listing.</p>
+    <mat-form-field appearance="outline"
+      ><mat-label>Supporting Source URL</mat-label
+      ><input
+        matInput
+        formControlName="source_url"
+        type="url"
+        required
+        maxlength="2048"
+      /><mat-error>Enter an official HTTP or HTTPS supporting source.</mat-error></mat-form-field
+    >
+  </fieldset>
+</div>

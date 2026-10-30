@@ -1,0 +1,37 @@
+.detail-page {
+  max-width: 1050px;
+}
+.detail-panel > .eyebrow {
+  margin-top: 0;
+}
+.detail-panel > .plain {
+  color: #50617a;
+  margin: 1rem 0;
+}
+.detail-panel dl {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(0, 3fr);
+  gap: 0.6rem 1.25rem;
+  margin: 1.25rem 0;
+  padding: 1rem 0;
+  border-block: 1px solid #e5ecf5;
+  font-size: 0.875rem;
+}
+dt {
+  font-weight: 600;
+  color: #526582;
+}
+dd {
+  margin: 0;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .detail-panel dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+  .detail-panel dd {
+    margin-bottom: 0.65rem;
+  }
+}

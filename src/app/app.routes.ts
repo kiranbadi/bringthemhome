@@ -12,6 +12,41 @@ import { SupportUs } from './support-us/support-us';
 
 export const routes: Routes = [
   {
+    path: 'resources',
+    loadComponent: () =>
+      import('./resources/resources-list.component').then((m) => m.ResourcesListComponent),
+    title: 'Missing Persons Resources',
+  },
+  {
+    path: 'resources/new',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./resources/resource-form.component').then((m) => m.ResourceFormComponent),
+    title: 'Add Resource',
+  },
+  {
+    path: 'resources/:id/correct',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./resources/resource-form.component').then((m) => m.ResourceFormComponent),
+    title: 'Suggest Correction',
+  },
+  {
+    path: 'resources/:id',
+    loadComponent: () =>
+      import('./resources/resource-detail.component').then((m) => m.ResourceDetailComponent),
+    title: 'Resource Details',
+  },
+  {
+    path: 'account/resource-contributions',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./resources/my-resource-contributions.component').then(
+        (m) => m.MyResourceContributionsComponent,
+      ),
+    title: 'My Resource Contributions',
+  },
+  {
     path: 'terms',
     component: PolicyPageComponent,
     data: { policy: 'terms' },

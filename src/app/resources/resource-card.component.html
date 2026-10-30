@@ -1,0 +1,35 @@
+<mat-card appearance="outlined">
+  <mat-card-content>
+    <p class="category">{{ categories[resource().category] }}</p>
+    <h2>{{ resource().name }}</h2>
+    <p class="description">{{ resource().description }}</p>
+    <p class="coverage"><span aria-hidden="true">⌖</span> {{ coverage(resource()) }}</p>
+    <div class="card-meta">
+      <span class="status" [attr.data-status]="resource().status">
+        <span aria-hidden="true">{{
+          resource().status === 'UNVERIFIED'
+            ? '●'
+            : resource().status === 'NEEDS_REVIEW'
+              ? '!'
+              : '✓'
+        }}</span>
+        {{ statuses[resource().status] }}
+      </span>
+      <span class="confirmations">{{ resource().confirmation_count }} community confirmations</span>
+    </div>
+    @if (resource().last_confirmed_at) {
+      <p class="last-confirmed">
+        Last confirmed: {{ resource().last_confirmed_at | date: 'mediumDate' }}
+      </p>
+    }
+  </mat-card-content>
+  <mat-card-actions>
+    <a
+      matButton
+      [routerLink]="['/resources', resource().id]"
+      [attr.aria-label]="'View details for ' + resource().name"
+    >
+      View details <span aria-hidden="true">→</span>
+    </a>
+  </mat-card-actions>
+</mat-card>

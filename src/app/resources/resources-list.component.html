@@ -1,0 +1,79 @@
+<app-navigation-header />
+<main class="directory">
+  @if (locationNotice()) {
+    <p role="status">{{ locationNotice() }}</p>
+  }
+  <header class="heading">
+    <div>
+      <span class="eyebrow">SUPPORT &amp; GUIDANCE</span>
+      <h1>Missing Persons Resources</h1>
+      <p>Find organizations, search assistance, and family support.</p>
+    </div>
+    <div class="heading-tools">
+      @if (auth.isAuthenticated()) {
+        <div class="actions">
+          <a matButton="outlined" routerLink="/account/resource-contributions">My Contributions</a>
+          <a matButton="filled" routerLink="/resources/new"
+            ><span aria-hidden="true">＋</span> Add Resource</a
+          >
+        </div>
+      }
+      <p class="notice">Community confirmations are not official verification.</p>
+    </div>
+  </header>
+  <form class="panel filters" [formGroup]="filters" (ngSubmit)="search()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic"
+      ><mat-label>Search resource or keyword</mat-label
+      ><input matInput formControlName="search" maxlength="200"
+    /></mat-form-field>
+    <app-searchable-select
+      label="Category"
+      emptyLabel="All categories"
+      formControlName="category"
+      [options]="categoryOptions"
+    />
+    <app-searchable-select
+      label="Coverage"
+      emptyLabel="All coverage"
+      formControlName="scope"
+      [options]="scopeOptions"
+    />
+    <app-resource-locations [form]="filters" />
+    <div class="actions filter-actions">
+      <button matButton="filled" type="submit">Search</button
+      ><button matButton type="button" (click)="clear()">Reset</button>
+    </div>
+  </form>
+  @if (loading()) {
+    <p role="status">Loading resources…</p>
+  } @else if (error()) {
+    <p role="alert" class="error">{{ error() }}</p>
+    <button matButton (click)="reload.next()">Try again</button>
+  } @else if (page(); as p) {
+    <div class="results-heading">
+      <p role="status">{{ p.total }} {{ p.total === 1 ? 'resource' : 'resources' }} found</p>
+      <span>Browse support &amp; guidance</span>
+    </div>
+    <section class="grid" aria-label="Resources">
+      @for (r of p.items; track r.id) {
+        <app-resource-card [resource]="r" />
+      } @empty {
+        <div class="empty-state">
+          <span class="empty-icon" aria-hidden="true">⌕</span>
+          <h2>No resources match your filters</h2>
+          <p>Try a different keyword or broaden your location to find support.</p>
+          <button matButton="outlined" type="button" (click)="clear()">Reset filters</button>
+        </div>
+      }
+    </section>
+    @if (p.total > 0 && p.items.length > 0) {
+      <mat-paginator
+        [length]="p.total"
+        [pageSize]="20"
+        [pageIndex]="p.page - 1"
+        (page)="paginate($event)"
+        aria-label="Resources pagination"
+      />
+    }
+  }
+</main>

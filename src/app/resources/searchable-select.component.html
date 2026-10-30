@@ -1,0 +1,26 @@
+<mat-form-field appearance="outline" subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    matInput
+    [formControl]="text"
+    [matAutocomplete]="menu"
+    [required]="required()"
+    [placeholder]="emptyLabel()"
+    (input)="query.set($any($event.target).value)"
+    (blur)="onTouched()"
+  />
+  <mat-autocomplete
+    #menu="matAutocomplete"
+    [displayWith]="display"
+    requireSelection
+    (opened)="query.set('')"
+    (optionSelected)="select($event.option.value)"
+  >
+    <mat-option value="">{{ emptyLabel() }}</mat-option>
+    @for (option of filtered(); track option.id) {
+      <mat-option [value]="option.id">{{ option.name }}</mat-option>
+    } @empty {
+      <mat-option disabled>No matching options</mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

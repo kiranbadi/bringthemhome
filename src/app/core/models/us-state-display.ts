@@ -51,6 +51,17 @@ export const US_STATES: Readonly<Record<string, string>> = {
   WI: 'Wisconsin',
   WY: 'Wyoming',
   DC: 'District of Columbia',
+  AA: 'Armed Forces Americas',
+  AE: 'Armed Forces Europe',
+  AP: 'Armed Forces Pacific',
+  AS: 'American Samoa',
+  FM: 'Federated States of Micronesia',
+  GU: 'Guam',
+  MH: 'Republic of the Marshall Islands',
+  MP: 'Northern Mariana Islands',
+  PR: 'Puerto Rico',
+  PW: 'Palau (the Republic of Palau)',
+  VI: 'U.S. Virgin Islands',
 };
 
 export function stateName(value: string | null | undefined): string {

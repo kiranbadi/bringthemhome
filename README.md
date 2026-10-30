@@ -98,3 +98,15 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Community resources directory
+
+The `/resources` directory supports search, cascading Census-backed location filters,
+resource details, authenticated submissions, community assessments, pending corrections,
+and `/account/resource-contributions`. Public case-location links require an explicit
+`circumstances.lastKnownLocation.visibility: "PUBLIC"` marker.
+
+A new includable FastAPI/SQLAlchemy backend is provided in `backend/`. See
+[the Resources API guide](docs/api/resources.md) for PostgreSQL setup, integration with
+existing authentication, Census reference-data import, all endpoints, JSON contracts,
+and curl examples. The existing deployed backend is not automatically connected.

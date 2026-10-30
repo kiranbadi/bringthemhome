@@ -57,6 +57,7 @@
             [routerLink]="['/missing-persons', record._id, 'discussions']"
             >Discussions</a
           >
+          <a class="discussion-link" routerLink="/resources" [queryParams]="resourceLocation(record)">Resources Near This Case</a>
           <app-case-share
             [caseId]="record._id"
             [name]="name(record)"

@@ -43,6 +43,7 @@ export class NavigationHeader {
     { label: 'Home', route: '/' },
     { label: 'Account', route: '/account/management' },
     { label: 'Search', route: '/advanced-search' },
+    { label: 'Resources', route: '/resources' },
     { label: 'Support Us', route: '/support-us' },
     { label: 'Contact Us', route: '/contact-us' },
   ];
