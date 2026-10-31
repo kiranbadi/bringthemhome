@@ -255,11 +255,11 @@ describe('Photo review', () => {
 
     // Facial Landmark Analysis
     expect(report?.textContent).toContain('Facial Landmark Analysis');
-    expect(report?.textContent).toContain('Orbit & Interocular Region');
+    expect(report?.textContent).toContain('Orbit and Interocular Region');
     expect(report?.textContent).toContain('Interocular distance and orbital geometry match.');
     expect(report?.textContent).toContain('Nasal Complex');
     expect(report?.textContent).toContain('Nasal bridge and alar base are congruent.');
-    expect(report?.textContent).toContain('Mandibular & Perioral Region');
+    expect(report?.textContent).toContain('Mandibular and Perioral Region');
     expect(report?.textContent).toContain('Chin cleft and vermilion border align.');
     expect(report?.textContent).toContain('Auricular Features');
     expect(report?.textContent).toContain('Ear lobe attachment matches.');
@@ -268,7 +268,7 @@ describe('Photo review', () => {
     expect(report?.textContent).toContain('Faint scar on forehead');
 
     // Differences & Imaging Limitations
-    expect(report?.textContent).toContain('Differences & Imaging Limitations');
+    expect(report?.textContent).toContain('Differences and Imaging Limitations');
     expect(report?.textContent).toContain('Subtle difference in facial hair density');
     expect(report?.textContent).toContain('High resolution portrait');
     expect(report?.textContent).toContain('Moderate resolution image');
