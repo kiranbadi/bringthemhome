@@ -1,0 +1,121 @@
+<app-navigation-header />
+<main class="review-page" aria-labelledby="review-title">
+  <header>
+    <h1 id="review-title">Photo Review</h1>
+    <p>Select two photographs for side-by-side human review.</p>
+  </header>
+
+  <aside class="privacy-notice" aria-labelledby="privacy-title">
+    <h2 id="privacy-title">Your photographs stay in this browser</h2>
+    <p>
+      Photos are displayed locally and are not uploaded, saved by this app, or shared. Select only
+      photographs you have permission to use. Clear Images or leave this page to release the
+      previews.
+    </p>
+  </aside>
+
+  <p id="file-help">Choose JPEG, PNG, or WebP images, up to {{ maxSizeLabel }} each.</p>
+  <section class="photo-grid" aria-label="Photographs for review">
+    @for (card of cards; track card.index) {
+      @let photo = photos()[card.index];
+      <article class="photo-card" [attr.aria-labelledby]="'photo-title-' + card.index">
+        <h2 [id]="'photo-title-' + card.index">{{ card.title }}</h2>
+        <label [for]="'photo-input-' + card.index"
+          >{{ photo.url ? 'Replace' : 'Choose' }} {{ card.label }}</label
+        >
+        <input
+          #photoInput
+          type="file"
+          [id]="'photo-input-' + card.index"
+          accept="image/jpeg,image/png,image/webp"
+          (change)="select(card.index, photoInput)"
+          [attr.aria-describedby]="'file-help photo-error-' + card.index"
+          [attr.aria-invalid]="photo.error ? 'true' : null"
+        />
+        <div class="preview" [attr.aria-busy]="!!photo.url && !photo.loaded">
+          @if (photo.url) {
+            <img
+              [src]="photo.url"
+              [alt]="card.title + ' selected for review'"
+              (load)="imageLoaded(card.index, photo.url)"
+              (error)="imageFailed(card.index, photo.url)"
+            />
+          } @else {
+            <p>No {{ card.label }} selected.</p>
+          }
+        </div>
+        @if (photo.url) {
+          <p class="file-name">{{ photo.name }}</p>
+          <button matButton type="button" (click)="remove(card.index)">
+            Remove {{ card.label }}
+          </button>
+        }
+        <div [id]="'photo-error-' + card.index">
+          @if (photo.error) {
+            <p class="error" role="alert">{{ photo.error }}</p>
+          }
+        </div>
+      </article>
+    }
+  </section>
+
+  <div class="review-actions">
+    <button
+      matButton="filled"
+      type="button"
+      (click)="checkQuality()"
+      [disabled]="!ready() || checkingQuality()"
+      [attr.aria-busy]="checkingQuality()"
+      aria-describedby="quality-demo-notice"
+    >
+      {{ checkingQuality() ? 'Checking…' : 'Check Image Quality (Demo)' }}
+    </button>
+    <button matButton="outlined" type="button" (click)="clear()" [disabled]="!hasContent()">
+      Clear Images
+    </button>
+    <p role="status" aria-live="polite">
+      @if (checkingQuality()) {
+        Running the demo quality check…
+      } @else if (ready()) {
+        Ready for side-by-side review.
+      } @else {
+        Select two valid photographs to review them together.
+      }
+    </p>
+  </div>
+
+  <p id="quality-demo-notice">
+    Demo mode: the quality-check response is simulated locally. No photographs are sent to a server
+    and no image analysis is performed.
+  </p>
+  @if (qualityError()) {
+    <p class="error" role="alert">{{ qualityError() }}</p>
+  }
+  @if (qualityResult(); as result) {
+    <section class="quality-result" role="status" aria-labelledby="quality-result-title">
+      <h2 id="quality-result-title">Demo quality-check response</h2>
+      <p>{{ result.message }}</p>
+      <dl>
+        <dt>Reference file</dt>
+        <dd>{{ result.reference.name }} ({{ result.reference.sizeBytes }} bytes)</dd>
+        <dt>Comparison file</dt>
+        <dd>{{ result.comparison.name }} ({{ result.comparison.sizeBytes }} bytes)</dd>
+      </dl>
+      <p>
+        Review lighting, focus, and resolution manually until the quality-check service is
+        available.
+      </p>
+    </section>
+  }
+
+  <section class="review-guidance" aria-labelledby="guidance-title">
+    <h2 id="guidance-title">Review with care</h2>
+    <p>
+      Consider lighting, camera angle, image age, and image quality when inspecting the photographs.
+    </p>
+    <p>
+      Visual resemblance does not establish identity. This page provides no automated similarity
+      score or identity assessment.
+    </p>
+  </section>
+</main>
