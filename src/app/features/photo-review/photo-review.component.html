@@ -6,11 +6,12 @@
   </header>
 
   <aside class="privacy-notice" aria-labelledby="privacy-title">
-    <h2 id="privacy-title">Your photographs stay in this browser</h2>
+    <h2 id="privacy-title">Secure Image Analysis</h2>
     <p>
-      Photos are displayed locally and are not uploaded, saved by this app, or shared. Select only
-      photographs you have permission to use. Clear Images or leave this page to release the
-      previews.
+      Photos are transmitted securely to the comparison service for biometric and landmark
+      analysis. Images are processed in accordance with privacy guidelines and are not shared
+      publicly. Select only photographs you have permission to evaluate. Clear Images or leave
+      this page to release local previews.
     </p>
   </aside>
 
@@ -63,48 +64,180 @@
     <button
       matButton="filled"
       type="button"
-      (click)="checkQuality()"
-      [disabled]="!ready() || checkingQuality()"
-      [attr.aria-busy]="checkingQuality()"
-      aria-describedby="quality-demo-notice"
+      (click)="compare()"
+      [disabled]="!ready() || comparing()"
+      [attr.aria-busy]="comparing()"
     >
-      {{ checkingQuality() ? 'Checking…' : 'Check Image Quality (Demo)' }}
+      {{ comparing() ? 'Analyzing…' : 'Compare Photos' }}
     </button>
     <button matButton="outlined" type="button" (click)="clear()" [disabled]="!hasContent()">
       Clear Images
     </button>
     <p role="status" aria-live="polite">
-      @if (checkingQuality()) {
-        Running the demo quality check…
+      @if (comparing()) {
+        Analyzing photographs…
       } @else if (ready()) {
-        Ready for side-by-side review.
+        Ready for photo comparison.
       } @else {
         Select two valid photographs to review them together.
       }
     </p>
   </div>
 
-  <p id="quality-demo-notice">
-    Demo mode: the quality-check response is simulated locally. No photographs are sent to a server
-    and no image analysis is performed.
-  </p>
-  @if (qualityError()) {
-    <p class="error" role="alert">{{ qualityError() }}</p>
+  @if (comparisonError()) {
+    <p class="error" role="alert">{{ comparisonError() }}</p>
   }
-  @if (qualityResult(); as result) {
-    <section class="quality-result" role="status" aria-labelledby="quality-result-title">
-      <h2 id="quality-result-title">Demo quality-check response</h2>
-      <p>{{ result.message }}</p>
-      <dl>
-        <dt>Reference file</dt>
-        <dd>{{ result.reference.name }} ({{ result.reference.sizeBytes }} bytes)</dd>
-        <dt>Comparison file</dt>
-        <dd>{{ result.comparison.name }} ({{ result.comparison.sizeBytes }} bytes)</dd>
-      </dl>
-      <p>
-        Review lighting, focus, and resolution manually until the quality-check service is
-        available.
-      </p>
+
+  @if (comparisonResult(); as result) {
+    <section class="comparison-report" role="region" aria-labelledby="comparison-result-title">
+      <header class="report-header-card">
+        <div class="report-title-row">
+          <h2 id="comparison-result-title">Comparison Analysis Report</h2>
+          <span class="badge" [class]="similarityBadgeClass(result.similarity_classification)">
+            {{ result.similarity_classification }}
+          </span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-label">Match Percentage</span>
+            <span class="metric-value">{{ result.estimated_match_percentage }}%</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Confidence Score</span>
+            <span class="metric-value">{{ result.confidence_score }}</span>
+          </div>
+        </div>
+        <p class="technical-summary">{{ result.technical_summary }}</p>
+      </header>
+
+      <article class="report-card age-assessment-card">
+        <h3>Age & Maturation Assessment</h3>
+        <dl class="assessment-dl">
+          <div class="dl-row">
+            <dt>Apparent Age (Image A)</dt>
+            <dd>{{ result.age_and_maturation_assessment.estimated_apparent_age_image_a }}</dd>
+          </div>
+          <div class="dl-row">
+            <dt>Apparent Age (Image B)</dt>
+            <dd>{{ result.age_and_maturation_assessment.estimated_apparent_age_image_b }}</dd>
+          </div>
+          <div class="dl-row">
+            <dt>Morphological Continuity</dt>
+            <dd>{{ result.age_and_maturation_assessment.morphological_continuity }}</dd>
+          </div>
+        </dl>
+        <p class="maturation-observations">
+          {{ result.age_and_maturation_assessment.maturation_observations }}
+        </p>
+      </article>
+
+      <article class="report-card landmark-analysis-card">
+        <h3>Facial Landmark Analysis</h3>
+        <div class="landmarks-grid">
+          <div class="landmark-card">
+            <div class="landmark-header">
+              <h4>Orbit & Interocular Region</h4>
+              <span
+                class="badge"
+                [class]="congruenceBadgeClass(result.landmark_analysis.orbit_and_interocular_region.congruence)"
+              >
+                {{ result.landmark_analysis.orbit_and_interocular_region.congruence }}
+              </span>
+            </div>
+            <p>{{ result.landmark_analysis.orbit_and_interocular_region.findings }}</p>
+          </div>
+
+          <div class="landmark-card">
+            <div class="landmark-header">
+              <h4>Nasal Complex</h4>
+              <span
+                class="badge"
+                [class]="congruenceBadgeClass(result.landmark_analysis.nasal_complex.congruence)"
+              >
+                {{ result.landmark_analysis.nasal_complex.congruence }}
+              </span>
+            </div>
+            <p>{{ result.landmark_analysis.nasal_complex.findings }}</p>
+          </div>
+
+          <div class="landmark-card">
+            <div class="landmark-header">
+              <h4>Mandibular & Perioral Region</h4>
+              <span
+                class="badge"
+                [class]="congruenceBadgeClass(result.landmark_analysis.mandibular_and_perioral_region.congruence)"
+              >
+                {{ result.landmark_analysis.mandibular_and_perioral_region.congruence }}
+              </span>
+            </div>
+            <p>{{ result.landmark_analysis.mandibular_and_perioral_region.findings }}</p>
+          </div>
+
+          <div class="landmark-card">
+            <div class="landmark-header">
+              <h4>Auricular Features</h4>
+              <span
+                class="badge"
+                [class]="congruenceBadgeClass(result.landmark_analysis.auricular_features.congruence)"
+              >
+                {{ result.landmark_analysis.auricular_features.congruence }}
+              </span>
+            </div>
+            <p>{{ result.landmark_analysis.auricular_features.findings }}</p>
+          </div>
+
+          <div class="landmark-card landmark-card-wide">
+            <div class="landmark-header">
+              <h4>Surface Markers</h4>
+              <span class="badge badge-default">
+                {{ result.landmark_analysis.surface_markers.features_detected ? 'Detected' : 'None detected' }}
+              </span>
+            </div>
+            @if (result.landmark_analysis.surface_markers.consistent_markers.length) {
+              <h5>Consistent Markers</h5>
+              <ul>
+                @for (marker of result.landmark_analysis.surface_markers.consistent_markers; track marker) {
+                  <li>{{ marker }}</li>
+                }
+              </ul>
+            }
+            @if (result.landmark_analysis.surface_markers.inconsistent_markers.length) {
+              <h5>Inconsistent Markers</h5>
+              <ul>
+                @for (marker of result.landmark_analysis.surface_markers.inconsistent_markers; track marker) {
+                  <li>{{ marker }}</li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      </article>
+
+      <article class="report-card limitations-card">
+        <h3>Differences & Imaging Limitations</h3>
+        @if (result.distinguishing_differences.length) {
+          <h4>Distinguishing Differences</h4>
+          <ul class="differences-list">
+            @for (diff of result.distinguishing_differences; track diff) {
+              <li>{{ diff }}</li>
+            }
+          </ul>
+        }
+        <dl class="limitations-dl">
+          <div class="dl-row">
+            <dt>Clarity Image A</dt>
+            <dd>{{ result.imaging_limitations.image_a_clarity }}</dd>
+          </div>
+          <div class="dl-row">
+            <dt>Clarity Image B</dt>
+            <dd>{{ result.imaging_limitations.image_b_clarity }}</dd>
+          </div>
+          <div class="dl-row">
+            <dt>Lighting / Perspective Distortions</dt>
+            <dd>{{ result.imaging_limitations.perspective_or_lighting_distortions }}</dd>
+          </div>
+        </dl>
+      </article>
     </section>
   }
 
@@ -114,8 +247,8 @@
       Consider lighting, camera angle, image age, and image quality when inspecting the photographs.
     </p>
     <p>
-      Visual resemblance does not establish identity. This page provides no automated similarity
-      score or identity assessment.
+      Automated analysis assists human review; visual resemblance does not establish identity.
     </p>
   </section>
 </main>
+

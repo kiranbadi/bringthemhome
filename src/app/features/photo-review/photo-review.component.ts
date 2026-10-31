@@ -10,7 +10,8 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { NavigationHeader } from '../../shared/navigation-header/navigation-header';
 import { Subscription, finalize, take } from 'rxjs';
-import { PhotoQuality, PhotoQualityResponse } from './photo-quality';
+import { PhotoComparisonService } from './photo-comparison.service';
+import { PhotoComparisonResponse } from './photo-comparison.types';
 
 export const PHOTO_REVIEW_MAX_BYTES = new InjectionToken<number>(
   'Photo review maximum image bytes',
@@ -38,11 +39,11 @@ const emptyPhoto = (): PhotoSlot => ({ url: '', name: '', loaded: false, error: 
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhotoReviewComponent {
-  private readonly qualityService = inject(PhotoQuality);
-  private qualityRequest?: Subscription;
-  protected readonly checkingQuality = signal(false);
-  protected readonly qualityResult = signal<PhotoQualityResponse | null>(null);
-  protected readonly qualityError = signal('');
+  private readonly comparisonService = inject(PhotoComparisonService);
+  private comparisonRequest?: Subscription;
+  protected readonly comparing = signal(false);
+  protected readonly comparisonResult = signal<PhotoComparisonResponse | null>(null);
+  protected readonly comparisonError = signal('');
   protected readonly maxBytes = inject(PHOTO_REVIEW_MAX_BYTES);
   protected readonly maxSizeLabel = `${Number((this.maxBytes / 1024 / 1024).toFixed(2))} MB`;
   protected readonly cards = [
@@ -107,7 +108,7 @@ export class PhotoReviewComponent {
   }
 
   protected remove(index: PhotoIndex): void {
-    this.resetQuality();
+    this.resetComparison();
     const url = this.photos()[index].url;
     if (url) URL.revokeObjectURL(url);
     this.update(index, emptyPhoto());
@@ -118,34 +119,61 @@ export class PhotoReviewComponent {
     this.remove(1);
   }
 
-  protected checkQuality(): void {
-    if (!this.ready() || this.checkingQuality()) return;
+  protected compare(): void {
+    if (!this.ready() || this.comparing()) return;
     const [reference, comparison] = this.photos();
     if (!reference.file || !comparison.file) return;
-    this.resetQuality();
-    this.checkingQuality.set(true);
-    this.qualityRequest = this.qualityService
-      .checkPhotos(reference.file, comparison.file)
+    this.resetComparison();
+    this.comparing.set(true);
+    this.comparisonRequest = this.comparisonService
+      .comparePhotos(reference.file, comparison.file)
       .pipe(
         take(1),
-        finalize(() => this.checkingQuality.set(false)),
+        finalize(() => this.comparing.set(false)),
       )
       .subscribe({
-        next: (result) => this.qualityResult.set(result),
+        next: (result) => this.comparisonResult.set(result),
         error: () =>
-          this.qualityError.set('The demo quality check could not complete. Please try again.'),
+          this.comparisonError.set('Unable to complete photo comparison. Please try again.'),
       });
   }
 
-  private resetQuality(): void {
-    this.qualityRequest?.unsubscribe();
-    this.qualityRequest = undefined;
-    this.checkingQuality.set(false);
-    this.qualityResult.set(null);
-    this.qualityError.set('');
+  protected similarityBadgeClass(classification: string): string {
+    switch (classification) {
+      case 'HIGH_SIMILARITY':
+        return 'badge-high';
+      case 'MODERATE_SIMILARITY':
+        return 'badge-moderate';
+      case 'LOW_SIMILARITY':
+        return 'badge-low';
+      default:
+        return 'badge-default';
+    }
+  }
+
+  protected congruenceBadgeClass(congruence: string): string {
+    switch (congruence) {
+      case 'HIGH':
+        return 'badge-high';
+      case 'MODERATE':
+        return 'badge-moderate';
+      case 'LOW':
+        return 'badge-low';
+      default:
+        return 'badge-default';
+    }
+  }
+
+  private resetComparison(): void {
+    this.comparisonRequest?.unsubscribe();
+    this.comparisonRequest = undefined;
+    this.comparing.set(false);
+    this.comparisonResult.set(null);
+    this.comparisonError.set('');
   }
 
   private update(index: PhotoIndex, photo: PhotoSlot): void {
     this.photos.update((photos) => photos.map((current, i) => (i === index ? photo : current)));
   }
 }
+
