@@ -16,6 +16,13 @@
       </a>
     }
     @if (currentUser$ | async) {
+      <a
+        matButton
+        routerLink="/photo-review"
+        routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{ exact: true }"
+        >Photo Review</a
+      >
       <button
         matButton
         type="button"

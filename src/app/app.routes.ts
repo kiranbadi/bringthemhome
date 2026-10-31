@@ -12,6 +12,13 @@ import { SupportUs } from './support-us/support-us';
 
 export const routes: Routes = [
   {
+    path: 'photo-review',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/photo-review/photo-review.component').then((m) => m.PhotoReviewComponent),
+    title: 'Photo Review | Bring Them Home',
+  },
+  {
     path: 'resources',
     loadComponent: () =>
       import('./resources/resources-list.component').then((m) => m.ResourcesListComponent),
