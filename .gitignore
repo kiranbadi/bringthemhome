@@ -59,6 +59,7 @@ Thumbs.db
 # Community resources source and handoff documents.
 !/docs/api/resources.md
 !/docs/plans/2026-10-27-community-resources.md
+!/docs/plans/2026-10-31-photo-comparison-api-design.md
 __pycache__/
 .pytest_cache/
 *.pyc
