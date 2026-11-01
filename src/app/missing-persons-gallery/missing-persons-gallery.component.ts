@@ -29,11 +29,24 @@ import {
 } from '../core/models/missing-person-display';
 import { MissingPersonService } from '../core/services/missing-person.service';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
+import { NaturalSearchHeroComponent } from '../features/natural-search/natural-search-hero.component';
+import { NaturalSearchService } from '../features/natural-search/natural-search.service';
+import {
+  ApiError,
+  SearchPayload,
+  searchError,
+} from '../features/natural-search/natural-search.models';
 
 @Component({
   selector: 'app-missing-persons-gallery',
   standalone: true,
-  imports: [CaseShareComponent, NavigationHeader, RouterLink, TitleCasePipe],
+  imports: [
+    CaseShareComponent,
+    NavigationHeader,
+    RouterLink,
+    TitleCasePipe,
+    NaturalSearchHeroComponent,
+  ],
   templateUrl: './missing-persons-gallery.component.html',
   styleUrl: './missing-persons-gallery.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +60,10 @@ export class MissingPersonsGalleryComponent implements OnInit {
   private filters: MissingPersonSearchFilters = {};
   readonly isSearch = signal(false);
   private readonly service = inject(MissingPersonService);
+  private readonly naturalService = inject(NaturalSearchService);
+  private naturalPayload: SearchPayload | null = null;
+  readonly naturalActive = signal(false);
+  readonly naturalError = signal<ApiError | null>(null);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly requests = new Subject<number>();
@@ -75,21 +92,29 @@ export class MissingPersonsGalleryComponent implements OnInit {
           this.requestedPage = page;
           this.loading.set(true);
           this.error.set('');
+          this.naturalError.set(null);
           this.shareMessage.set('');
         }),
         switchMap((page) =>
-          (this.isSearch()
-            ? this.service.searchMissingPersons(this.filters, page, this.pageSize)
-            : this.service.getMissingPersons(page, this.pageSize)
+          (this.naturalPayload
+            ? this.naturalService.search({ ...this.naturalPayload, page })
+            : this.isSearch()
+              ? this.service.searchMissingPersons(this.filters, page, this.pageSize)
+              : this.service.getMissingPersons(page, this.pageSize)
           ).pipe(
             tap((response) => {
               this.response.set(response);
               this.failedImages.set(new Set());
               this.loading.set(false);
             }),
-            catchError(() => {
+            catchError((error: unknown) => {
               this.loading.set(false);
-              this.error.set('We could not load missing persons. Please try again.');
+              if (this.naturalPayload) {
+                const failure = searchError(error);
+                this.naturalError.set(failure);
+                this.response.set(null);
+                this.error.set(failure.message);
+              } else this.error.set('We could not load missing persons. Please try again.');
               return EMPTY;
             }),
           ),
@@ -98,13 +123,42 @@ export class MissingPersonsGalleryComponent implements OnInit {
       )
       .subscribe();
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.naturalPayload = null;
+      if (params.has('nl_query')) {
+        const naturalFilters: SearchPayload['filters'] = {};
+        for (const key of [
+          'state',
+          'city',
+          'gender',
+          'date_last_seen_after',
+          'date_last_seen_before',
+        ] as const) {
+          const value = params.get(`nl_${key}`)?.trim();
+          if (value) naturalFilters[key] = value;
+        }
+        for (const key of ['age_min', 'age_max'] as const) {
+          const value = params.get(`nl_${key}`);
+          if (value !== null && value !== '' && Number.isFinite(Number(value)))
+            naturalFilters[key] = Number(value);
+        }
+        this.naturalPayload = {
+          query: params.get('nl_query')?.trim() ?? '',
+          mode: params.get('nl_mode') === 'exact' ? 'exact' : 'semantic',
+          filters: naturalFilters,
+          page: 1,
+          page_size: this.pageSize,
+        };
+      }
+      this.naturalActive.set(this.naturalPayload !== null);
       const filters: Record<string, string> = {};
       for (const key of SEARCH_FILTER_KEYS) {
         const value = params.get(key)?.trim();
         if (value) filters[key] = value;
       }
       this.filters = filters as MissingPersonSearchFilters;
-      this.isSearch.set(params.get('search') === 'true' || Object.keys(filters).length > 0);
+      this.isSearch.set(
+        this.naturalActive() || params.get('search') === 'true' || Object.keys(filters).length > 0,
+      );
       const page = Number(params.get('page') ?? 1);
       this.requests.next(Number.isInteger(page) && page > 0 ? page : 1);
     });

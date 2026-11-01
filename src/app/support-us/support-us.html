@@ -1,108 +1,98 @@
 <app-navigation-header />
 
 <main class="support-page">
-  <header class="support-heading">
-    <div>
+  <header class="support-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">SUPPORT OUR COMMUNITY</span>
       <h1>Support Us</h1>
-      <p>Help families, volunteers, and community partners move faster when someone is missing.</p>
+      <p class="hero-lead">Every small action can help bring someone home.</p>
+      <p>
+        Help families find support, give missing-person cases more visibility, and connect your
+        community with useful information.
+      </p>
+      <div class="hero-actions">
+        <a matButton="filled" routerLink="/contact-us">
+          <mat-icon aria-hidden="true">volunteer_activism</mat-icon>
+          Get Involved
+        </a>
+        <a matButton="outlined" routerLink="/missing-persons">Browse Cases</a>
+      </div>
     </div>
-    <a matButton="filled" routerLink="/contact-us">
-      <mat-icon aria-hidden="true">volunteer_activism</mat-icon>
-      Get Involved
-    </a>
+    <aside class="impact-panel" aria-labelledby="impact-title">
+      <span class="icon-tile"><mat-icon aria-hidden="true">diversity_1</mat-icon></span>
+      <h2 id="impact-title">Stronger together</h2>
+      <p>Your time, skills, and local connections can make a difference.</p>
+      <ul>
+        <li>
+          <mat-icon aria-hidden="true">visibility</mat-icon>More visibility for missing people
+        </li>
+        <li><mat-icon aria-hidden="true">favorite_border</mat-icon>More support for families</li>
+        <li><mat-icon aria-hidden="true">hub</mat-icon>Better-connected communities</li>
+      </ul>
+    </aside>
   </header>
 
-  <section class="impact-band" aria-label="Support impact">
-    <article>
-      <strong>Case Visibility</strong>
-      <span>Share verified reports across trusted community channels.</span>
-    </article>
-    <article>
-      <strong>Family Support</strong>
-      <span>Help families prepare posters, updates, and organized information.</span>
-    </article>
-    <article>
-      <strong>Faster Tips</strong>
-      <span>Encourage people to submit useful sightings, photos, and video.</span>
-    </article>
+  <section aria-labelledby="ways-title">
+    <div class="section-heading">
+      <span class="eyebrow">FIND YOUR WAY TO HELP</span>
+      <h2 id="ways-title">Make a difference in your own way</h2>
+      <p>Start with an action that fits your time and experience.</p>
+    </div>
+    <div class="support-grid">
+      @for (option of supportOptions; track option.title) {
+        <article class="support-card">
+          <span class="icon-tile"
+            ><mat-icon aria-hidden="true">{{ option.icon }}</mat-icon></span
+          >
+          <h3>{{ option.title }}</h3>
+          <p>{{ option.description }}</p>
+          <a matButton [routerLink]="option.route">
+            {{ option.action }}
+            <mat-icon iconPositionEnd aria-hidden="true">arrow_forward</mat-icon>
+          </a>
+        </article>
+      }
+    </div>
   </section>
 
-  <section class="support-grid" aria-label="Ways to support Bring Them Home">
-    <article class="support-card">
-      <mat-icon aria-hidden="true">campaign</mat-icon>
-      <h2>Share Active Cases</h2>
-      <p>
-        Post case pages, posters, and updates through neighborhood groups, school networks, and
-        local channels.
-      </p>
-      <a matButton routerLink="/">
-        <mat-icon aria-hidden="true">search</mat-icon>
-        Find Cases
-      </a>
-    </article>
-
-    <article class="support-card">
-      <mat-icon aria-hidden="true">groups</mat-icon>
-      <h2>Volunteer</h2>
-      <p>
-        Support intake review, poster preparation, community outreach, translation, and follow-up
-        coordination.
-      </p>
-      <a matButton routerLink="/contact-us">
-        <mat-icon aria-hidden="true">person_add</mat-icon>
-        Volunteer
-      </a>
-    </article>
-
-    <article class="support-card">
-      <mat-icon aria-hidden="true">handshake</mat-icon>
-      <h2>Partner With Us</h2>
-      <p>
-        Schools, nonprofits, shelters, businesses, and faith groups can help expand trusted local
-        awareness.
-      </p>
-      <a matButton routerLink="/contact-us">
-        <mat-icon aria-hidden="true">mail</mat-icon>
-        Start a Partnership
-      </a>
-    </article>
-
-    <article class="support-card">
-      <mat-icon aria-hidden="true">payments</mat-icon>
-      <h2>Contribute Resources</h2>
-      <p>
-        Help cover outreach materials, technology, translation, printing, and community response
-        operations.
-      </p>
-      <a matButton routerLink="/contact-us">
-        <mat-icon aria-hidden="true">favorite</mat-icon>
-        Contribute
-      </a>
-    </article>
+  <section class="guidance-section" aria-labelledby="guidance-title">
+    <div class="section-heading">
+      <span class="eyebrow">CARE IN EVERY ACTION</span>
+      <h2 id="guidance-title">Help thoughtfully. Share responsibly.</h2>
+      <p>Keep families and the people we are looking for at the heart of everything you share.</p>
+    </div>
+    <ol class="guidance-list">
+      <li>
+        <h3>Share the case page</h3>
+        <p>
+          Link to the person’s detail page so others can see the available case information and
+          updates.
+        </p>
+      </li>
+      <li>
+        <h3>Send tips through the right channel</h3>
+        <p>
+          Use the tip form on the case page. Include the date, time, location, and any relevant
+          photos or video.
+        </p>
+      </li>
+      <li>
+        <h3>Respect families and privacy</h3>
+        <p>
+          Keep conversations compassionate. Avoid speculation and sharing sensitive personal details
+          publicly.
+        </p>
+      </li>
+    </ol>
   </section>
 
-  <section class="resource-section">
-    <div class="section-copy">
-      <h2>How You Can Help Today</h2>
-      <p>
-        Small, careful actions matter. Share verified information, avoid rumors, and send possible
-        sightings through the tip form on the person detail page.
-      </p>
+  <section class="contact-banner" aria-labelledby="contact-title">
+    <div>
+      <h2 id="contact-title">Have another way to help?</h2>
+      <p>Tell us about your skills, organization, or idea. Let’s find a way to work together.</p>
     </div>
-
-    <div class="resource-list">
-      <article>
-        <h3>Use Verified Details</h3>
-        <p>Share the person’s official detail page instead of screenshots or copied posts.</p>
-      </article>
-      <article>
-        <h3>Submit Useful Tips</h3>
-        <p>Include date, time, location, photos, video, and what made the sighting notable.</p>
-      </article>
-      <article>
-        <h3>Respect Families</h3>
-        <p>Keep comments compassionate and avoid speculation while an investigation is active.</p>
-      </article>
-    </div>
+    <a matButton="filled" routerLink="/contact-us"
+      >Talk to Our Team<mat-icon iconPositionEnd aria-hidden="true">arrow_forward</mat-icon></a
+    >
   </section>
 </main>

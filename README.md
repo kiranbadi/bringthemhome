@@ -4,6 +4,15 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Missing persons gallery
 
+The home/gallery page includes a standalone Angular Material natural-language search hero
+with a compact rounded query field, optional voice input, and Search button. It accepts names, case IDs, and
+plain-language descriptions, without additional home-page filters or background requests.
+Natural results reuse the existing case cards and pagination; advanced search keeps its
+existing API contract. The hero loads in a separate chunk to preserve the initial bundle budget.
+Deploy the new search endpoints before using this feature: see the
+[Natural Search API guide](docs/api/natural-search.md) for request schemas, error contracts,
+credentialed CSRF/CORS integration, and executable cURL commands.
+
 The home page and `/missing-persons` display a responsive gallery backed by
 `GET {apiUrl}/api/v1/missing-persons?page=1&page_size=20`. Set `apiUrl` in
 `src/environments/environment.ts` and `environment.production.ts` for each deployment

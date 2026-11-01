@@ -1,0 +1,104 @@
+@use '@angular/material' as mat;
+:host {
+  display: block;
+  margin-bottom: 16px;
+}
+.search-hero {
+  padding: 16px 12px 4px;
+  text-align: center;
+  color: var(--mat-sys-on-surface);
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: 28px,
+      container-height: 48px,
+      container-vertical-padding: 12px,
+    )
+  );
+}
+h2 {
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  margin: 0 0 8px;
+}
+.intro {
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+form {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 760px;
+  margin: auto;
+  text-align: left;
+}
+mat-form-field {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+.search-button {
+  min-height: 48px;
+  padding-inline: 28px;
+}
+mat-spinner {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  --mdc-circular-progress-active-indicator-color: currentColor;
+}
+.search-status {
+  min-height: 0;
+  margin: 8px 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+.error-banner {
+  max-width: 760px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px;
+  margin: 12px auto 0;
+  text-align: left;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  border-radius: 12px;
+}
+.error-banner p {
+  flex: 1 1 220px;
+  margin: 0;
+  line-height: 1.6;
+}
+button:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 4px;
+}
+button {
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .search-hero {
+    padding: 12px 0 4px;
+  }
+  form {
+    flex-direction: column;
+  }
+  .search-button {
+    align-self: center;
+    min-width: 140px;
+  }
+}
+@media (forced-colors: active) {
+  .error-banner {
+    border: 1px solid CanvasText;
+  }
+}
+
+.listening {
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
+}

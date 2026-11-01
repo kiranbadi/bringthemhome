@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { NavigationHeader } from '../../shared/navigation-header/navigation-header';
 import { Subscription, finalize, take } from 'rxjs';
 import { PhotoComparisonService } from './photo-comparison.service';
@@ -33,7 +34,7 @@ const emptyPhoto = (): PhotoSlot => ({ url: '', name: '', loaded: false, error: 
 
 @Component({
   selector: 'app-photo-review',
-  imports: [MatButtonModule, NavigationHeader],
+  imports: [MatButtonModule, MatIconModule, NavigationHeader],
   templateUrl: './photo-review.component.html',
   styleUrl: './photo-review.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -176,4 +177,3 @@ export class PhotoReviewComponent {
     this.photos.update((photos) => photos.map((current, i) => (i === index ? photo : current)));
   }
 }
-

@@ -1,0 +1,80 @@
+<section class="search-hero" aria-labelledby="natural-search-title">
+  <h2 id="natural-search-title">Until everyone is home</h2>
+  <p class="intro">Search by name, case ID, or the details you know.</p>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    role="search"
+    aria-label="Search missing person cases"
+    [attr.aria-busy]="busy()"
+  >
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Search missing persons</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        #queryInput
+        matInput
+        formControlName="query"
+        maxlength="500"
+        autocomplete="off"
+        enterkeyhint="search"
+      />
+      @if (form.controls.query.value) {
+        <button
+          matIconButton
+          matSuffix
+          type="button"
+          aria-label="Clear search query"
+          (click)="clear()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      }
+      <button
+        matIconButton
+        matSuffix
+        type="button"
+        [disabled]="busy()"
+        [attr.aria-label]="listening() ? 'Stop voice search' : 'Start voice search'"
+        [attr.aria-pressed]="listening()"
+        [class.listening]="listening()"
+        (click)="toggleVoice()"
+      >
+        <mat-icon aria-hidden="true">{{ listening() ? 'mic_off' : 'mic' }}</mat-icon>
+      </button>
+      @if (form.controls.query.hasError('required')) {
+        <mat-error>Enter a description, name, or case ID to search.</mat-error>
+      } @else if (form.controls.query.hasError('maxlength')) {
+        <mat-error>Keep your search to 500 characters or fewer.</mat-error>
+      } @else if (form.controls.query.hasError('server')) {
+        <mat-error>Check your search, then try again.</mat-error>
+      }
+    </mat-form-field>
+    <button matButton="filled" class="search-button" type="submit" [disabled]="busy()">
+      @if (busy()) {
+        <mat-spinner diameter="20" aria-hidden="true" />
+      }
+      {{ busy() ? 'Searching…' : 'Search' }}
+    </button>
+  </form>
+  <p class="search-status" role="status" aria-live="polite">
+    {{
+      listening()
+        ? 'Listening… Speak your search, then select Search.'
+        : busy()
+          ? 'Searching missing person cases…'
+          : ''
+    }}
+  </p>
+  @if (apiError(); as error) {
+    <div class="error-banner" role="alert">
+      <mat-icon aria-hidden="true">warning</mat-icon>
+      <p>{{ error.message }}</p>
+      @if (error.status !== 400 && error.status !== 422 && error.status !== 429) {
+        <button matButton="outlined" type="button" [disabled]="busy()" (click)="retrySearch.emit()">
+          Retry search
+        </button>
+      }
+    </div>
+  }
+</section>

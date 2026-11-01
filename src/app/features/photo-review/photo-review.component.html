@@ -1,18 +1,22 @@
 <app-navigation-header />
 <main class="review-page" aria-labelledby="review-title">
-  <header>
+  <header class="page-heading">
+    <span class="eyebrow">PHOTO COMPARISON</span>
     <h1 id="review-title">Photo Review</h1>
-    <p>Select two photographs for side-by-side human review.</p>
+    <p>Compare two photographs side by side and review the analysis together.</p>
   </header>
 
   <aside class="privacy-notice" aria-labelledby="privacy-title">
-    <h2 id="privacy-title">Secure Image Analysis</h2>
-    <p>
-      Photos are transmitted securely to the comparison service for biometric and landmark
-      analysis. Images are processed in accordance with privacy guidelines and are not shared
-      publicly. Select only photographs you have permission to evaluate. Clear Images or leave
-      this page to release local previews.
-    </p>
+    <span class="notice-icon"><mat-icon aria-hidden="true">shield</mat-icon></span>
+    <div>
+      <h2 id="privacy-title">Secure Image Analysis</h2>
+      <p>
+        Photos are transmitted securely to the comparison service for biometric and landmark
+        analysis. Images are processed in accordance with privacy guidelines and are not shared
+        publicly. Select only photographs you have permission to evaluate. Clear Images or leave
+        this page to release local previews.
+      </p>
+    </div>
   </aside>
 
   <p id="file-help">Choose JPEG, PNG, or WebP images, up to {{ maxSizeLabel }} each.</p>
@@ -20,7 +24,19 @@
     @for (card of cards; track card.index) {
       @let photo = photos()[card.index];
       <article class="photo-card" [attr.aria-labelledby]="'photo-title-' + card.index">
-        <h2 [id]="'photo-title-' + card.index">{{ card.title }}</h2>
+        <div class="photo-heading">
+          <span class="step-number" aria-hidden="true">0{{ card.index + 1 }}</span>
+          <div>
+            <h2 [id]="'photo-title-' + card.index">{{ card.title }}</h2>
+            <p>
+              {{
+                card.index === 0
+                  ? 'Start with a known reference image.'
+                  : 'Add the image you want to compare.'
+              }}
+            </p>
+          </div>
+        </div>
         <label [for]="'photo-input-' + card.index"
           >{{ photo.url ? 'Replace' : 'Choose' }} {{ card.label }}</label
         >
@@ -42,7 +58,11 @@
               (error)="imageFailed(card.index, photo.url)"
             />
           } @else {
-            <p>No {{ card.label }} selected.</p>
+            <div class="preview-empty">
+              <mat-icon aria-hidden="true">add_photo_alternate</mat-icon>
+              <p>No {{ card.label }} selected.</p>
+              <span>Your selected photo will appear here</span>
+            </div>
           }
         </div>
         @if (photo.url) {
@@ -139,7 +159,11 @@
               <h4>Orbit & Interocular Region</h4>
               <span
                 class="badge"
-                [class]="congruenceBadgeClass(result.landmark_analysis.orbit_and_interocular_region.congruence)"
+                [class]="
+                  congruenceBadgeClass(
+                    result.landmark_analysis.orbit_and_interocular_region.congruence
+                  )
+                "
               >
                 {{ result.landmark_analysis.orbit_and_interocular_region.congruence }}
               </span>
@@ -165,7 +189,11 @@
               <h4>Mandibular & Perioral Region</h4>
               <span
                 class="badge"
-                [class]="congruenceBadgeClass(result.landmark_analysis.mandibular_and_perioral_region.congruence)"
+                [class]="
+                  congruenceBadgeClass(
+                    result.landmark_analysis.mandibular_and_perioral_region.congruence
+                  )
+                "
               >
                 {{ result.landmark_analysis.mandibular_and_perioral_region.congruence }}
               </span>
@@ -178,7 +206,9 @@
               <h4>Auricular Features</h4>
               <span
                 class="badge"
-                [class]="congruenceBadgeClass(result.landmark_analysis.auricular_features.congruence)"
+                [class]="
+                  congruenceBadgeClass(result.landmark_analysis.auricular_features.congruence)
+                "
               >
                 {{ result.landmark_analysis.auricular_features.congruence }}
               </span>
@@ -190,13 +220,20 @@
             <div class="landmark-header">
               <h4>Surface Markers</h4>
               <span class="badge badge-default">
-                {{ result.landmark_analysis.surface_markers.features_detected ? 'Detected' : 'None detected' }}
+                {{
+                  result.landmark_analysis.surface_markers.features_detected
+                    ? 'Detected'
+                    : 'None detected'
+                }}
               </span>
             </div>
             @if (result.landmark_analysis.surface_markers.consistent_markers.length) {
               <h5>Consistent Markers</h5>
               <ul>
-                @for (marker of result.landmark_analysis.surface_markers.consistent_markers; track marker) {
+                @for (
+                  marker of result.landmark_analysis.surface_markers.consistent_markers;
+                  track marker
+                ) {
                   <li>{{ marker }}</li>
                 }
               </ul>
@@ -204,7 +241,10 @@
             @if (result.landmark_analysis.surface_markers.inconsistent_markers.length) {
               <h5>Inconsistent Markers</h5>
               <ul>
-                @for (marker of result.landmark_analysis.surface_markers.inconsistent_markers; track marker) {
+                @for (
+                  marker of result.landmark_analysis.surface_markers.inconsistent_markers;
+                  track marker
+                ) {
                   <li>{{ marker }}</li>
                 }
               </ul>
@@ -246,9 +286,6 @@
     <p>
       Consider lighting, camera angle, image age, and image quality when inspecting the photographs.
     </p>
-    <p>
-      Automated analysis assists human review; visual resemblance does not establish identity.
-    </p>
+    <p>Automated analysis assists human review; visual resemblance does not establish identity.</p>
   </section>
 </main>
-
