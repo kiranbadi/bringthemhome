@@ -14,10 +14,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { finalize, map } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AccountManagementService } from '../services/account-management';
 
@@ -45,6 +45,12 @@ type AccountMode = 'login' | 'forgotPassword';
 export class AccountManagement implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+  protected readonly reportLoginRequired = toSignal(
+    inject(ActivatedRoute).queryParamMap.pipe(
+      map((params) => params.get('reason') === 'report-account-required'),
+    ),
+    { initialValue: false },
+  );
 
   private readonly accountService = inject(AccountManagementService);
   private readonly destroyRef = inject(DestroyRef);

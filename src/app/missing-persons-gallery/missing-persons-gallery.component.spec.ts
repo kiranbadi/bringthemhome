@@ -59,6 +59,50 @@ describe('MissingPersonsGalleryComponent', () => {
   });
   afterEach(() => http.verify());
 
+  it('runs natural search and preserves filters when paginating', async () => {
+    request().flush(page());
+    queryParams.next(
+      convertToParamMap({
+        nl_query: 'teenage girl in Raleigh',
+        nl_mode: 'semantic',
+        nl_state: 'NC',
+        nl_age_min: '13',
+        page: '1',
+      }),
+    );
+    const search = http.expectOne('http://localhost:8000/bringthemhome/api/v1/search/natural');
+    expect(search.request.body).toEqual({
+      query: 'teenage girl in Raleigh',
+      mode: 'semantic',
+      filters: { state: 'NC', age_min: 13 },
+      page: 1,
+      page_size: 20,
+    });
+    search.flush(page());
+    await fixture.whenStable();
+    expect(element().textContent).toContain('Jane Doe');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.componentInstance.goToPage(2);
+    expect(navigate).toHaveBeenCalledWith([], {
+      relativeTo: TestBed.inject(ActivatedRoute),
+      queryParams: { page: 2 },
+      queryParamsHandling: 'merge',
+    });
+    queryParams.next(
+      convertToParamMap({
+        nl_query: 'teenage girl in Raleigh',
+        nl_mode: 'semantic',
+        nl_state: 'NC',
+        nl_age_min: '13',
+        page: '2',
+      }),
+    );
+    const next = http.expectOne('http://localhost:8000/bringthemhome/api/v1/search/natural');
+    expect(next.request.body.page).toBe(2);
+    expect(next.request.body.filters.state).toBe('NC');
+    next.flush(page(2));
+  });
+
   it('loads page one, renders nullable location and placeholder, and links the real case identity', async () => {
     expect(element().textContent).toContain('Loading');
     request().flush(page());
@@ -226,7 +270,7 @@ describe('MissingPersonsGalleryComponent', () => {
       await fixture.componentInstance.share(record);
       expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/\/missing-persons\/case-1$/));
       await fixture.whenStable();
-      expect(element().querySelector('[role="status"]')?.textContent).toContain('copied');
+      expect(element().querySelector('.share-status')?.textContent).toContain('copied');
       share.mockRejectedValue(new DOMException('Cancelled', 'AbortError'));
       writeText.mockClear();
       await fixture.componentInstance.share(record);

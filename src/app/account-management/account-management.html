@@ -2,16 +2,29 @@
 
 <main class="account-page">
   <header class="account-heading">
+    <span class="eyebrow">JOIN OUR COMMUNITY</span>
     <h1>Account Management</h1>
-    <p>Register to help report missing person details, or sign in to continue.</p>
+    <p>Connect with a community working to bring missing people home.</p>
   </header>
+
+  @if (reportLoginRequired()) {
+    <div class="report-login-notice" role="status">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <p>
+        Only signed-in users with a registered account can create a missing person report. Sign in
+        or create an account to continue.
+      </p>
+    </div>
+  }
 
   <section class="account-grid" aria-label="Account access">
     <section class="account-panel" aria-labelledby="login-title">
       @if (accountMode === 'login') {
         <div class="panel-heading">
+          <span class="panel-icon"><mat-icon aria-hidden="true">login</mat-icon></span>
+          <span class="eyebrow">WELCOME BACK</span>
           <h2 id="login-title">Sign In</h2>
-          <p>Use your email and password.</p>
+          <p>Sign in with your email and password to continue.</p>
         </div>
 
         <form
@@ -80,6 +93,8 @@
         </form>
       } @else {
         <div class="panel-heading">
+          <span class="panel-icon"><mat-icon aria-hidden="true">lock_reset</mat-icon></span>
+          <span class="eyebrow">ACCOUNT RECOVERY</span>
           <h2 id="login-title">Reset Password</h2>
           <p>Enter your email or phone number.</p>
         </div>

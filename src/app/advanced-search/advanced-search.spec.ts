@@ -31,6 +31,25 @@ describe('AdvancedSearch', () => {
     expect(compiled.textContent).toContain('Sort By');
     expect(compiled.textContent).toContain('Most Recent');
   });
+  it('groups every filter once in its respective panel', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const groups = {
+      identity: ['firstName', 'middleName', 'lastName', 'race', 'gender'],
+      appearance: ['eyeColor', 'hairColor'],
+      ages: ['ageMissingMin', 'ageMissingMax', 'ageNowMin', 'ageNowMax'],
+      location: ['city', 'state', 'country'],
+      report: ['reportedStartDate', 'reportedEndDate', 'agency', 'photoAvailable', 'alertType'],
+    };
+    for (const [group, names] of Object.entries(groups)) {
+      const panel = root.querySelector(`#${group}-filters`);
+      expect(panel).toBeTruthy();
+      for (const name of names) {
+        expect(panel?.querySelector(`[formControlName="${name}"]`)).toBeTruthy();
+        expect(root.querySelectorAll(`[formControlName="${name}"]`)).toHaveLength(1);
+      }
+    }
+    expect(root.querySelector('.selected-criteria-panel [formControlName="sortBy"]')).toBeTruthy();
+  });
   it('submits backend filter names and explicit age bounds to the gallery', async () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);

@@ -39,6 +39,7 @@ export interface AuthenticatedUser {
   readonly email: string;
   readonly full_name: string;
   readonly role: string;
+  readonly phone?: string | null;
 }
 
 export interface LoginResponse {

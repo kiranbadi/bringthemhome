@@ -51,9 +51,21 @@ describe('Persisted account navigation', () => {
 
   it('redirects guests opening the report route to Login', async () => {
     const harness = await RouterTestingHarness.create('/missing-person-report');
-    expect(TestBed.inject(Router).url).toBe('/login');
+    expect(TestBed.inject(Router).url).toBe('/login?reason=report-account-required');
     expect(harness.routeNativeElement?.textContent).toContain('Sign In');
+    expect(harness.routeNativeElement?.querySelector('[role="status"]')?.textContent).toContain(
+      'Only signed-in users with a registered account can create a missing person report.',
+    );
     expect(harness.routeNativeElement?.querySelector('app-missing-person-report')).toBeNull();
+  });
+
+  it('does not show the report notice on ordinary login visits or after leaving the report login', async () => {
+    const harness = await RouterTestingHarness.create('/login');
+    expect(harness.routeNativeElement?.querySelector('.report-login-notice')).toBeNull();
+    await harness.navigateByUrl('/missing-person-report');
+    expect(harness.routeNativeElement?.querySelector('.report-login-notice')).not.toBeNull();
+    await harness.navigateByUrl('/login');
+    expect(harness.routeNativeElement?.querySelector('.report-login-notice')).toBeNull();
   });
 
   it('allows signed-in users to open the report route', async () => {
@@ -61,6 +73,7 @@ describe('Persisted account navigation', () => {
     const harness = await RouterTestingHarness.create('/missing-person-report');
     expect(TestBed.inject(Router).url).toBe('/missing-person-report');
     expect(harness.routeNativeElement?.textContent).toContain('Missing Person');
+    expect(harness.routeNativeElement?.querySelector('.report-login-notice')).toBeNull();
   });
 
   it('requires login again only after explicit logout', async () => {

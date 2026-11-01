@@ -3,8 +3,12 @@
 <main class="account-dashboard">
   <header class="dashboard-heading">
     <div>
+      <span class="eyebrow">YOUR COMMUNITY WORKSPACE</span>
       <h1>My Account</h1>
-      <p>Account access is active. Use this workspace to create and manage missing person reports.</p>
+      <p>
+        Welcome{{ user()?.full_name?.trim() ? ', ' + user()?.full_name : '' }}. Help connect missing
+        people with the communities looking for them.
+      </p>
     </div>
     <a matButton="filled" routerLink="/missing-person-report">
       <mat-icon aria-hidden="true">post_add</mat-icon>
@@ -12,43 +16,73 @@
     </a>
   </header>
 
-  <a matButton routerLink="/account/resource-contributions">My Contributions — Community Resources</a>
-
-  <section class="dashboard-grid" aria-label="Account details">
-    <section class="detail-panel">
-      <h2>Reporter Details</h2>
+  <div class="dashboard-grid">
+    <section class="detail-panel" aria-labelledby="profile-title">
+      <header class="panel-heading">
+        <span class="icon-tile"><mat-icon aria-hidden="true">person_outline</mat-icon></span>
+        <div>
+          <h2 id="profile-title">Your Profile</h2>
+          <p>Details associated with your signed-in account.</p>
+        </div>
+      </header>
       <dl>
         <div>
-          <dt>Name</dt>
-          <dd>Verified Account Holder</dd>
+          <dt>Full Name</dt>
+          <dd>{{ user()?.full_name?.trim() || 'Not provided' }}</dd>
         </div>
         <div>
           <dt>Email</dt>
-          <dd>verified@example.com</dd>
+          <dd>{{ user()?.email?.trim() || 'Not provided' }}</dd>
         </div>
         <div>
           <dt>Phone</dt>
-          <dd>(555) 010-2048</dd>
+          <dd>{{ user()?.phone?.trim() || 'Not provided' }}</dd>
+        </div>
+        <div>
+          <dt>Account Role</dt>
+          <dd>{{ roleLabel() }}</dd>
         </div>
       </dl>
+      <p class="profile-note">
+        These details come from your sign-in session. Information not supplied by your account is
+        shown as “Not provided”.
+      </p>
     </section>
 
-    <section class="detail-panel">
-      <h2>Reporting Access</h2>
-      <dl>
+    <section class="detail-panel" aria-labelledby="actions-title">
+      <header class="panel-heading">
+        <span class="icon-tile"><mat-icon aria-hidden="true">volunteer_activism</mat-icon></span>
         <div>
-          <dt>Status</dt>
-          <dd>Approved</dd>
+          <h2 id="actions-title">Ways to Contribute</h2>
+          <p>Take the next step in supporting your community.</p>
         </div>
-        <div>
-          <dt>Available Action</dt>
-          <dd>Missing person report submission</dd>
-        </div>
-        <div>
-          <dt>Review Queue</dt>
-          <dd>Submitted reports are reviewed before publishing.</dd>
-        </div>
-      </dl>
+      </header>
+      <nav class="account-actions" aria-label="Account actions">
+        <a routerLink="/missing-person-report">
+          <mat-icon aria-hidden="true">post_add</mat-icon>
+          <span
+            ><strong>Create a Missing Person Report</strong
+            ><span>Share details to help others find a missing person.</span></span
+          >
+          <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        </a>
+        <a routerLink="/account/resource-contributions">
+          <mat-icon aria-hidden="true">folder_shared</mat-icon>
+          <span
+            ><strong>My Resource Contributions</strong
+            ><span>View your community resource contributions.</span></span
+          >
+          <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        </a>
+        <a routerLink="/missing-persons">
+          <mat-icon aria-hidden="true">search</mat-icon>
+          <span
+            ><strong>Browse Missing Person Cases</strong
+            ><span>Explore case details and share information.</span></span
+          >
+          <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        </a>
+      </nav>
     </section>
-  </section>
+  </div>
 </main>
