@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guard';
+import { caseClaimsAdminGuard } from './features/case-claims/case-claims.guard';
 
 import { MissingPersonsGalleryComponent } from './missing-persons-gallery/missing-persons-gallery.component';
 import { AccountDashboard } from './account-dashboard/account-dashboard';
@@ -11,6 +12,15 @@ import { PolicyPageComponent } from './policy-page/policy-page.component';
 import { SupportUs } from './support-us/support-us';
 
 export const routes: Routes = [
+  {
+    path: 'admin/case-claims',
+    canActivate: [caseClaimsAdminGuard],
+    loadComponent: () =>
+      import('./features/case-claims/case-claims-admin.component').then(
+        (m) => m.CaseClaimsAdminComponent,
+      ),
+    title: 'Case Claim Review | Bring Them Home',
+  },
   {
     path: 'photo-review',
     canActivate: [authGuard],

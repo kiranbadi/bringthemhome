@@ -9,8 +9,10 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { HttpErrorResponse } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { NavigationHeader } from '../../shared/navigation-header/navigation-header';
-import { Subscription, finalize, take } from 'rxjs';
+import { Subscription, finalize, take, timer } from 'rxjs';
 import { PhotoComparisonService } from './photo-comparison.service';
 import { PhotoComparisonResponse } from './photo-comparison.types';
 
@@ -34,7 +36,7 @@ const emptyPhoto = (): PhotoSlot => ({ url: '', name: '', loaded: false, error: 
 
 @Component({
   selector: 'app-photo-review',
-  imports: [MatButtonModule, MatIconModule, NavigationHeader],
+  imports: [MatButtonModule, MatIconModule, NavigationHeader, DatePipe],
   templateUrl: './photo-review.component.html',
   styleUrl: './photo-review.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +47,9 @@ export class PhotoReviewComponent {
   protected readonly comparing = signal(false);
   protected readonly comparisonResult = signal<PhotoComparisonResponse | null>(null);
   protected readonly comparisonError = signal('');
+  protected readonly limitReached = signal(false);
+  protected readonly retryAt = signal<Date | null>(null);
+  private quotaTimer?: Subscription;
   protected readonly maxBytes = inject(PHOTO_REVIEW_MAX_BYTES);
   protected readonly maxSizeLabel = `${Number((this.maxBytes / 1024 / 1024).toFixed(2))} MB`;
   protected readonly cards = [
@@ -58,7 +63,10 @@ export class PhotoReviewComponent {
   );
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.clear());
+    inject(DestroyRef).onDestroy(() => {
+      this.clear();
+      this.quotaTimer?.unsubscribe();
+    });
   }
 
   protected select(index: PhotoIndex, input: HTMLInputElement): void {
@@ -121,7 +129,7 @@ export class PhotoReviewComponent {
   }
 
   protected compare(): void {
-    if (!this.ready() || this.comparing()) return;
+    if (!this.ready() || this.comparing() || this.limitReached()) return;
     const [reference, comparison] = this.photos();
     if (!reference.file || !comparison.file) return;
     this.resetComparison();
@@ -134,8 +142,23 @@ export class PhotoReviewComponent {
       )
       .subscribe({
         next: (result) => this.comparisonResult.set(result),
-        error: () =>
-          this.comparisonError.set('Unable to complete photo comparison. Please try again.'),
+        error: (error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 429) {
+            const seconds = Number(
+              error.error?.detail?.retry_after_seconds ?? error.headers.get('Retry-After'),
+            );
+            const wait = Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds, 86400) : 60;
+            this.limitReached.set(true);
+            this.retryAt.set(new Date(Date.now() + wait * 1000));
+            this.quotaTimer?.unsubscribe();
+            this.quotaTimer = timer(wait * 1000).subscribe(() => {
+              this.limitReached.set(false);
+              this.retryAt.set(null);
+            });
+          } else {
+            this.comparisonError.set('Unable to complete photo comparison. Please try again.');
+          }
+        },
       });
   }
 

@@ -1,0 +1,96 @@
+<section class="composer" aria-labelledby="contribution-form-title">
+  <h3 id="contribution-form-title">Add information and photos</h3>
+  <p>
+    Contributions are added to the case history. They do not change the original case facts or
+    status and cannot be edited or deleted here.
+  </p>
+  @if (!allowed()) {
+    <p role="status">
+      Contribution controls are disabled while verified access is unavailable or being checked.
+    </p>
+  }
+  <form (submit)="$event.preventDefault(); publish()" [attr.aria-busy]="saving()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Additional case information</mat-label>
+      <textarea
+        #information
+        matInput
+        [formControl]="content"
+        rows="5"
+        maxlength="10000"
+        [readonly]="!allowed() || saving()"
+      ></textarea>
+      <mat-hint
+        >Share only information suitable for public viewing. Up to 10,000 characters.</mat-hint
+      >
+      @if (content.invalid) {
+        <mat-error>Keep information to 10,000 characters or fewer.</mat-error>
+      }
+    </mat-form-field>
+    <label class="upload-label"
+      >Add photos (optional)
+      <input
+        #photosInput
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        [disabled]="!allowed() || saving()"
+        (change)="select($event)"
+        aria-describedby="claim-photo-help"
+      />
+    </label>
+    <p id="claim-photo-help">
+      Up to three unique JPEG, PNG, or WebP photos, 5 MiB each. Photos are uploaded to private
+      storage. After validation and submission, they appear with your case contribution and may be
+      viewed by visitors to the case page.
+    </p>
+    <p>
+      Completing an upload alone does not publish it. Select Publish contribution to submit.
+      Unpublished uploads expire after 24 hours.
+    </p>
+    @if (fileError()) {
+      <p role="alert" class="error">{{ fileError() }}</p>
+    }
+    <div class="photo-grid">
+      @for (entry of entries(); track entry.key) {
+        <figure>
+          <img [src]="entry.preview" [alt]="'Selected photo: ' + entry.file.name" />
+          <figcaption>{{ entry.file.name }}</figcaption>
+          <p role="status">{{ entry.state }}</p>
+          @if (entry.error) {
+            <p role="alert" class="error">{{ entry.error }}</p>
+          }
+          @if (!entry.running && (entry.state === 'failed' || entry.state === 'validating')) {
+            <button
+              matButton
+              type="button"
+              [disabled]="!allowed() || saving()"
+              (click)="upload(entry.key)"
+            >
+              {{ entry.state === 'validating' ? 'Check validation' : 'Retry upload' }}
+            </button>
+          }
+          <button
+            matButton
+            type="button"
+            [disabled]="saving()"
+            (click)="remove(entry.key)"
+            [attr.aria-label]="'Remove ' + entry.file.name"
+          >
+            Remove
+          </button>
+        </figure>
+      }
+    </div>
+    @if (error()) {
+      <p role="alert" class="error">{{ error() }}</p>
+    }
+    @if (reauthenticate()) {
+      <button matButton type="button" (click)="signInRequested.emit()">Sign in again</button>
+    }
+    <button matButton="filled" type="submit" [disabled]="!allowed() || saving() || !filesReady()">
+      {{ saving() ? 'Publishing…' : 'Publish contribution' }}
+    </button>
+    <p role="status">{{ message() }}</p>
+  </form>
+</section>

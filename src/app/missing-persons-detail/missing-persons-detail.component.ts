@@ -8,7 +8,9 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   OnInit,
+  ViewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -35,16 +37,32 @@ import {
 } from '../core/models/missing-person-display';
 import { MissingPersonService } from '../core/services/missing-person.service';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
+import { CaseClaimPanelComponent } from '../features/case-claims/case-claim-panel.component';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-missing-persons-detail',
   standalone: true,
-  imports: [CaseShareComponent, NavigationHeader, RouterLink, TitleCasePipe, CaseProfileSections],
+  imports: [
+    MatButtonModule,
+    CaseShareComponent,
+    NavigationHeader,
+    RouterLink,
+    TitleCasePipe,
+    CaseProfileSections,
+    CaseClaimPanelComponent,
+  ],
   templateUrl: './missing-persons-detail.component.html',
   styleUrl: './missing-persons-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsDetailComponent implements OnInit {
+  @ViewChild('claimAccess') private claimAccess?: ElementRef<HTMLElement>;
+  openClaimOptions(): void {
+    const panel = this.claimAccess?.nativeElement;
+    panel?.focus({ preventScroll: true });
+    panel?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+  }
   private readonly tipDialog = inject(TipDialogService);
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(MissingPersonService);

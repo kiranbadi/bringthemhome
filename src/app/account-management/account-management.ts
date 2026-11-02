@@ -20,6 +20,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { finalize, map } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AccountManagementService } from '../services/account-management';
+import { safeReturnUrl } from '../core/auth/return-url';
 
 import { RegistrationComponent } from '../registration/registration.component';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
@@ -45,6 +46,11 @@ type AccountMode = 'login' | 'forgotPassword';
 export class AccountManagement implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly returnDestination = toSignal(
+    this.route.queryParamMap.pipe(map((params) => safeReturnUrl(params.get('returnUrl')))),
+    { initialValue: null },
+  );
   protected readonly reportLoginRequired = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(
       map((params) => params.get('reason') === 'report-account-required'),
@@ -74,7 +80,8 @@ export class AccountManagement implements OnInit {
 
   ngOnInit(): void {
     if (this.accountService.isAuthenticated()) {
-      void this.router.navigate(['/account/management']);
+      if (this.returnDestination()) void this.router.navigateByUrl(this.returnDestination()!);
+      else void this.router.navigate(['/account/management']);
     }
   }
 
@@ -112,7 +119,8 @@ export class AccountManagement implements OnInit {
       .subscribe({
         next: () => {
           this.loginSucceeded = true;
-          void this.router.navigate(['/account/management']);
+          if (this.returnDestination()) void this.router.navigateByUrl(this.returnDestination()!);
+          else void this.router.navigate(['/account/management']);
         },
         error: (error: unknown) => {
           if (error instanceof HttpErrorResponse && error.status === 429) {

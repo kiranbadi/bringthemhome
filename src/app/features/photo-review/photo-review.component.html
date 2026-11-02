@@ -6,6 +6,19 @@
     <p>Compare two photographs side by side and review the analysis together.</p>
   </header>
 
+  <aside class="quota-notice" aria-labelledby="quota-title">
+    <mat-icon aria-hidden="true">info</mat-icon>
+    <div>
+      <h2 id="quota-title">
+        Only 5 photo comparisons are allowed per account in any 24-hour period.
+      </h2>
+      <p>
+        Valid submissions count when comparison starts, including attempts that later fail. Invalid
+        uploads do not count.
+      </p>
+    </div>
+  </aside>
+
   <aside class="privacy-notice" aria-labelledby="privacy-title">
     <span class="notice-icon"><mat-icon aria-hidden="true">shield</mat-icon></span>
     <div>
@@ -85,7 +98,7 @@
       matButton="filled"
       type="button"
       (click)="compare()"
-      [disabled]="!ready() || comparing()"
+      [disabled]="!ready() || comparing() || limitReached()"
       [attr.aria-busy]="comparing()"
     >
       {{ comparing() ? 'Analyzing…' : 'Compare Photos' }}
@@ -106,6 +119,12 @@
 
   @if (comparisonError()) {
     <p class="error" role="alert">{{ comparisonError() }}</p>
+  }
+  @if (limitReached()) {
+    <p class="error" role="alert">
+      You have reached your limit of 5 photo comparisons in 24 hours. You can try again after
+      {{ retryAt() | date: 'medium' }}.
+    </p>
   }
 
   @if (comparisonResult(); as result) {

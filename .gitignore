@@ -64,6 +64,9 @@ Thumbs.db
 !/docs/api/natural-search.md
 !/docs/api/natural-search.schema.json
 !/docs/plans/2026-10-31-natural-search.md
+!/docs/api/case-claims.md
+!/docs/api/photo-comparison-limits.md
+!/docs/plans/2026-10-31-case-claims.md
 __pycache__/
 .pytest_cache/
 *.pyc
