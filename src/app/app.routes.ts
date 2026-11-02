@@ -107,6 +107,13 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'missing-persons/:slug/:id',
+    loadComponent: () =>
+      import('./missing-persons-detail/missing-persons-detail.component').then(
+        (m) => m.MissingPersonsDetailComponent,
+      ),
+  },
+  {
     path: 'missing-persons/:id',
     loadComponent: () =>
       import('./missing-persons-detail/missing-persons-detail.component').then(

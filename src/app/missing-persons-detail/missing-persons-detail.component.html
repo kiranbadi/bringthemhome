@@ -70,6 +70,7 @@
           >
           <app-case-share
             [caseId]="record._id"
+            [canonicalPath]="casePath(record)"
             [name]="name(record)"
             [location]="location(record)"
             [image]="image()"
@@ -83,7 +84,7 @@
     <app-case-profile-sections [record]="record" />
     <div #claimAccess class="claim-access" tabindex="-1" aria-label="Case claim options">
       @defer (on immediate) {
-        <app-case-claim-panel [caseId]="record._id" />
+        <app-case-claim-panel [caseId]="record._id" [canonicalPath]="casePath(record)" />
       } @placeholder {
         <p role="status">Loading case contribution tools…</p>
       } @error {

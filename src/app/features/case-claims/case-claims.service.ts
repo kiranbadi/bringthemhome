@@ -16,6 +16,7 @@ import {
   toArray,
 } from 'rxjs';
 import { MissingPersonService } from '../../core/services/missing-person.service';
+import { casePath } from '../../core/models/case-url';
 import { environment } from '../../../environments/environment';
 import {
   Claim,
@@ -38,6 +39,7 @@ export class CaseClaimsService {
   private readonly credentials = { withCredentials: true };
   private readonly missingPersons = inject(MissingPersonService);
   private readonly personNames = new Map<string, string>();
+  private readonly personPaths = new Map<string, string>();
   private caseUrl(id: string) {
     return `${this.base}/cases/${encodeURIComponent(id)}`;
   }
@@ -171,6 +173,7 @@ export class CaseClaimsService {
                 record?.full_name?.trim() ||
                 record?._source?.full_name?.trim();
               if (name) this.personNames.set(id, name);
+              if (record) this.personPaths.set(id, casePath(record));
               return name ?? null;
             }),
             catchError(() => of(null)),
@@ -186,6 +189,9 @@ export class CaseClaimsService {
         items: queue.items.map((claim) => ({
           ...claim,
           missing_person_name: this.personNames.get(claim.missing_person_id) ?? null,
+          canonical_path:
+            this.personPaths.get(claim.missing_person_id) ??
+            casePath({ _id: claim.missing_person_id, canonical_path: claim.canonical_path }),
         })),
       })),
     );

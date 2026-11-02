@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { casePath } from '../../core/models/case-url';
 
 export interface CaseShareData {
   title: string;
@@ -11,11 +11,10 @@ export interface CaseShareData {
 @Injectable({ providedIn: 'root' })
 export class CaseShareService {
   private readonly document = inject(DOCUMENT);
-  private readonly router = inject(Router);
   readonly nativeAvailable = !!this.document.defaultView?.navigator.share;
 
-  data(id: string, name: string, location: string): CaseShareData {
-    const path = this.router.serializeUrl(this.router.createUrlTree(['/missing-persons', id]));
+  data(id: string, name: string, location: string, canonicalPath?: string | null): CaseShareData {
+    const path = casePath({ _id: id, canonical_path: canonicalPath });
     return {
       title: name,
       text: `Help find ${name}.${location && location !== 'Location unavailable' ? ` Last known location: ${location}.` : ''} View case details and share information:`,

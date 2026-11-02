@@ -112,12 +112,13 @@
                 <app-case-share
                   [image]="image(person)"
                   [caseId]="person._id"
+                  [canonicalPath]="casePath(person)"
                   [name]="person.full_name"
                   [location]="location(person)"
                 />
                 <a
                   class="details-link"
-                  [routerLink]="['/missing-persons', person._id]"
+                  [routerLink]="casePath(person)"
                   [attr.aria-label]="'View details for ' + person.full_name"
                   >View Details <span aria-hidden="true">→</span></a
                 >

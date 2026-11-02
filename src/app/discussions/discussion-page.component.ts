@@ -19,6 +19,7 @@ import { NavigationHeader } from '../shared/navigation-header/navigation-header'
 import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
 import { PERSON_PLACEHOLDER } from '../core/models/missing-person-display';
 import { publicImageUrl } from '../missing-persons-detail/case-profile-format';
+import { casePath } from '../core/models/case-url';
 @Component({
   selector: 'app-discussion-page',
   imports: [RouterLink, RouterOutlet, MatButtonModule, NavigationHeader],
@@ -26,7 +27,9 @@ import { publicImageUrl } from '../missing-persons-detail/case-profile-format';
   template: `
     <app-navigation-header />
     <main class="discussion-page">
-      <a [routerLink]="['/missing-persons', caseId()]">← Back to {{ personName() }}’s case</a>
+      <a [routerLink]="person() ? casePath(person()!) : ['/missing-persons', caseId()]"
+        >← Back to {{ personName() }}’s case</a
+      >
       @if (loading()) {
         <p role="status">Loading case…</p>
       } @else if (person(); as record) {
@@ -65,6 +68,7 @@ import { publicImageUrl } from '../missing-persons-detail/case-profile-format';
   styleUrl: './discussions.scss',
 })
 export class DiscussionPageComponent {
+  readonly casePath = casePath;
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(MissingPersonService);
   private readonly tip = inject(TipDialogService);

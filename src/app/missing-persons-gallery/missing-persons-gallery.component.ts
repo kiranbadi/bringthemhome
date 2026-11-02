@@ -29,6 +29,7 @@ import {
 } from '../core/models/missing-person-display';
 import { MissingPersonService } from '../core/services/missing-person.service';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
+import { casePath } from '../core/models/case-url';
 import { NaturalSearchHeroComponent } from '../features/natural-search/natural-search-hero.component';
 import { NaturalSearchService } from '../features/natural-search/natural-search.service';
 import {
@@ -81,6 +82,7 @@ export class MissingPersonsGalleryComponent implements OnInit {
   readonly totalPages = computed(() => this.response()?.total_pages ?? 0);
   readonly failedImages = signal<ReadonlySet<string>>(new Set());
   readonly placeholder = PERSON_PLACEHOLDER;
+  readonly casePath = casePath;
   readonly location = personLocation;
   readonly reportedDate = personReportedDate;
   readonly skeletons = Array.from({ length: 8 }, (_, index) => index);
@@ -225,7 +227,7 @@ export class MissingPersonsGalleryComponent implements OnInit {
   async share(person: MissingPerson): Promise<void> {
     this.shareMessage.set(
       await this.caseShare.share(
-        this.caseShare.data(person._id, person.full_name, this.location(person)),
+        this.caseShare.data(person._id, person.full_name, this.location(person), casePath(person)),
       ),
     );
   }
