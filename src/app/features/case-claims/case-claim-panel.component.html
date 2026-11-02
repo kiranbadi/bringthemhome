@@ -1,0 +1,119 @@
+<section class="panel" id="case-claims" aria-labelledby="case-claims-title">
+  <div class="heading-row">
+    <div>
+      <h2 id="case-claims-title">Claim this case</h2>
+      <p>
+        Are you the person in this case, a family member, or a legal guardian? Request verified
+        access to add information and photos.
+      </p>
+    </div>
+  </div>
+  @if (!user()) {
+    <a matButton="filled" routerLink="/login" [queryParams]="{ returnUrl: returnUrl() }"
+      >Sign in to claim this case</a
+    >
+  } @else {
+    @if (loading()) {
+      <p role="status">Checking your claim status…</p>
+    }
+    @if (statusError()) {
+      <p role="alert" class="error">{{ statusError() }}</p>
+      <button matButton type="button" (click)="reload()" [disabled]="loading()">
+        Retry claim status
+      </button>
+    }
+    @if (!loading() && !statusError() && loaded()) {
+      @if (claim(); as current) {
+        @switch (current.status) {
+          @case ('PENDING') {
+            <p class="status" role="status">Verification pending</p>
+            <p>
+              Staff will independently verify your relationship before contribution access is
+              granted.
+            </p>
+          }
+          @case ('APPROVED') {
+            <p class="status" role="status">Verified case access</p>
+            <div class="actions">
+              <button matButton="filled" type="button" (click)="addInformation()">
+                Add information</button
+              ><button matButton="outlined" type="button" (click)="addPhotos()">Add photos</button>
+            </div>
+          }
+          @case ('REJECTED') {
+            <p class="status" role="status">Claim rejected</p>
+            <p>Contact staff to discuss verification or ask for reconsideration.</p>
+            <a matButton routerLink="/contact-us">Contact staff</a>
+          }
+          @case ('REVOKED') {
+            <p class="status" role="status">Verified access revoked</p>
+            <p>You can no longer add information or photos. Contact staff about your access.</p>
+            <a matButton routerLink="/contact-us">Contact staff</a>
+          }
+        }
+      } @else {
+        <button
+          matButton="filled"
+          type="button"
+          (click)="showClaimForm.set(true)"
+          [disabled]="saving()"
+        >
+          Claim this case
+        </button>
+        @if (showClaimForm()) {
+          <form [formGroup]="form" (ngSubmit)="submitClaim()" [attr.aria-busy]="saving()">
+            <p>
+              Your explanation is private. Staff independently verify your claim before access is
+              granted. Do not upload verification documents; this workflow accepts an explanation
+              only.
+            </p>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"
+              ><mat-label>Your relationship</mat-label
+              ><mat-select formControlName="relationship">
+                @for (relationship of relationships; track relationship[0]) {
+                  <mat-option [value]="relationship[0]">{{ relationship[1] }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.relationship.invalid) {
+                <mat-error>Select a relationship.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"
+              ><mat-label>Private relationship explanation</mat-label
+              ><textarea
+                matInput
+                formControlName="explanation"
+                rows="4"
+                maxlength="3000"
+                [readonly]="saving()"
+              ></textarea
+              ><mat-hint>10–3000 characters after trimming.</mat-hint>
+              @if (form.controls.explanation.invalid) {
+                <mat-error>Enter a private explanation of 10–3000 characters.</mat-error>
+              }
+            </mat-form-field>
+            <button matButton="filled" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Submitting…' : 'Submit claim for verification' }}
+            </button>
+          </form>
+        }
+      }
+    }
+    @if (actionError()) {
+      <p role="alert" class="error">{{ actionError() }}</p>
+    }
+    @if (reauthenticate()) {
+      <button matButton type="button" (click)="signInAgain()">Sign in again</button>
+    }
+    @if (showComposer()) {
+      <app-claim-contribution-composer
+        [caseId]="caseId()"
+        [allowed]="canContribute()"
+        (published)="published()"
+        (permissionFailure)="permissionChanged()"
+        (signInRequested)="signInAgain()"
+      />
+    }
+  }
+</section>
+<app-case-contributions [caseId]="caseId()" [refresh]="contributionVersion()" />

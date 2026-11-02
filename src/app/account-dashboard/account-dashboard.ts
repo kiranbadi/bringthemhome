@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 import { AccountManagementService } from '../services/account-management';
+import { isAdministrator } from '../features/case-claims/case-claims.models';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -15,6 +16,7 @@ import { AccountManagementService } from '../services/account-management';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountDashboard {
+  protected readonly isAdmin = computed(() => isAdministrator(this.user()?.role));
   protected readonly user = toSignal(inject(AccountManagementService).currentUser$, {
     initialValue: null,
   });

@@ -1,0 +1,146 @@
+<app-navigation-header />
+<main class="admin-page">
+  <h1>Case claim review</h1>
+  <p>
+    Private staff workspace. Verify each relationship independently before granting access. Approval
+    verifies access, not every contribution.
+  </p>
+  @if (!isAdmin()) {
+    <p role="alert" class="error">Administrator access is required.</p>
+  } @else {
+    <mat-form-field appearance="outline"
+      ><mat-label>Claim status</mat-label
+      ><mat-select
+        [value]="status()"
+        [disabled]="saving()"
+        (selectionChange)="filter($event.value)"
+      >
+        @for (option of statuses; track option) {
+          <mat-option [value]="option">{{ option }}</mat-option>
+        }
+      </mat-select></mat-form-field
+    >
+    <button matButton type="button" (click)="load()" [disabled]="saving() || loading()">
+      Refresh queue
+    </button>
+    @if (loading()) {
+      <p role="status">Loading private claims…</p>
+    }
+    @if (error()) {
+      <p role="alert" class="error">{{ error() }}</p>
+    }
+    @if (reauthenticate()) {
+      <button matButton type="button" (click)="signInAgain()">Sign in again</button>
+    }
+    @if (queue(); as data) {
+      @for (claim of data.items; track claim.id) {
+        <article class="panel">
+          <h2>{{ claim.missing_person_name || 'Name unavailable' }}</h2>
+          <p>
+            {{ relationships[claim.relationship] }} · {{ claim.status }} ·
+            {{ claim.created_at | date: 'medium' }}
+          </p>
+          <p>Claimant account ID: {{ claim.user_id }}</p>
+          <h3>Private relationship explanation</h3>
+          <p class="private-explanation">{{ claim.explanation }}</p>
+          <div class="actions">
+            <a
+              matButton
+              [routerLink]="['/missing-persons', claim.missing_person_id]"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="
+                'View case for ' +
+                (claim.missing_person_name || 'this missing person') +
+                ' (opens in a new tab)'
+              "
+              >View case</a
+            ><button
+              matButton="outlined"
+              type="button"
+              [disabled]="own(claim) || saving() || denied()"
+              (click)="select(claim)"
+            >
+              Review claim
+            </button>
+          </div>
+          @if (own(claim)) {
+            <p>You cannot review your own claim.</p>
+          }
+        </article>
+      } @empty {
+        <p>No claims with this status.</p>
+      }
+      <nav class="actions" aria-label="Staff claim pagination">
+        <button
+          matButton
+          type="button"
+          [disabled]="page() <= 1 || saving() || loading()"
+          (click)="changePage(-1)"
+        >
+          Previous claims</button
+        ><span>Page {{ page() }} · {{ data.total }} claims</span
+        ><button
+          matButton
+          type="button"
+          [disabled]="page() * data.page_size >= data.total || saving() || loading()"
+          (click)="changePage(1)"
+        >
+          Next claims
+        </button>
+      </nav>
+    }
+    @if (selected(); as claim) {
+      <section class="panel" aria-labelledby="review-title">
+        <h2 id="review-title">
+          Review claim for {{ claim.missing_person_name || 'Name unavailable' }}
+        </h2>
+        <form [formGroup]="form" (ngSubmit)="review()" [attr.aria-busy]="saving()">
+          @if (staleReview()) {
+            <p role="alert" class="error">
+              This claim changed while you were reviewing it. Select its current status in the queue
+              and reopen the review. Your draft notes have been kept.
+            </p>
+          } @else {
+            <mat-form-field appearance="outline"
+              ><mat-label>Review decision</mat-label
+              ><mat-select formControlName="status">
+                @for (option of choices(); track option) {
+                  <mat-option [value]="option">{{ option }}</mat-option>
+                }
+              </mat-select></mat-form-field
+            >
+            <mat-checkbox formControlName="verified"
+              >I completed independent verification before approving access.</mat-checkbox
+            >
+          }
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"
+            ><mat-label>Private staff review notes</mat-label
+            ><textarea
+              matInput
+              formControlName="review_notes"
+              rows="4"
+              maxlength="3000"
+              [readonly]="saving()"
+            ></textarea
+            ><mat-hint>10–3000 characters. Visible to staff only.</mat-hint>
+            @if (form.controls.review_notes.invalid) {
+              <mat-error>Enter review notes of 10–3000 characters.</mat-error>
+            }
+          </mat-form-field>
+          @if (reviewError()) {
+            <p role="alert" class="error">{{ reviewError() }}</p>
+          }
+          <button
+            matButton="filled"
+            type="submit"
+            [disabled]="saving() || loading() || denied() || staleReview() || own(claim)"
+          >
+            {{ saving() ? 'Saving…' : 'Save review' }}
+          </button>
+        </form>
+      </section>
+    }
+    <p role="status">{{ message() }}</p>
+  }
+</main>

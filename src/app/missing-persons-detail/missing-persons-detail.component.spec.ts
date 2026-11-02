@@ -27,7 +27,17 @@ describe('MissingPersonsDetailComponent', () => {
       ],
     });
   });
-  afterEach(() => TestBed.inject(HttpTestingController).verify());
+  afterEach(() => {
+    const http = TestBed.inject(HttpTestingController);
+    // The independently tested contribution widget now loads alongside the case profile.
+    for (const request of http.match(
+      (request) =>
+        request.url === 'http://localhost:8000/bringthemhome/api/cases/abc-123/contributions',
+    )) {
+      if (!request.cancelled) request.flush({ items: [], total: 0, page: 1, page_size: 20 });
+    }
+    http.verify();
+  });
 
   it('loads one detail response for summary and all seven sections and preserves Submit Tip', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
@@ -51,6 +61,10 @@ describe('MissingPersonsDetailComponent', () => {
     expect(root.textContent).toContain('County Police');
     expect(root.textContent).toContain('ROWAN, North Carolina');
     expect(root.querySelectorAll('mat-expansion-panel')).toHaveLength(7);
+    const claimButton = root.querySelector<HTMLButtonElement>('.photo-panel button');
+    expect(claimButton?.textContent).toContain('Claim this case');
+    claimButton!.click();
+    expect(document.activeElement).toBe(root.querySelector('.claim-access'));
     (root.querySelector('.tip-link') as HTMLButtonElement).click();
     await fixture.whenStable();
     await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1));
@@ -63,7 +77,7 @@ describe('MissingPersonsDetailComponent', () => {
     http.expectNone((request) => request.url.endsWith('/api/v1/missing-persons'));
   });
 
-  it('supports the confirmed flat response without extra requests', async () => {
+  it('supports the confirmed flat response alongside independent contributions', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
     await fixture.whenStable();
     TestBed.inject(HttpTestingController).expectOne(endpoint).flush({
@@ -92,7 +106,7 @@ describe('MissingPersonsDetailComponent', () => {
       _source: { embedded_images: { data_urls: [first] } },
     });
     await fixture.whenStable();
-    const image = fixture.nativeElement.querySelector('.person-summary > img') as HTMLImageElement;
+    const image = fixture.nativeElement.querySelector('.photo-panel img') as HTMLImageElement;
     expect(image.getAttribute('src')).toBe(primary);
     for (const expected of [first, second, '/missing-person-placeholder.svg']) {
       image.dispatchEvent(new Event('error'));
@@ -108,7 +122,7 @@ describe('MissingPersonsDetailComponent', () => {
       embedded_images: { data_urls: [first] },
     });
     await fixture.whenStable();
-    expect(fixture.nativeElement.querySelector('.person-summary > img').getAttribute('src')).toBe(
+    expect(fixture.nativeElement.querySelector('.photo-panel img').getAttribute('src')).toBe(
       first,
     );
   });

@@ -1,0 +1,146 @@
+:host {
+  display: block;
+}
+.panel {
+  box-sizing: border-box;
+  margin: 24px 0;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 16px;
+  background: var(--mat-sys-surface-container-lowest);
+  color: var(--mat-sys-on-surface);
+}
+h2 {
+  font: var(--mat-sys-title-large);
+  margin: 0 0 12px;
+}
+h3 {
+  font: var(--mat-sys-title-medium);
+  margin: 0 0 10px;
+}
+p {
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.heading-row > div {
+  flex: 1 1 320px;
+}
+form {
+  display: grid;
+  gap: 20px;
+  margin-top: 20px;
+}
+mat-form-field {
+  width: 100%;
+  min-width: 0;
+}
+form > button {
+  justify-self: start;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+button,
+a[matButton] {
+  min-height: 44px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 4px;
+}
+.error {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+  padding: 14px;
+  border-radius: 10px;
+}
+.status {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font-weight: 600;
+}
+.composer,
+.contribution {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-top: 24px;
+  margin-top: 24px;
+}
+.upload-label {
+  display: grid;
+  gap: 12px;
+  font-weight: 600;
+}
+input[type='file'] {
+  max-width: 100%;
+  font: inherit;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  gap: 16px;
+}
+figure {
+  margin: 0;
+  min-width: 0;
+}
+img {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-low);
+}
+img[hidden] {
+  display: none;
+}
+figcaption {
+  overflow-wrap: anywhere;
+  margin-top: 8px;
+}
+.content,
+.private-explanation {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.admin-page {
+  box-sizing: border-box;
+  max-width: 1240px;
+  margin: auto;
+  padding: 32px 24px;
+}
+.admin-page h1 {
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.2;
+}
+.admin-page > mat-form-field {
+  max-width: 320px;
+}
+@media (max-width: 600px) {
+  .panel {
+    padding: 20px 16px;
+  }
+  .actions {
+    align-items: stretch;
+  }
+  .admin-page {
+    padding: 24px 16px;
+  }
+}

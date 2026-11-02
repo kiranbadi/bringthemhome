@@ -18,6 +18,9 @@ export class PhotoComparisonService {
       Accept: 'application/json',
     });
 
-    return this.http.post<PhotoComparisonResponse>(this.endpoint, formData, { headers });
+    return this.http.post<PhotoComparisonResponse>(this.endpoint, formData, {
+      headers,
+      withCredentials: true,
+    });
   }
 }

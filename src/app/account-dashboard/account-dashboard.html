@@ -58,6 +58,15 @@
         </div>
       </header>
       <nav class="account-actions" aria-label="Account actions">
+        @if (isAdmin()) {
+          <a routerLink="/admin/case-claims"
+            ><mat-icon aria-hidden="true">fact_check</mat-icon
+            ><span
+              ><strong>Review Case Claims</strong
+              ><span>Verify relationships and manage claimant access.</span></span
+            ><mat-icon aria-hidden="true">arrow_forward</mat-icon></a
+          >
+        }
         <a routerLink="/missing-person-report">
           <mat-icon aria-hidden="true">post_add</mat-icon>
           <span

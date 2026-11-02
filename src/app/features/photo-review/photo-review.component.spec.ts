@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -58,7 +59,8 @@ describe('Photo review', () => {
       perspective_or_lighting_distortions: 'Minor lighting angle difference.',
     },
     distinguishing_differences: ['Subtle difference in facial hair density'],
-    technical_summary: 'Comprehensive biometric landmark comparison indicates strong facial concordance.',
+    technical_summary:
+      'Comprehensive biometric landmark comparison indicates strong facial concordance.',
   };
 
   const root = () => fixture.nativeElement as HTMLElement;
@@ -129,6 +131,26 @@ describe('Photo review', () => {
     expect(routes.find((r) => r.path === 'photo-review')?.canActivate).toContain(authGuard);
   });
 
+  it('explains the 24-hour allowance and preserves a server-enforced limit after clearing photos', async () => {
+    expect(root().textContent).toContain(
+      'Only 5 photo comparisons are allowed per account in any 24-hour period.',
+    );
+    await chooseAndLoad(0, photo('ref.png'));
+    await chooseAndLoad(1, photo('comparison.png'));
+    await click('Compare Photos');
+    comparisonSubject.error(
+      new HttpErrorResponse({
+        status: 429,
+        error: { detail: { code: 'PHOTO_COMPARISON_LIMIT_REACHED', retry_after_seconds: 3600 } },
+      }),
+    );
+    await fixture.whenStable();
+    expect(root().textContent).toContain('You have reached your limit of 5 photo comparisons');
+    expect(button('Compare Photos')?.disabled).toBe(true);
+    await click('Clear Images');
+    expect(root().textContent).toContain('You have reached your limit of 5 photo comparisons');
+  });
+
   it('renders two independent previews and updated privacy notice', async () => {
     await choose(0, photo());
     await choose(1, photo('second.jpg', 'image/jpeg'));
@@ -142,7 +164,9 @@ describe('Photo review', () => {
       'Ready for photo comparison.',
     );
     expect(root().textContent).toContain('Secure Image Analysis');
-    expect(root().textContent).toContain('Photos are transmitted securely to the comparison service');
+    expect(root().textContent).toContain(
+      'Photos are transmitted securely to the comparison service',
+    );
     expect(root().textContent).toContain('does not establish identity');
   });
 
@@ -286,7 +310,9 @@ describe('Photo review', () => {
     await fixture.whenStable();
 
     const errorAlert = root().querySelector('[role=alert]');
-    expect(errorAlert?.textContent).toContain('Unable to complete photo comparison. Please try again.');
+    expect(errorAlert?.textContent).toContain(
+      'Unable to complete photo comparison. Please try again.',
+    );
     expect(root().querySelector('section[aria-labelledby="comparison-result-title"]')).toBeNull();
 
     const compareBtn = button('Compare Photos');
@@ -332,4 +358,3 @@ describe('Photo review', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:photo-2');
   });
 });
-

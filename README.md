@@ -52,6 +52,15 @@ Their links are configured through `termsUrl` and `privacyPolicyUrl` in the
 environment files. The drafts disclose the current diagnostics and external media
 requests, and identify the operational details that still need confirmation.
 
+## Verified case claims and contributions
+
+Case detail pages include private relationship claims and public, append-only information/photo
+contributions for approved claimants. Trusted `ADMIN`/`ADMINISTRATOR` accounts can review claims
+at `/admin/case-claims`, linked from My Account. The client targets `/bringthemhome/api/...`;
+the backend or gateway must expose that context path. See the
+[case-claims integration guide](docs/api/case-claims.md) for contracts, cURL examples,
+authentication/storage isolation, and migration/storage prerequisites.
+
 ## Development server
 
 To start a local development server, run:

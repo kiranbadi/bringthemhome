@@ -30,6 +30,26 @@ main {
 .summary-content {
   min-width: 0;
 }
+.photo-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+}
+.photo-panel img {
+  box-sizing: border-box;
+}
+.photo-panel button {
+  width: 100%;
+}
+.claim-access {
+  scroll-margin-top: 24px;
+}
+.claim-access:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
 h1 {
   font: var(--mat-sys-headline-medium);
   margin: 4px 0 12px;

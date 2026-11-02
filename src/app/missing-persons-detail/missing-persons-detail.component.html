@@ -10,13 +10,18 @@
     </div>
   } @else if (person(); as record) {
     <article class="person-summary" aria-labelledby="person-name">
-      <img
-        [src]="image()"
-        [alt]="'Photo of ' + name(record)"
-        (error)="imageFailed()"
-        width="480"
-        height="360"
-      />
+      <div class="photo-panel">
+        <img
+          [src]="image()"
+          [alt]="'Photo of ' + name(record)"
+          (error)="imageFailed()"
+          width="480"
+          height="360"
+        />
+        <button matButton="filled" type="button" (click)="openClaimOptions()">
+          Claim this case
+        </button>
+      </div>
       <section class="summary-content">
         <p class="eyebrow">Missing person case</p>
         <h1 id="person-name">{{ name(record) | titlecase }}</h1>
@@ -57,7 +62,12 @@
             [routerLink]="['/missing-persons', record._id, 'discussions']"
             >Discussions</a
           >
-          <a class="discussion-link" routerLink="/resources" [queryParams]="resourceLocation(record)">Resources Near This Case</a>
+          <a
+            class="discussion-link"
+            routerLink="/resources"
+            [queryParams]="resourceLocation(record)"
+            >Resources Near This Case</a
+          >
           <app-case-share
             [caseId]="record._id"
             [name]="name(record)"
@@ -71,6 +81,15 @@
       </section>
     </article>
     <app-case-profile-sections [record]="record" />
+    <div #claimAccess class="claim-access" tabindex="-1" aria-label="Case claim options">
+      @defer (on immediate) {
+        <app-case-claim-panel [caseId]="record._id" />
+      } @placeholder {
+        <p role="status">Loading case contribution tools…</p>
+      } @error {
+        <p role="alert">Case contribution tools could not load. Refresh the page to try again.</p>
+      }
+    </div>
   } @else {
     <h1 class="unavailable-heading">Case unavailable</h1>
     <p>This case could not be found.</p>
