@@ -46,7 +46,7 @@
           <div class="actions">
             <a
               matButton
-              [routerLink]="['/missing-persons', claim.missing_person_id]"
+              [routerLink]="claim.canonical_path || ['/missing-persons', claim.missing_person_id]"
               target="_blank"
               rel="noopener noreferrer"
               [attr.aria-label]="

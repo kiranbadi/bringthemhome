@@ -41,12 +41,13 @@ export class CaseShareComponent {
   readonly name = input.required<string>();
   readonly location = input('');
   readonly image = input('');
+  readonly canonicalPath = input<string | null | undefined>();
   private readonly service = inject(CaseShareService);
   private readonly dialog = inject(MatDialog);
   open(): void {
     this.dialog.open(CaseShareDialog, {
       data: {
-        ...this.service.data(this.caseId(), this.name(), this.location()),
+        ...this.service.data(this.caseId(), this.name(), this.location(), this.canonicalPath()),
         location: this.location(),
         image: this.image(),
       },

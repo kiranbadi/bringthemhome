@@ -31,6 +31,7 @@ import {
 } from './case-claims.models';
 import { ClaimContributionComposerComponent } from './claim-contribution-composer.component';
 import { CaseContributionsComponent } from './case-contributions.component';
+import { casePath } from '../../core/models/case-url';
 
 @Component({
   selector: 'app-case-claim-panel',
@@ -50,6 +51,7 @@ import { CaseContributionsComponent } from './case-contributions.component';
 })
 export class CaseClaimPanelComponent {
   readonly caseId = input.required<string>();
+  readonly canonicalPath = input<string | null | undefined>();
   private readonly auth = inject(AccountManagementService);
   readonly user = toSignal(this.auth.currentUser$, { initialValue: null });
   private readonly api = inject(CaseClaimsService);
@@ -72,10 +74,8 @@ export class CaseClaimPanelComponent {
       !this.statusError() &&
       this.claim()?.status === 'APPROVED',
   );
-  readonly returnUrl = computed(() =>
-    this.router.serializeUrl(
-      this.router.createUrlTree(['/missing-persons', this.caseId()], { fragment: 'case-claims' }),
-    ),
+  readonly returnUrl = computed(
+    () => casePath({ _id: this.caseId(), canonical_path: this.canonicalPath() }) + '#case-claims',
   );
   readonly relationships = Object.entries(RELATIONSHIPS) as [Relationship, string][];
   readonly form = inject(FormBuilder).nonNullable.group({

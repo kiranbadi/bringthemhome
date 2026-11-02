@@ -1,3 +1,6 @@
+import { CaseSeoService } from '../core/seo/case-seo.service';
+import { casePath } from '../core/models/case-url';
+import { RESPONSE_INIT } from '@angular/core';
 import { publicResourceLocation } from '../resources/resource-case-location';
 import { formatLocation } from '../core/models/us-state-display';
 import { CaseShareComponent } from '../shared/case-share/case-share.component';
@@ -15,7 +18,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   EMPTY,
   Subject,
@@ -63,6 +66,10 @@ export class MissingPersonsDetailComponent implements OnInit {
     panel?.focus({ preventScroll: true });
     panel?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
   }
+  readonly casePath = casePath;
+  private readonly seo = inject(CaseSeoService);
+  private readonly router = inject(Router);
+  private readonly response = inject(RESPONSE_INIT, { optional: true });
   private readonly tipDialog = inject(TipDialogService);
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(MissingPersonService);
@@ -91,6 +98,8 @@ export class MissingPersonsDetailComponent implements OnInit {
     if (!record) return this.placeholder;
     const candidates = [
       record.summary?.primaryImageUrl,
+      ...(record.image_urls ?? []),
+      record.photo_url,
       ...(record.embedded_images?.data_urls ?? []),
       ...(record._source?.embedded_images?.data_urls ?? []),
       ...(record._source?.image_urls ?? []),
@@ -110,6 +119,7 @@ export class MissingPersonsDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.seo.clear());
     combineLatest([
       this.route.paramMap.pipe(
         map((params) => params.get('id') ?? ''),
@@ -119,6 +129,7 @@ export class MissingPersonsDetailComponent implements OnInit {
     ])
       .pipe(
         switchMap(([id]) => {
+          this.seo.unavailable();
           this.loading.set(true);
           this.error.set('');
           this.person.set(null);
@@ -126,9 +137,20 @@ export class MissingPersonsDetailComponent implements OnInit {
           return this.service.findMissingPerson(id).pipe(
             tap((person) => {
               this.person.set(person);
+              if (person) {
+                this.seo.update(person, this.image());
+                const target = casePath(person);
+                if (person.canonical_path && this.router.url.split(/[?#]/)[0] !== target) {
+                  void this.router.navigateByUrl(
+                    target + this.router.url.slice(this.router.url.split(/[?#]/)[0].length),
+                    { replaceUrl: true },
+                  );
+                }
+              } else if (this.response) this.response.status = 404;
               this.loading.set(false);
             }),
             catchError(() => {
+              if (this.response) this.response.status = 503;
               this.error.set('We could not load this case. Please try again.');
               this.loading.set(false);
               return EMPTY;

@@ -12,6 +12,7 @@ export interface Claim {
   created_at: string;
 }
 export interface StaffClaim extends Claim {
+  canonical_path?: string | null;
   missing_person_name?: string | null;
   review_notes?: string | null;
 }

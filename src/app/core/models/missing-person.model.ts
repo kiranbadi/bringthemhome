@@ -4,6 +4,8 @@ export interface EmbeddedImages {
 
 export interface MissingPerson {
   _id: string;
+  slug?: string | null;
+  canonical_path?: string | null;
   full_name: string;
   photo_url?: string | null;
   missing_since?: string | null;
