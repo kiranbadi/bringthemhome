@@ -267,3 +267,164 @@
     flex-direction: column;
   }
 }
+
+.workflow-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: 16px;
+  margin: 1rem 0;
+}
+.workflow-banner h2 {
+  font: var(--mat-sys-title-large);
+  margin: 0.6rem 0;
+}
+.workflow-banner p {
+  margin: 0.5rem 0;
+}
+.status-pill {
+  display: inline-block;
+  font: var(--mat-sys-label-large);
+  padding: 0.3rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 24px;
+}
+.lifecycle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.integration-notice {
+  border-left: 4px solid var(--mat-sys-primary);
+  padding: 1rem;
+  background: var(--mat-sys-surface-container-low);
+  line-height: 1.5;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+.section-nav {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 16px;
+}
+.section-progress {
+  font: var(--mat-sys-label-large);
+  margin: 0.5rem;
+}
+.section-nav button {
+  height: auto;
+  min-height: 60px;
+  justify-content: flex-start;
+  text-align: left;
+  border-radius: 10px;
+}
+.section-nav button.current {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+.section-number {
+  display: inline-block;
+  margin-right: 0.75rem;
+  font-weight: 700;
+}
+.section-label {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+}
+.section-label small {
+  font: var(--mat-sys-label-small);
+  opacity: 0.8;
+}
+.workspace-content {
+  min-width: 0;
+}
+.mobile-section-nav {
+  display: none;
+}
+.review-intro {
+  padding: 1rem 0;
+}
+.review-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.validation-summary {
+  color: var(--mat-sys-error);
+}
+:host ::ng-deep .report-stepper .mat-horizontal-stepper-header-container {
+  display: none;
+}
+:host ::ng-deep .report-stepper .mat-horizontal-content-container {
+  padding: 0 1.25rem 1.25rem;
+}
+button:focus-visible,
+a:focus-visible,
+.upload-zone:focus-within {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .section-nav {
+    display: none;
+  }
+  .mobile-section-nav {
+    display: block;
+  }
+  .workflow-banner {
+    flex-direction: column;
+  }
+}
+.narrative-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.circumstances-section .field-grid,
+.circumstances-section .textarea-grid {
+  row-gap: 24px;
+}
+
+.circumstances-section .field-grid + .field-grid {
+  margin-top: 12px;
+}
+
+.full-width-narrative {
+  grid-column: 1 / -1;
+}
+
+.full-width-narrative textarea {
+  resize: vertical;
+}
+
+.aliases {
+  display: grid;
+  gap: 12px;
+}
+
+.aliases .record-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.aliases > button {
+  justify-self: start;
+}
