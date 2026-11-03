@@ -13,6 +13,11 @@ import { SupportUs } from './support-us/support-us';
 
 export const routes: Routes = [
   {
+    path: 'reset-password',
+    loadComponent: () => import('./reset-password/reset-password').then((m) => m.ResetPassword),
+    title: 'Reset Password | Bring Them Home',
+  },
+  {
     path: 'admin/case-claims',
     canActivate: [caseClaimsAdminGuard],
     loadComponent: () =>
