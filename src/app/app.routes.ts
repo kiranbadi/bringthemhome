@@ -7,7 +7,6 @@ import { AccountDashboard } from './account-dashboard/account-dashboard';
 import { AdvancedSearch } from './advanced-search/advanced-search';
 import { AccountManagement } from './account-management/account-management';
 import { ContactUs } from './contact-us/contact-us';
-import { MissingPersonReport } from './missing-person-report/missing-person-report';
 import { PolicyPageComponent } from './policy-page/policy-page.component';
 import { SupportUs } from './support-us/support-us';
 
@@ -161,7 +160,8 @@ export const routes: Routes = [
   },
   {
     path: 'missing-person-report',
-    component: MissingPersonReport,
+    loadComponent: () =>
+      import('./missing-person-report/missing-person-report').then((m) => m.MissingPersonReport),
     canActivate: [authGuard],
   },
   {

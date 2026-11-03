@@ -74,3 +74,10 @@ __pycache__/
 /backend/*.db
 !/docs/api/case-seo.md
 !/docs/plans/2026-11-01-canonical-case-seo.md
+
+!/docs/plans/2026-11-02-report-workspace.md
+!/docs/api/person-reports.md
+
+!/docs/api/person-report-payload.example.json
+
+!/docs/api/person-report-update.example.json
