@@ -96,7 +96,7 @@
           <span class="panel-icon"><mat-icon aria-hidden="true">lock_reset</mat-icon></span>
           <span class="eyebrow">ACCOUNT RECOVERY</span>
           <h2 id="login-title">Reset Password</h2>
-          <p>Enter your email or phone number.</p>
+          <p>Enter the email address associated with your account.</p>
         </div>
 
         <form
@@ -105,27 +105,42 @@
           (ngSubmit)="submitForgotPassword()"
         >
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Email or Phone</mat-label>
-            <input matInput formControlName="identity" autocomplete="username" />
+            <mat-label>Email address</mat-label>
+            <input matInput type="email" formControlName="identity" autocomplete="email" />
             @if (forgotPasswordForm.controls.identity.hasError('required')) {
-              <mat-error>Email or phone is required.</mat-error>
-            } @else if (forgotPasswordForm.controls.identity.hasError('emailOrPhone')) {
-              <mat-error>Enter a valid email or phone.</mat-error>
+              <mat-error>Email address is required.</mat-error>
+            } @else if (forgotPasswordForm.controls.identity.hasError('email')) {
+              <mat-error>Enter a valid email address.</mat-error>
             }
           </mat-form-field>
 
+          @if (recoveryError()) {
+            <p class="error-message" role="alert">{{ recoveryError() }}</p>
+          }
+
           @if (forgotPasswordSubmitted) {
             <p class="success-message" role="status">
-              Password reset instructions have been submitted.
+              If an account exists for this email, a password reset link will be sent.
             </p>
           }
 
           <div class="form-actions">
-            <button matButton="filled" type="submit">
-              <mat-icon aria-hidden="true">mark_email_read</mat-icon>
-              Submit
+            <button
+              matButton="filled"
+              type="submit"
+              [disabled]="recoveryPending()"
+              [attr.aria-busy]="recoveryPending()"
+            >
+              @if (recoveryPending()) {
+                <mat-spinner diameter="20" aria-label="Requesting password reset" />
+              } @else {
+                <mat-icon aria-hidden="true">mark_email_read</mat-icon>
+              }
+              {{ recoveryPending() ? 'Sending…' : 'Send reset instructions' }}
             </button>
-            <button matButton type="button" (click)="showLogin()">Back to Sign In</button>
+            <button matButton type="button" (click)="showLogin()" [disabled]="recoveryPending()">
+              Back to Sign In
+            </button>
           </div>
         </form>
       }

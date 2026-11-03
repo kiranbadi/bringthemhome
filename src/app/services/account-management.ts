@@ -29,6 +29,10 @@ export interface AccountRegistrationResponse {
   readonly temporary_password?: string;
 }
 
+export interface ForgotPasswordResponse {
+  readonly message: string;
+}
+
 export interface LoginRequest {
   readonly email: string;
   readonly password: string;
@@ -57,6 +61,26 @@ export class AccountManagementService {
   );
   private logoutRequest?: Observable<void>;
   readonly currentUser$ = this.userSubject.asObservable();
+
+  resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
+    return this.http
+      .post<{ message: string }>(
+        `${environment.apiUrl}${environment.apiBaseUrl}/auth/reset-password`,
+        { token, new_password: newPassword },
+        { headers: { 'Content-Type': 'application/json' } },
+      )
+      .pipe(timeout(15000));
+  }
+
+  forgotPassword(email: string): Observable<ForgotPasswordResponse> {
+    return this.http
+      .post<ForgotPasswordResponse>(
+        `${environment.apiUrl}${environment.apiBaseUrl}/auth/forgot-password`,
+        { email },
+        { headers: { 'Content-Type': 'application/json' } },
+      )
+      .pipe(timeout(15000));
+  }
 
   login(request: LoginRequest): Observable<LoginResponse> {
     return this.http

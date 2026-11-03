@@ -24,6 +24,17 @@ describe('AccountManagementService', () => {
 
   afterEach(() => httpTesting.verify());
 
+  it('requests password recovery with the exact email-only endpoint contract', () => {
+    service.forgotPassword('jane@example.com').subscribe();
+    const request = httpTesting.expectOne(
+      'http://localhost:8000/bringthemhome/auth/forgot-password',
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ email: 'jane@example.com' });
+    expect(request.request.headers.get('Content-Type')).toBe('application/json');
+    request.flush({ message: 'Accepted' });
+  });
+
   it('posts a registration and returns the generated credentials', () => {
     expect(environment.apiBaseUrl).toBe('/bringthemhome');
 

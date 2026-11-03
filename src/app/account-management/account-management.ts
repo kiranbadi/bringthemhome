@@ -66,6 +66,8 @@ export class AccountManagement implements OnInit {
 
   protected accountMode: AccountMode = 'login';
   protected forgotPasswordSubmitted = false;
+  protected readonly recoveryPending = signal(false);
+  protected readonly recoveryError = signal('');
   @ViewChild('loginIdentity') private loginIdentity?: ElementRef<HTMLInputElement>;
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -75,7 +77,7 @@ export class AccountManagement implements OnInit {
   });
 
   protected readonly forgotPasswordForm = this.formBuilder.nonNullable.group({
-    identity: ['', [Validators.required, this.emailOrPhoneValidator]],
+    identity: ['', [Validators.required, Validators.email]],
   });
 
   ngOnInit(): void {
@@ -87,12 +89,15 @@ export class AccountManagement implements OnInit {
 
   protected showForgotPassword(): void {
     if (this.loginPending()) return;
+    this.recoveryError.set('');
     this.loginError.set('');
     this.accountMode = 'forgotPassword';
     this.forgotPasswordSubmitted = false;
   }
 
   protected showLogin(): void {
+    if (this.recoveryPending()) return;
+    this.recoveryError.set('');
     this.accountMode = 'login';
     this.forgotPasswordForm.reset();
     this.forgotPasswordSubmitted = false;
@@ -145,13 +150,37 @@ export class AccountManagement implements OnInit {
   }
 
   protected submitForgotPassword(): void {
+    if (this.recoveryPending()) return;
+    const control = this.forgotPasswordForm.controls.identity;
+    control.setValue(control.value.trim());
     this.forgotPasswordForm.markAllAsTouched();
-
-    if (this.forgotPasswordForm.invalid) {
-      return;
-    }
-
-    this.forgotPasswordSubmitted = true;
+    if (this.forgotPasswordForm.invalid) return;
+    this.forgotPasswordSubmitted = false;
+    this.recoveryError.set('');
+    this.recoveryPending.set(true);
+    this.forgotPasswordForm.disable({ emitEvent: false });
+    this.accountService
+      .forgotPassword(control.value)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.recoveryPending.set(false);
+          this.forgotPasswordForm.enable({ emitEvent: false });
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.forgotPasswordSubmitted = true;
+          this.cdr.markForCheck();
+        },
+        error: (error: unknown) => {
+          this.recoveryError.set(
+            error instanceof HttpErrorResponse && error.status === 429
+              ? 'Too many reset requests. Please wait a moment before trying again.'
+              : 'We could not request a password reset. Please try again.',
+          );
+        },
+      });
   }
 
   protected proceedToLogin(email: string): void {
@@ -161,13 +190,5 @@ export class AccountManagement implements OnInit {
     this.cdr.detectChanges();
     this.loginIdentity?.nativeElement.focus();
     this.loginIdentity?.nativeElement.scrollIntoView?.({ block: 'center', behavior: 'auto' });
-  }
-
-  private emailOrPhoneValidator(control: { value: string }) {
-    const value = control.value.trim();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phonePattern = /^\+?[0-9 .()-]{10,20}$/;
-
-    return emailPattern.test(value) || phonePattern.test(value) ? null : { emailOrPhone: true };
   }
 }
