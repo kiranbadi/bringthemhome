@@ -33,7 +33,7 @@ describe('Header logout flow', () => {
     expect(button(fixture.nativeElement)).toBeUndefined();
   });
 
-  it('reads readable cookie tokens when session storage has only the legacy CSRF token', () => {
+  it('uses the legacy CSRF token and leaves the session cookie to the browser', () => {
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     sessionStorage.setItem('csrf_token', 'login-csrf');
     document.cookie = 'bth_session=cookie-session; Path=/';
@@ -43,8 +43,10 @@ describe('Header logout flow', () => {
     const request = TestBed.inject(HttpTestingController).expectOne(
       'http://localhost:8000/bringthemhome/auth/logout',
     );
-    expect(request.request.headers.get('bth_csrf')).toBe('login-csrf');
-    expect(request.request.headers.get('bth_session')).toBe('cookie-session');
+    expect(request.request.headers.get('X-CSRF-Token')).toBe('login-csrf');
+    expect(request.request.headers.has('bth_csrf')).toBe(false);
+    expect(request.request.headers.has('bth_session')).toBe(false);
+    expect(request.request.withCredentials).toBe(true);
     request.flush('');
     expect(service.isAuthenticated()).toBe(false);
   });
@@ -94,8 +96,9 @@ describe('Header logout flow', () => {
       expect(request.request.method).toBe('POST');
       expect(request.request.body).toBe('');
       expect(request.request.withCredentials).toBe(true);
-      expect(request.request.headers.get('bth_csrf')).toBe('csrf-value');
-      expect(request.request.headers.get('bth_session')).toBe('session-value');
+      expect(request.request.headers.get('X-CSRF-Token')).toBe('csrf-value');
+      expect(request.request.headers.has('bth_csrf')).toBe(false);
+      expect(request.request.headers.has('bth_session')).toBe(false);
       request.flush('', { status, statusText: status === 200 ? 'OK' : 'Error' });
       await fixture.whenStable();
       for (const key of ['currentUser', 'bth_csrf', 'bth_session', 'csrf_token'])

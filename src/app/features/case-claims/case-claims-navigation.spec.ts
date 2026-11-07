@@ -57,7 +57,7 @@ describe('Claim sign-in return navigation', () => {
             role: 'GENERAL_PUBLIC',
           },
           csrf_token: 'token',
-          expires_at: '2026-11-01T04:00:00Z',
+          expires_at: new Date(Date.now() + 3_600_000).toISOString(),
         });
       await harness.fixture.whenStable();
       expect(TestBed.inject(Router).url).toBe(expected);

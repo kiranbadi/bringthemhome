@@ -9,7 +9,7 @@ export const authGuard: CanActivateFn = (route) =>
     : inject(Router).createUrlTree(['/login'], {
         queryParams:
           route.routeConfig?.path === 'missing-person-report'
-            ? { reason: 'report-account-required' }
+            ? { reason: 'report-account-required', returnUrl: '/missing-person-report' }
             : undefined,
       });
 

@@ -1,6 +1,10 @@
 # Missing person report workflow — proposed backend contract
 
-Status: **UI implemented; API not implemented or integrated.** Routes below are a proposal for the backend, not existing working endpoints. The UI leaves persistence controls unavailable by default and never fabricates a save, submission, approval, found confirmation, or archive.
+**Create Missing Person Report** reuses `_id`, `report_id`, and `user_id` from a readable browser session cookie when the email matches the signed-in account. The UI supports a URL-encoded JSON cookie named `bth_report_context` or three individual cookies named for the fields. Cookies must be visible to the Angular page (use `Path=/`).
+
+Without matching context, the UI calls `POST /bringthemhome/api/v2/person-reports` with `{ "user_id": "<signed-in email>" }`, the session cookie, and `X-CSRF-Token`. After a successful create, the UI writes the returned context to `bth_report_context` for reuse during the browser session. Section APIs must verify ownership against the authenticated session.
+
+The v1 routes below describe the separate report workflow proposal. The current UI still leaves section saving and submission unavailable.
 
 ## UI integration boundary
 
@@ -69,6 +73,12 @@ Limits: employmentHistory ≤25; possibleSightingLocations ≤25; caseAndReporte
 The UI retains actual `File` objects in memory keyed by `client_id`. Its JSON contains only descriptors: `client_id`, `name`, `size` (display string), `size_bytes`, `type`, optional server `attachment_id`. Never treat a filename or client-generated ID as an uploaded file.
 
 Proposed POST /{id}/attachments multipart fields: `client_id`, `kind` (photo/video), `file`. Response 201 `{ "client_id": "...", "attachment_id": "server-uuid", "status": "READY" }`. Add that ID to the corresponding descriptor, then save the report. DELETE /{id}/attachments/{attachment_id} removes unused draft attachments. Validate size, count, MIME content, access rights and scan status server-side; return upload limits from configuration. Submission must verify every referenced attachment belongs to this report and has completed upload/validation. On reopening a saved draft, descriptors with attachment_id remain usable without re-uploading; unsent browser files cannot survive refresh.
+
+### Section 1 file size limits
+
+The frontend rejects individual photos larger than 5 MB (5,242,880 bytes) and videos larger than 25 MB (26,214,400 bytes), using 1 MB = 1,048,576 bytes. Files exactly at the limit are accepted. Oversized files are not retained in the in-memory upload map or payload; valid files from the same selection are retained and rejected filenames appear in an accessible error message. Existing image/* and video/* MIME selection rules remain unchanged. These are per-file limits; count, aggregate size and video duration limits are not implemented.
+
+Enforce the same byte limits on the backend, independently of browser checks. This section currently selects files synchronously and retains File references in memory; it does not perform network uploads. Async upload/progress, retries and pending validation still need backend integration. A per-file size limit does not itself bound total storage, bandwidth or playback cost.
 
 ## Errors and concurrency
 

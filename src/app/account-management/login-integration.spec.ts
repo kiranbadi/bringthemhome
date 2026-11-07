@@ -66,7 +66,7 @@ describe('Login UI integration', () => {
     request.flush({
       user: { id: '1', email: 'jane@example.com', full_name: 'Jane Doe', role: 'GENERAL_PUBLIC' },
       csrf_token: 'token',
-      expires_at: '2026-10-22T23:57:20Z',
+      expires_at: new Date(Date.now() + 3_600_000).toISOString(),
     });
     await fixture.whenStable();
     expect(sessionStorage.getItem('currentUser')).toContain('Jane Doe');
