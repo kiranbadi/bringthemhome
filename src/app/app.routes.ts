@@ -19,6 +19,7 @@ export const routes: Routes = [
   {
     path: 'admin/case-claims',
     canActivate: [caseClaimsAdminGuard],
+    data: { requiresAuth: true },
     loadComponent: () =>
       import('./features/case-claims/case-claims-admin.component').then(
         (m) => m.CaseClaimsAdminComponent,
@@ -28,6 +29,7 @@ export const routes: Routes = [
   {
     path: 'photo-review',
     canActivate: [authGuard],
+    data: { requiresAuth: true },
     loadComponent: () =>
       import('./features/photo-review/photo-review.component').then((m) => m.PhotoReviewComponent),
     title: 'Photo Review | Bring Them Home',
@@ -41,6 +43,7 @@ export const routes: Routes = [
   {
     path: 'resources/new',
     canActivate: [authGuard],
+    data: { requiresAuth: true },
     loadComponent: () =>
       import('./resources/resource-form.component').then((m) => m.ResourceFormComponent),
     title: 'Add Resource',
@@ -48,6 +51,7 @@ export const routes: Routes = [
   {
     path: 'resources/:id/correct',
     canActivate: [authGuard],
+    data: { requiresAuth: true },
     loadComponent: () =>
       import('./resources/resource-form.component').then((m) => m.ResourceFormComponent),
     title: 'Suggest Correction',
@@ -61,6 +65,7 @@ export const routes: Routes = [
   {
     path: 'account/resource-contributions',
     canActivate: [authGuard],
+    data: { requiresAuth: true },
     loadComponent: () =>
       import('./resources/my-resource-contributions.component').then(
         (m) => m.MyResourceContributionsComponent,
@@ -152,17 +157,20 @@ export const routes: Routes = [
     path: 'account/management',
     component: AccountDashboard,
     canActivate: [authGuard],
+    data: { requiresAuth: true },
   },
   {
     path: 'myaccount',
     component: AccountDashboard,
     canActivate: [authGuard],
+    data: { requiresAuth: true },
   },
   {
     path: 'missing-person-report',
     loadComponent: () =>
-      import('./missing-person-report/missing-person-report').then((m) => m.MissingPersonReport),
+      import('./missing-person-report/create-report-page').then((m) => m.CreateReportPage),
     canActivate: [authGuard],
+    data: { requiresAuth: true },
   },
   {
     path: 'support-us',

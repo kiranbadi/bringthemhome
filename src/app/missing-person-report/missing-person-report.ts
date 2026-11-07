@@ -19,7 +19,12 @@ import {
   effect,
 } from '@angular/core';
 import { MatStepper } from '@angular/material/stepper';
-import { ReportWorkflow, ReportAction, allowedReportActions } from './report-workflow';
+import {
+  ReportContext,
+  ReportWorkflow,
+  ReportAction,
+  allowedReportActions,
+} from './report-workflow';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ReportActionDialog } from './report-action-dialog';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -77,15 +82,20 @@ export class MissingPersonReport {
   private readonly formBuilder = inject(FormBuilder);
 
   readonly uploadFiles = new Map<string, File>();
+  protected readonly maxPhotoSizeMb = 5;
+  protected readonly maxVideoSizeMb = 25;
+  protected readonly mediaSelectionErrors = signal<string[]>([]);
   protected readonly photoFiles: UploadedMedia[] = [];
   protected readonly videoFiles: UploadedMedia[] = [];
   /** Host integration supplies persisted workflow and listens for actionRequested. */
   readonly workflow = input<ReportWorkflow | null>(null);
+  readonly reportContext = input<ReportContext | null>(null);
   readonly administrator = input(false);
   readonly integrationReady = input(false);
   readonly actionRequested = output<{
     action: ReportAction;
     report_id?: string;
+    user_id?: string;
     version?: number;
     payload: unknown;
   }>();
@@ -257,9 +267,11 @@ export class MissingPersonReport {
   }
   private emitAction(action: ReportAction, payload: unknown): void {
     const workflow = this.workflow();
+    const context = this.reportContext();
     this.actionRequested.emit({
       action,
-      report_id: workflow?.id,
+      report_id: context?.report_id ?? workflow?.id,
+      ...(context ? { user_id: context.user_id } : {}),
       version: workflow?.version,
       payload,
     });
@@ -870,7 +882,17 @@ export class MissingPersonReport {
   private addFiles(event: Event, collection: UploadedMedia[], typePrefix: string): void {
     if (!this.editable()) return;
     const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []).filter((file) => file.type.startsWith(typePrefix));
+    const limitMb = typePrefix === 'image/' ? this.maxPhotoSizeMb : this.maxVideoSizeMb;
+    const errors: string[] = [];
+    const files = Array.from(input.files ?? []).filter((file) => {
+      if (!file.type.startsWith(typePrefix)) return false;
+      if (file.size > limitMb * 1024 * 1024) {
+        errors.push(`${file.name} exceeds the ${limitMb} MB limit and was not added.`);
+        return false;
+      }
+      return true;
+    });
+    this.mediaSelectionErrors.set(errors);
 
     collection.push(
       ...files.map((file) => {

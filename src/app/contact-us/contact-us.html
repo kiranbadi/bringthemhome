@@ -3,15 +3,22 @@
 <main class="contact-page">
   <header class="contact-heading">
     <div>
+      <span class="eyebrow">MissingLives</span>
       <h1>Contact Us</h1>
-      <p>
-        Reach the Bring Them Home team for account help, report support, or partnership questions.
-      </p>
+      <p>Reach the MissingLives team for account help, report support, or partnership questions.</p>
+      <nav class="contact-links" aria-label="On this page">
+        <button matButton="filled" type="button" (click)="messagePanel.focus()">
+          Send a message
+        </button>
+        <button matButton type="button" (click)="missionTitle.focus()">Our mission</button>
+        <button matButton type="button" (click)="teamTitle.focus()">Our team</button>
+      </nav>
     </div>
+    <mat-icon class="hero-icon" aria-hidden="true">forum</mat-icon>
   </header>
 
   <section class="contact-layout" aria-label="Contact options and message form">
-    <section class="contact-form-panel" aria-labelledby="message-title">
+    <section class="contact-form-panel" #messagePanel tabindex="-1" aria-labelledby="message-title">
       @if (submitted()) {
         <div class="success-message" role="status" aria-live="polite">
           <mat-icon aria-hidden="true">task_alt</mat-icon>
@@ -131,7 +138,12 @@
         <mat-icon aria-hidden="true">emergency</mat-icon>
         <div>
           <h2>Immediate Danger</h2>
-          <p>If someone is in immediate danger or requires urgent assistance, call 911 (in the United States) or your local emergency services immediately. This website is not an emergency response service and does not replace contacting law enforcement or emergency authorities. Do not use this website to report emergencies.</p>
+          <p>
+            If someone is in immediate danger or requires urgent assistance, call 911 (in the United
+            States) or your local emergency services immediately. This website is not an emergency
+            response service and does not replace contacting law enforcement or emergency
+            authorities. Do not use this website to report emergencies.
+          </p>
         </div>
       </section>
 
@@ -139,7 +151,7 @@
         <mat-icon aria-hidden="true">support_agent</mat-icon>
         <div>
           <h2>Support</h2>
-          <p>support&#64;missinglives.com</p>
+          <p><a href="mailto:support&#64;missinglives.com">support&#64;missinglives.com</a></p>
         </div>
       </section>
 
@@ -148,10 +160,66 @@
         <div>
           <h2>Sensitive Information</h2>
           <p>
-            Please share only the information necessary for your report. Avoid including sensitive personal information unless essential. Information submitted through this form may be reviewed by our support team.
+            Please share only the information necessary for your report. Avoid including sensitive
+            personal information unless essential. Information submitted through this form may be
+            reviewed by our support team.
           </p>
         </div>
       </section>
     </aside>
   </section>
+  <div class="about-layout">
+    <section class="about-panel mission-panel" aria-labelledby="mission-title">
+      <h2 id="mission-title" #missionTitle tabindex="-1">
+        <mat-icon aria-hidden="true">favorite_border</mat-icon>
+        Our Mission
+      </h2>
+      <p>
+        My mission with MissingLives is to make it easier to gather, discover, broadcast, and share
+        information about missing persons. We want to bring families, communities, and law
+        enforcement together, using technology to improve access to information, encourage community
+        contributions, and help turn credible leads into action. Our goal is not to replace existing
+        missing-person databases, but to complement them by increasing awareness, improving
+        collaboration, and ultimately helping locate missing individuals and reunite them with their
+        families and loved ones.
+      </p>
+    </section>
+    <section class="about-panel team-panel" aria-labelledby="team-title">
+      <mat-icon aria-hidden="true">groups</mat-icon>
+      <h2 id="team-title" #teamTitle tabindex="-1">Our Team</h2>
+      <p>
+        The MissingLives team supports people using the site, answers questions about reports, and
+        welcomes inquiries from volunteers and community partners.
+      </p>
+      <ul class="team-grid">
+        @for (profile of teamProfiles; track profile) {
+          <li class="team-card">
+            <div class="team-portrait">
+              @if (profile.photoUrl) {
+                <img [src]="profile.photoUrl" alt="" width="160" height="160" loading="lazy" />
+              } @else {
+                <mat-icon aria-hidden="true">person</mat-icon>
+              }
+            </div>
+            <h3>
+              @if (profile.profileUrl) {
+                <a [href]="profile.profileUrl">{{ profile.name }}</a>
+              } @else {
+                {{ profile.name }}
+              }
+            </h3>
+            @if (profile.role) {
+              <p class="team-role">{{ profile.role }}</p>
+            }
+            @if (profile.description) {
+              <p>{{ profile.description }}</p>
+            }
+          </li>
+        }
+      </ul>
+      <button matButton="filled" type="button" (click)="messagePanel.focus()">
+        Get in touch <mat-icon iconPositionEnd aria-hidden="true">arrow_forward</mat-icon>
+      </button>
+    </section>
+  </div>
 </main>

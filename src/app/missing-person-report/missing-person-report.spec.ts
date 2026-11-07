@@ -52,6 +52,41 @@ describe('Report workspace', () => {
     fixture.detectChanges();
     return { fixture, page: fixture.componentInstance as unknown as ReportHarness };
   }
+  it.each([
+    ['image', 'image/jpeg', 5 * 1024 * 1024, '5 MB'],
+    ['video', 'video/mp4', 25 * 1024 * 1024, '25 MB'],
+  ])('limits %s file sizes while keeping valid selections', async (kind, type, limit, label) => {
+    const fixture = TestBed.createComponent(MissingPersonReport);
+    await fixture.whenStable();
+    const input = fixture.nativeElement.querySelector(
+      `input[accept="${kind}/*"]`,
+    ) as HTMLInputElement;
+    function select(files: File[]) {
+      Object.defineProperty(input, 'files', { configurable: true, value: files });
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // Override only size so boundary tests do not allocate large file buffers.
+    function file(name: string, size: number) {
+      const result = new File(['x'], name, { type });
+      Object.defineProperty(result, 'size', { value: size });
+      return result;
+    }
+    select([file('accepted', limit), file('too-large', limit + 1)]);
+    await fixture.whenStable();
+    const component = fixture.componentInstance;
+    const media = component.getPayload().media;
+    expect(kind === 'image' ? media.photos : media.videos).toHaveLength(1);
+    expect(component.uploadFiles.size).toBe(1);
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
+      `too-large exceeds the ${label} limit`,
+    );
+    expect(input.value).toBe('');
+    select([file('another-valid', 1024)]);
+    await fixture.whenStable();
+    expect(component.uploadFiles.size).toBe(2);
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+  });
+
   it('preserves aliases and every repeatable record in the payload', () => {
     const { page } = create();
     page.aliases.at(0).setValue(' Izzy ');

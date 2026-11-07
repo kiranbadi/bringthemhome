@@ -70,6 +70,20 @@ export class ContactUs {
 
   private readonly httpClient = inject(HttpClient);
 
+  protected readonly teamProfiles: ReadonlyArray<{
+    name: string;
+    role?: string;
+    description?: string;
+    photoUrl?: string;
+    profileUrl?: string;
+  }> = [
+    {
+      name: 'Kiran Badi',
+      profileUrl: 'https://www.vasanti.org/',
+      photoUrl: '/team/featured-portrait.jpg',
+    },
+  ];
+
   protected readonly inquiryTypes = [
     'Missing person tip',
     'Report support',

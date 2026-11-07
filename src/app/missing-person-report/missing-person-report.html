@@ -4,6 +4,9 @@
   <header class="report-heading">
     <div>
       <h1>Create Missing Person Report</h1>
+      @if (reportContext(); as report) {
+        <p>Report ID {{ report.report_id }}</p>
+      }
       <p>Complete the sections you know. Required fields keep the report reviewable.</p>
     </div>
     <a matButton routerLink="/myaccount">
@@ -150,7 +153,10 @@
                     (change)="addPhotos($event)"
                   />
                   <mat-icon aria-hidden="true">add_photo_alternate</mat-icon>
-                  <span>Upload clear face, full-body, and recent photos</span>
+                  <span
+                    >Upload clear face, full-body, and recent photos (up to {{ maxPhotoSizeMb }} MB
+                    each)</span
+                  >
                 </label>
 
                 @if (photoFiles.length > 0) {
@@ -188,7 +194,10 @@
                     (change)="addVideos($event)"
                   />
                   <mat-icon aria-hidden="true">video_call</mat-icon>
-                  <span>Upload recent clips showing voice, walk, or mannerisms</span>
+                  <span
+                    >Upload recent clips showing voice, walk, or mannerisms (up to
+                    {{ maxVideoSizeMb }} MB each)</span
+                  >
                 </label>
 
                 @if (videoFiles.length > 0) {
@@ -212,6 +221,14 @@
                 }
               </div>
             </section>
+
+            @if (mediaSelectionErrors().length > 0) {
+              <div class="field-error" role="alert">
+                @for (error of mediaSelectionErrors(); track $index) {
+                  <p>{{ error }}</p>
+                }
+              </div>
+            }
 
             <mat-form-field appearance="outline">
               <mat-label>Media Notes</mat-label>

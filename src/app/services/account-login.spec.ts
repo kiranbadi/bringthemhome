@@ -7,7 +7,7 @@ import { csrfInterceptor } from '../core/auth/csrf.interceptor';
 const response = {
   user: { id: 'user-1', email: 'jane@example.com', full_name: 'Jane Doe', role: 'GENERAL_PUBLIC' },
   csrf_token: 'csrf-value',
-  expires_at: '2026-10-22T23:57:20.080428Z',
+  expires_at: new Date(Date.now() + 3_600_000).toISOString(),
 };
 
 describe('Account login and CSRF', () => {
@@ -47,6 +47,56 @@ describe('Account login and CSRF', () => {
     expect(request.request.withCredentials).toBe(true);
     request.flush(response);
     subscription.unsubscribe();
+  });
+
+  it('clears an open session as soon as the login expiry is reached', async () => {
+    vi.useFakeTimers();
+    try {
+      const expiresAt = new Date(Date.now() + 1_000).toISOString();
+      service.login({ email: response.user.email, password: 'password' }).subscribe();
+      http.expectOne('http://localhost:8000/bringthemhome/auth/login').flush({
+        ...response,
+        expires_at: expiresAt,
+      });
+      let user: unknown;
+      const subscription = service.currentUser$.subscribe((value) => (user = value));
+      expect(user).toEqual(response.user);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(user).toEqual(response.user);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(user).toBeNull();
+      expect(sessionStorage.getItem('currentUser')).toBeNull();
+      expect(service.csrfToken).toBeNull();
+      subscription.unsubscribe();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears the current session on a credentialed API 401', () => {
+    sessionStorage.setItem('currentUser', JSON.stringify(response.user));
+    sessionStorage.setItem('csrf_token', response.csrf_token);
+    TestBed.inject(HttpClient)
+      .get('/bringthemhome/auth/me', { withCredentials: true })
+      .subscribe({ error: () => {} });
+    http
+      .expectOne('/bringthemhome/auth/me')
+      .flush(null, { status: 401, statusText: 'Unauthorized' });
+    expect(service.isAuthenticated()).toBe(false);
+    expect(service.csrfToken).toBeNull();
+  });
+
+  it('ignores a delayed 401 from a session that has since been replaced', () => {
+    sessionStorage.setItem('currentUser', JSON.stringify(response.user));
+    sessionStorage.setItem('csrf_token', 'old-csrf-token');
+    TestBed.inject(HttpClient)
+      .get('/bringthemhome/auth/me', { withCredentials: true })
+      .subscribe({ error: () => {} });
+    const stale = http.expectOne('/bringthemhome/auth/me');
+    service.login({ email: response.user.email, password: 'password' }).subscribe();
+    http.expectOne('http://localhost:8000/bringthemhome/auth/login').flush(response);
+    stale.flush(null, { status: 401, statusText: 'Unauthorized' });
+    expect(service.isAuthenticated()).toBe(true);
   });
 
   it('does not persist a failed login', () => {

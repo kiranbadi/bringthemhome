@@ -1,6 +1,11 @@
 /** Persisted lifecycle values are supplied by the server, never inferred from form completion. */
 export type ReportStatus = 'DRAFT' | 'SUBMITTED' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
 export type PersonStatus = 'MISSING' | 'FOUND_PENDING_REVIEW' | 'FOUND';
+export interface ReportContext {
+  readonly _id: string;
+  readonly report_id: string;
+  readonly user_id: string;
+}
 export interface ReportWorkflow {
   id: string;
   version: number;
