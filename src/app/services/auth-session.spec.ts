@@ -14,8 +14,17 @@ describe('Auth session hydration', () => {
   });
   afterEach(() => {
     sessionStorage.clear();
-    document.cookie = 'currentUser=; Max-Age=0; Path=/';
-    document.cookie = 'csrf_token=; Max-Age=0; Path=/';
+    for (const name of [
+      'currentUser',
+      'csrf_token',
+      'bth_report_context',
+      '_id',
+      'report_id',
+      'user_id',
+      'site_preference',
+    ]) {
+      document.cookie = `${name}=; Max-Age=0; Path=/`;
+    }
   });
 
   it('hydrates the first reactive emission synchronously from stored user', () => {
@@ -55,6 +64,9 @@ describe('Auth session hydration', () => {
     sessionStorage.setItem('unrelated', 'keep');
     document.cookie = 'currentUser=legacy; Path=/';
     document.cookie = 'csrf_token=legacy; Path=/';
+    const reportCookies = ['bth_report_context', '_id', 'report_id', 'user_id'];
+    for (const name of reportCookies) document.cookie = `${name}=test; Path=/`;
+    document.cookie = 'site_preference=keep; Path=/';
     const service = TestBed.inject(AccountManagementService);
     expect(typeof service.logout).toBe('function');
     service.logout().subscribe();
@@ -66,6 +78,9 @@ describe('Auth session hydration', () => {
     expect(sessionStorage.getItem('csrf_token')).toBeNull();
     expect(sessionStorage.getItem('unrelated')).toBe('keep');
     expect(document.cookie).not.toMatch(/(?:^|;\s*)(currentUser|csrf_token)=/);
+    const remainingCookies = document.cookie.split('; ').map((cookie) => cookie.split('=')[0]);
+    for (const name of reportCookies) expect(remainingCookies).not.toContain(name);
+    expect(document.cookie).toContain('site_preference=keep');
     let current: AuthenticatedUser | null | undefined;
     service.currentUser$.subscribe((value) => (current = value)).unsubscribe();
     expect(current).toBeNull();

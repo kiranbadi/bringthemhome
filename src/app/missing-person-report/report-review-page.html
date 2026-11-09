@@ -1,0 +1,329 @@
+<app-navigation-header />
+<main class="review-page">
+  <header class="page-heading">
+    <a matButton routerLink="/myaccount">Back to My Account</a>
+    <h1>{{ administrator ? 'Missing Person Report Review' : 'My Missing Person Reports' }}</h1>
+    <p>
+      {{
+        administrator
+          ? 'Select a report from the queue to review its details and record a decision.'
+          : 'Check the status of your reports and respond to administrator feedback.'
+      }}
+    </p>
+  </header>
+
+  <ng-template #fieldList let-fields>
+    <dl class="field-list">
+      @for (field of fields; track field.key) {
+        <div class="field">
+          <dt>{{ field.label }}</dt>
+          <dd>
+            @if (field.text) {
+              <div class="field-value">{{ field.text }}</div>
+            }
+            @if (field.records.length) {
+              <div class="record-list">
+                @for (record of field.records; track $index) {
+                  <div class="record">
+                    @if (field.records.length > 1) {
+                      <p class="record-title">Record {{ $index + 1 }}</p>
+                    }
+                    <ng-container
+                      [ngTemplateOutlet]="fieldList"
+                      [ngTemplateOutletContext]="{ $implicit: record }"
+                    />
+                  </div>
+                }
+              </div>
+            }
+          </dd>
+        </div>
+      }
+    </dl>
+  </ng-template>
+
+  @if (notice()) {
+    <p role="status" class="notice">{{ notice() }}</p>
+  }
+  @if (error()) {
+    <p role="alert" class="notice error">{{ error() }}</p>
+  }
+  <ng-template #mediaSection>
+    @if (media(); as attachments) {
+      <section class="card detail-card">
+        <h3>Photos and videos</h3>
+        @if (attachments.notes?.trim()) {
+          <dl class="field-list">
+            <div class="field">
+              <dt>Media notes</dt>
+              <dd class="field-value">{{ attachments.notes }}</dd>
+            </div>
+          </dl>
+        }
+        <div class="media-grid">
+          @for (photo of attachments.photos ?? []; track $index) {
+            <figure>
+              <img [src]="photo.url" [alt]="photo.name || 'Report photo'" />
+              @if (photo.name) {
+                <figcaption>{{ photo.name }}</figcaption>
+              }
+            </figure>
+          }
+          @for (video of attachments.videos ?? []; track $index) {
+            <figure>
+              <video
+                [src]="video.url"
+                controls
+                preload="metadata"
+                [attr.aria-label]="video.name || 'Report video'"
+              ></video>
+              @if (video.name) {
+                <figcaption>{{ video.name }}</figcaption>
+              }
+            </figure>
+          }
+        </div>
+      </section>
+    }
+  </ng-template>
+
+  <ng-template #pagination>
+    @if (page() > 1 || total() > pageSize) {
+      <nav class="toolbar" aria-label="Report pages">
+        <button
+          matButton
+          type="button"
+          [disabled]="loading() || deciding() || page() === 1"
+          (click)="loadPage(page() - 1)"
+        >
+          Previous
+        </button>
+        <span>Page {{ page() }}</span>
+        <button
+          matButton
+          type="button"
+          [disabled]="loading() || deciding() || page() * pageSize >= total()"
+          (click)="loadPage(page() + 1)"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  </ng-template>
+
+  @if (administrator) {
+    <div class="review-workspace">
+      <aside
+        class="card queue-panel"
+        #queuePanel
+        tabindex="-1"
+        aria-labelledby="review-queue-heading"
+      >
+        <header class="queue-heading">
+          <h2 id="review-queue-heading">Review queue</h2>
+          @if (!loadingQueue() && total() > 0) {
+            <span class="status">{{ total() }}</span>
+          }
+        </header>
+        @if (loadingQueue()) {
+          <p role="status">Loading queue…</p>
+        }
+        <ul class="queue-entries">
+          @for (item of reports(); track item._id) {
+            <li>
+              <button
+                type="button"
+                class="queue-entry"
+                [attr.aria-current]="selected()?._id === item._id ? 'true' : null"
+                [disabled]="loading() || deciding()"
+                (click)="openReport(item._id)"
+              >
+                <strong>{{ item.name || 'Missing person report' }}</strong>
+                <span class="queue-meta">
+                  <span>{{ item.report_id }}</span>
+                  @if (item.submitted_at) {
+                    <span>{{ item.submitted_at | date: 'mediumDate' }}</span>
+                  }
+                </span>
+                <span class="queue-status">{{ statusLabel(item.report_status) }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+        @if (!loadingQueue() && reports().length === 0 && !error()) {
+          <p class="empty-detail">No reports are awaiting review or publication.</p>
+        }
+        <ng-container [ngTemplateOutlet]="pagination" />
+        <button
+          matButton
+          type="button"
+          [disabled]="loading() || deciding()"
+          (click)="loadPage(page())"
+        >
+          Refresh queue
+        </button>
+      </aside>
+
+      <section class="report-panel" #reportPanel tabindex="-1" aria-label="Selected report">
+        @if (loadingReport()) {
+          <p role="status" class="notice">Loading report…</p>
+        }
+        @if (selected(); as report) {
+          <article class="report-detail">
+            <div class="toolbar">
+              <button matButton type="button" class="back-to-queue" (click)="focusQueue()">
+                Back to queue
+              </button>
+              <button
+                matButton
+                type="button"
+                [disabled]="loading() || deciding()"
+                (click)="openReport(report._id)"
+              >
+                Refresh report
+              </button>
+            </div>
+            <header class="card report-summary">
+              <div class="report-heading">
+                <h2>{{ report.name || 'Missing person report' }}</h2>
+                <span class="status">{{ statusLabel(report.report_status) }}</span>
+              </div>
+              <dl class="report-meta">
+                <div>
+                  <dt>Report ID</dt>
+                  <dd>{{ report.report_id }}</dd>
+                </div>
+                <div>
+                  <dt>Submitted by</dt>
+                  <dd>{{ report.user_id }}</dd>
+                </div>
+                @if (report.submitted_at) {
+                  <div>
+                    <dt>Submitted on</dt>
+                    <dd>{{ report.submitted_at | date: 'mediumDate' }}</dd>
+                  </div>
+                }
+              </dl>
+            </header>
+            @if (!fields().length) {
+              <ng-container [ngTemplateOutlet]="mediaSection" />
+              @if (!media()) {
+                <p class="card empty-detail">No report details or media were provided.</p>
+              }
+            }
+            @for (section of fields(); track section.key; let first = $first) {
+              <details class="card detail-card" [open]="first">
+                <summary>{{ section.label }}</summary>
+                <ng-container
+                  [ngTemplateOutlet]="fieldList"
+                  [ngTemplateOutletContext]="{ $implicit: section.values }"
+                />
+              </details>
+              @if (first) {
+                <ng-container [ngTemplateOutlet]="mediaSection" />
+              }
+            }
+            @if (!report.can_review) {
+              <p class="card">An independent administrator must review this report.</p>
+            } @else if (
+              report.report_status === 'SUBMITTED' || report.report_status === 'APPROVED'
+            ) {
+              <div class="card decision-bar toolbar">
+                @if (report.report_status === 'SUBMITTED') {
+                  <button
+                    matButton="outlined"
+                    type="button"
+                    [disabled]="loading() || deciding()"
+                    (click)="decide('REJECT')"
+                  >
+                    Return for changes
+                  </button>
+                }
+                <button
+                  matButton="filled"
+                  type="button"
+                  [disabled]="loading() || deciding()"
+                  (click)="decide('APPROVE')"
+                >
+                  {{
+                    report.report_status === 'APPROVED'
+                      ? 'Retry publication'
+                      : 'Approve and publish'
+                  }}
+                </button>
+              </div>
+            }
+          </article>
+        } @else if (!loadingReport() && !loadingQueue()) {
+          <p class="card empty-detail">
+            {{
+              reports().length
+                ? 'Select a report from the queue to start reviewing.'
+                : 'Report details will appear here.'
+            }}
+          </p>
+        }
+      </section>
+    </div>
+  } @else {
+    @if (loadingQueue()) {
+      <p role="status">Loading reports…</p>
+    }
+    @if (error()) {
+      <button matButton type="button" [disabled]="loading()" (click)="loadPage(page())">
+        Retry loading reports
+      </button>
+    } @else if (!loading() && reports().length === 0) {
+      <p>You have no missing person reports yet.</p>
+    }
+    <div class="report-list">
+      @for (report of reports(); track report._id) {
+        <article class="card queue-card">
+          <div class="report-heading">
+            <h2>{{ report.name || 'Missing person report' }}</h2>
+            <span class="status">{{ statusLabel(report.report_status) }}</span>
+          </div>
+          <dl class="report-meta">
+            <div>
+              <dt>Report ID</dt>
+              <dd>{{ report.report_id }}</dd>
+            </div>
+            @if (report.submitted_at) {
+              <div>
+                <dt>Submitted on</dt>
+                <dd>{{ report.submitted_at | date: 'mediumDate' }}</dd>
+              </div>
+            }
+          </dl>
+          @if (report.rejection_reason) {
+            <dl class="feedback">
+              <div>
+                <dt>Administrator feedback</dt>
+                <dd class="field-value">{{ report.rejection_reason }}</dd>
+              </div>
+            </dl>
+          }
+          @if (
+            report.report_status === 'DRAFT' ||
+            report.report_status === 'REJECTED' ||
+            report.canonical_path
+          ) {
+            <div class="card-actions">
+              @if (report.report_status === 'DRAFT' || report.report_status === 'REJECTED') {
+                <a matButton="outlined" [routerLink]="['/missing-person-report', report._id]">{{
+                  report.report_status === 'REJECTED' ? 'Edit and resubmit' : 'Continue draft'
+                }}</a>
+              }
+              @if (report.canonical_path) {
+                <a matButton="outlined" [routerLink]="report.canonical_path"
+                  >View published report</a
+                >
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+    <ng-container [ngTemplateOutlet]="pagination" />
+  }
+</main>
