@@ -17,12 +17,14 @@
 
   <section class="workflow-banner" aria-label="Report status">
     <div>
-      <span class="status-pill">{{ workflow()?.status || 'DRAFT' }}</span>
+      <span class="status-pill">{{
+        submitted() ? 'SUBMITTED' : reviewReason() ? 'REJECTED' : workflow()?.status || 'DRAFT'
+      }}</span>
       <h2>
         {{
-          workflow()?.status === 'SUBMITTED'
+          submitted() || workflow()?.status === 'SUBMITTED'
             ? 'Awaiting administrator review'
-            : workflow()?.status === 'REJECTED'
+            : reviewReason() || workflow()?.status === 'REJECTED'
               ? 'Changes required'
               : workflow()?.status === 'ARCHIVED'
                 ? 'Archived report'
@@ -38,9 +40,10 @@
       @if (workflow()?.person_status === 'FOUND') {
         <p>This person has been found.</p>
       }
-      @if (workflow()?.rejection_reason) {
+      @if (!submitted() && (reviewReason() || workflow()?.rejection_reason)) {
         <p role="status">
-          <strong>Administrator feedback:</strong> {{ workflow()?.rejection_reason }}
+          <strong>Administrator feedback:</strong>
+          {{ reviewReason() || workflow()?.rejection_reason }}
         </p>
       }
       @if (workflow()?.revision_status) {
@@ -78,10 +81,15 @@
       }
     </div>
   </section>
-  @if (!integrationReady()) {
+  @if (!integrationReady() && !submitted()) {
     <p class="integration-notice" role="status">
-      Report saving and submission are not available yet. Information entered here will not be saved
-      when you leave.
+      @if (sectionSaveAvailable() || submitting()) {
+        The wizard saves each section when you select Next or Preview. Photos and videos upload to
+        S3 when you save Pictures and Videos.
+      } @else {
+        Report saving and submission are not available yet. Information entered here will not be
+        saved when you leave.
+      }
     </p>
   }
   @if (validationShown() && (mediaForm.invalid || detailsForm.invalid)) {
@@ -138,7 +146,13 @@
           <ng-template matStepLabel>Pictures and Videos</ng-template>
 
           <form class="step-content" [formGroup]="mediaForm">
-            <section class="upload-grid" aria-label="Media upload">
+            @let mediaLocked =
+              uploadingMedia() || mediaSection.pending() || mediaSection.needsLoad();
+            <section
+              class="upload-grid"
+              aria-label="Media upload"
+              [attr.inert]="mediaLocked ? '' : null"
+            >
               <div class="upload-panel">
                 <div class="section-title">
                   <mat-icon aria-hidden="true">photo_library</mat-icon>
@@ -161,10 +175,11 @@
 
                 @if (photoFiles.length > 0) {
                   <ul class="file-list" aria-label="Uploaded photos">
-                    @for (file of photoFiles; track file.name + $index) {
+                    @for (file of photoFiles; track file) {
                       <li>
                         <span>{{ file.name }}</span>
                         <small>{{ file.size }}</small>
+                        <small>{{ file.url ? 'Stored in S3' : 'Pending upload' }}</small>
                         <button
                           matIconButton
                           type="button"
@@ -202,10 +217,11 @@
 
                 @if (videoFiles.length > 0) {
                   <ul class="file-list" aria-label="Uploaded videos">
-                    @for (file of videoFiles; track file.name + $index) {
+                    @for (file of videoFiles; track file) {
                       <li>
                         <span>{{ file.name }}</span>
                         <small>{{ file.size }}</small>
+                        <small>{{ file.url ? 'Stored in S3' : 'Pending upload' }}</small>
                         <button
                           matIconButton
                           type="button"
@@ -230,21 +246,45 @@
               </div>
             }
 
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" [attr.inert]="mediaLocked ? '' : null">
               <mat-label>Media Notes</mat-label>
               <textarea matInput formControlName="mediaNotes" rows="3"></textarea>
             </mat-form-field>
 
-            <mat-checkbox formControlName="consentToUseMedia">
+            <mat-checkbox
+              formControlName="consentToUseMedia"
+              [attr.inert]="mediaLocked ? '' : null"
+            >
               I confirm I have permission to submit these images and videos for review.
             </mat-checkbox>
             @if (mediaForm.controls.consentToUseMedia.hasError('required') && mediaForm.touched) {
               <p class="field-error">Media consent is required before submitting.</p>
             }
+            @if (mediaUploadError() || mediaSection.errorMessage()) {
+              <p class="field-error" role="alert">
+                {{ mediaUploadError() || mediaSection.errorMessage() }}
+              </p>
+            }
+            @if (uploadingMedia()) {
+              <p role="status">Uploading files to S3…</p>
+            } @else if (mediaSection.pending(); as pending) {
+              <p role="status">
+                {{ pending === 'loading' ? 'Loading media…' : 'Saving media details…' }}
+              </p>
+            }
 
             <div class="step-actions">
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="uploadingMedia() || !!mediaSection.pending()"
+                (click)="saveMediaAndAdvance()"
+              >
+                {{
+                  mediaSection.needsLoad() && !mediaSection.pending()
+                    ? 'Retry loading media'
+                    : sectionNextLabel(0)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -257,7 +297,10 @@
           <ng-template matStepLabel>Identity</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <section class="form-section">
+            <section
+              class="form-section"
+              [attr.inert]="identitySection.pending() || identitySection.needsLoad() ? '' : null"
+            >
               <h2>Identity</h2>
               <div class="field-grid">
                 <mat-form-field appearance="outline">
@@ -320,13 +363,30 @@
                 </button>
               </div>
             </section>
+            @if (identitySection.errorMessage()) {
+              <p class="field-error" role="alert">{{ identitySection.errorMessage() }}</p>
+            }
+            @if (identitySection.pending(); as pending) {
+              <p role="status">
+                {{ pending === 'loading' ? 'Loading identity…' : 'Saving identity…' }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" (click)="stepper.selectedIndex = 0">
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Back to Media
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!identitySection.pending()"
+                (click)="identitySection.next()"
+              >
+                {{
+                  identitySection.needsLoad() && !identitySection.pending()
+                    ? 'Retry loading identity'
+                    : sectionNextLabel(1)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -337,7 +397,10 @@
           <ng-template matStepLabel>Physical Description</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <section class="form-section">
+            <section
+              class="form-section"
+              [attr.inert]="physicalSection.pending() || physicalSection.needsLoad() ? '' : null"
+            >
               <h2>Physical Description</h2>
               <div class="field-grid">
                 <mat-form-field appearance="outline">
@@ -437,15 +500,46 @@
                   <mat-label>Disabilities or Support Needs</mat-label>
                   <textarea matInput formControlName="disabilities" rows="3"></textarea>
                 </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Languages</mat-label>
+                  <input matInput formControlName="languages" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Other Identifiers</mat-label>
+                  <textarea matInput formControlName="otherIdentifiers" rows="3"></textarea>
+                </mat-form-field>
               </div>
             </section>
+            @if (physicalSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ physicalSection.errorMessage() }}</p>
+            }
+            @if (physicalSection.pending(); as pending) {
+              <p role="status">
+                {{
+                  pending === 'loading'
+                    ? 'Loading physical description…'
+                    : 'Saving physical description…'
+                }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!physicalSection.pending()"
+                (click)="physicalSection.next()"
+              >
+                {{
+                  physicalSection.needsLoad() && !physicalSection.pending()
+                    ? 'Retry loading physical description'
+                    : sectionNextLabel(2)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -456,7 +550,10 @@
           <ng-template matStepLabel>Social Media</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <section class="form-section">
+            <section
+              class="form-section"
+              [attr.inert]="socialSection.pending() || socialSection.needsLoad() ? '' : null"
+            >
               <div class="section-header">
                 <h2>Social Media and Online Presence</h2>
                 <button
@@ -533,13 +630,30 @@
                 }
               </div>
             </section>
+            @if (socialSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ socialSection.errorMessage() }}</p>
+            }
+            @if (socialSection.pending(); as pending) {
+              <p role="status">
+                {{ pending === 'loading' ? 'Loading social media…' : 'Saving social media…' }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!socialSection.pending()"
+                (click)="socialSection.next()"
+              >
+                {{
+                  socialSection.needsLoad() && !socialSection.pending()
+                    ? 'Retry loading social media'
+                    : sectionNextLabel(3)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -550,7 +664,10 @@
           <ng-template matStepLabel>Educational History</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <section class="form-section">
+            <section
+              class="form-section"
+              [attr.inert]="educationSection.pending() || educationSection.needsLoad() ? '' : null"
+            >
               <div class="section-header">
                 <h2>Educational History</h2>
                 <button
@@ -651,13 +768,34 @@
                 }
               </div>
             </section>
+            @if (educationSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ educationSection.errorMessage() }}</p>
+            }
+            @if (educationSection.pending(); as pending) {
+              <p role="status">
+                {{
+                  pending === 'loading'
+                    ? 'Loading educational history…'
+                    : 'Saving educational history…'
+                }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!educationSection.pending()"
+                (click)="educationSection.next()"
+              >
+                {{
+                  educationSection.needsLoad() && !educationSection.pending()
+                    ? 'Retry loading educational history'
+                    : sectionNextLabel(4)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -668,7 +806,12 @@
           <ng-template matStepLabel>Employment History</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <div class="section-header">
+            <div
+              class="section-header"
+              [attr.inert]="
+                employmentSection.pending() || employmentSection.needsLoad() ? '' : null
+              "
+            >
               <h2>Employment History</h2>
               <button
                 matButton
@@ -680,7 +823,13 @@
               </button>
             </div>
 
-            <div formArrayName="employmentHistory" class="record-list">
+            <div
+              formArrayName="employmentHistory"
+              class="record-list"
+              [attr.inert]="
+                employmentSection.pending() || employmentSection.needsLoad() ? '' : null
+              "
+            >
               @for (employment of employmentHistory.controls; track employment; let i = $index) {
                 <div [formGroupName]="i">
                   <section class="form-section">
@@ -744,13 +893,34 @@
                 </div>
               }
             </div>
+            @if (employmentSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ employmentSection.errorMessage() }}</p>
+            }
+            @if (employmentSection.pending(); as pending) {
+              <p role="status">
+                {{
+                  pending === 'loading'
+                    ? 'Loading employment history…'
+                    : 'Saving employment history…'
+                }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!employmentSection.pending()"
+                (click)="employmentSection.next()"
+              >
+                {{
+                  employmentSection.needsLoad() && !employmentSection.pending()
+                    ? 'Retry loading employment history'
+                    : sectionNextLabel(5)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -761,7 +931,10 @@
           <ng-template matStepLabel>Last Seen &amp; Circumstances</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <section class="form-section circumstances-section">
+            <section
+              class="form-section circumstances-section"
+              [attr.inert]="lastSeenSection.pending() || lastSeenSection.needsLoad() ? '' : null"
+            >
               <h2>Last Seen &amp; Circumstances</h2>
               <p>
                 Share what you know. Additional details are optional; leave unknown information
@@ -1016,13 +1189,32 @@
                 ><textarea matInput formControlName="additionalContext" rows="4"></textarea>
               </mat-form-field>
             </section>
+            @if (lastSeenSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ lastSeenSection.errorMessage() }}</p>
+            }
+            @if (lastSeenSection.pending(); as pending) {
+              <p role="status">
+                {{
+                  pending === 'loading' ? 'Loading last seen details…' : 'Saving last seen details…'
+                }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!lastSeenSection.pending()"
+                (click)="lastSeenSection.next()"
+              >
+                {{
+                  lastSeenSection.needsLoad() && !lastSeenSection.pending()
+                    ? 'Retry loading last seen details'
+                    : sectionNextLabel(6)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -1033,7 +1225,10 @@
           <ng-template matStepLabel>Possible Sightings</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <section class="form-section">
+            <section
+              class="form-section"
+              [attr.inert]="sightingsSection.pending() || sightingsSection.needsLoad() ? '' : null"
+            >
               <div class="section-header">
                 <h2>Possible Sighting Locations</h2>
                 <button
@@ -1161,13 +1356,34 @@
                 }
               </div>
             </section>
+            @if (sightingsSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ sightingsSection.errorMessage() }}</p>
+            }
+            @if (sightingsSection.pending(); as pending) {
+              <p role="status">
+                {{
+                  pending === 'loading'
+                    ? 'Loading possible sightings…'
+                    : 'Saving possible sightings…'
+                }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Next
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!sightingsSection.pending()"
+                (click)="sightingsSection.next()"
+              >
+                {{
+                  sightingsSection.needsLoad() && !sightingsSection.pending()
+                    ? 'Retry loading possible sightings'
+                    : sectionNextLabel(7)
+                }}
                 <mat-icon aria-hidden="true">arrow_forward</mat-icon>
               </button>
             </div>
@@ -1178,7 +1394,8 @@
           <ng-template matStepLabel>Case and Contact</ng-template>
 
           <form class="step-content" [formGroup]="detailsForm">
-            <div class="section-header">
+            @let caseFieldsLocked = caseContactSection.pending() || caseContactSection.needsLoad();
+            <div class="section-header" [attr.inert]="caseFieldsLocked ? '' : null">
               <h2>Case and Contact</h2>
               <button
                 matButton
@@ -1189,17 +1406,21 @@
                 Add record ({{ caseContacts.length }}/10)
               </button>
             </div>
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" [attr.inert]="caseFieldsLocked ? '' : null">
               <mat-label>Transportation</mat-label>
               <input matInput formControlName="transportation" />
             </mat-form-field>
 
-            <mat-form-field appearance="outline">
+            <mat-form-field appearance="outline" [attr.inert]="caseFieldsLocked ? '' : null">
               <mat-label>Companions</mat-label>
               <input matInput formControlName="companions" />
             </mat-form-field>
 
-            <div formArrayName="caseContacts" class="record-list">
+            <div
+              formArrayName="caseContacts"
+              class="record-list"
+              [attr.inert]="caseFieldsLocked ? '' : null"
+            >
               @for (contact of caseContacts.controls; track contact; let i = $index) {
                 <div [formGroupName]="i">
                   <section class="form-section">
@@ -1273,13 +1494,32 @@
                 </div>
               }
             </div>
+            @if (caseContactSection.errorMessage()) {
+              <p class="field-error" role="alert">{{ caseContactSection.errorMessage() }}</p>
+            }
+            @if (caseContactSection.pending(); as pending) {
+              <p role="status">
+                {{
+                  pending === 'loading' ? 'Loading case and contact…' : 'Saving case and contact…'
+                }}
+              </p>
+            }
             <div class="step-actions section-step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
                 Previous
               </button>
-              <button matButton="filled" type="button" matStepperNext>
-                Preview
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="!!caseContactSection.pending()"
+                (click)="caseContactSection.next()"
+              >
+                {{
+                  caseContactSection.needsLoad() && !caseContactSection.pending()
+                    ? 'Retry loading case and contact'
+                    : sectionNextLabel(8, 'Preview')
+                }}
                 <mat-icon aria-hidden="true">visibility</mat-icon>
               </button>
             </div>
@@ -1307,7 +1547,12 @@
             <div class="review-links">
               @for (section of sections; track section; let i = $index) {
                 @if (i < 9) {
-                  <button matButton type="button" (click)="selectSection(i)">
+                  <button
+                    matButton
+                    type="button"
+                    [disabled]="submitting()"
+                    (click)="editFromPreview(i)"
+                  >
                     {{ editable() ? 'Edit' : 'View' }} {{ section }}
                   </button>
                 }
@@ -1315,7 +1560,16 @@
             </div>
           </div>
 
-          <section class="step-content preview">
+          @if (reviewLoading()) {
+            <p role="status">Loading saved report details…</p>
+          }
+          @if (reviewLoadFailed()) {
+            <p role="alert">Some saved report details could not be loaded.</p>
+            <button matButton type="button" (click)="loadPreviewSections()">
+              Retry loading preview
+            </button>
+          }
+          <section class="step-content preview" [attr.aria-busy]="reviewLoading()">
             <article class="form-section">
               <h2>Circumstances summary</h2>
               <dl>
@@ -1555,6 +1809,15 @@
 
             <mat-divider />
 
+            @if (submissionError()) {
+              <p class="field-error" role="alert">{{ submissionError() }}</p>
+            }
+            @if (submitting()) {
+              <p role="status">Submitting your report…</p>
+            }
+            @if (submitted()) {
+              <p role="status">Your report was submitted for administrator review.</p>
+            }
             <div class="step-actions">
               <button matButton type="button" matStepperPrevious>
                 <mat-icon aria-hidden="true">arrow_back</mat-icon>
@@ -1568,7 +1831,7 @@
                 matButton="filled"
                 type="button"
                 (click)="submitReport()"
-                [disabled]="!integrationReady() || !editable()"
+                [disabled]="!submitAvailable()"
               >
                 <mat-icon aria-hidden="true">send</mat-icon>
                 Submit for administrator review

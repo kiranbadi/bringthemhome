@@ -8,8 +8,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatStepperModule } from '@angular/material/stepper';
 import { RouterLink } from '@angular/router';
 import { KeyValuePipe } from '@angular/common';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  DestroyRef,
   inject,
   input,
   output,
@@ -17,6 +19,7 @@ import {
   computed,
   ViewChild,
   effect,
+  OnInit,
 } from '@angular/core';
 import { MatStepper } from '@angular/material/stepper';
 import {
@@ -29,6 +32,9 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ReportActionDialog } from './report-action-dialog';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, concatMap, finalize, from, map, of, switchMap, timeout, toArray } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 
 const requiredWhenOther = (selection: string) => (control: AbstractControl) => {
   const value = control.parent?.get(selection)?.value;
@@ -47,16 +53,37 @@ const timezoneValidator = (control: AbstractControl) => {
   }
 };
 
-import { NavigationHeader } from '../shared/navigation-header/navigation-header';
-
 type UploadedMedia = {
   attachment_id?: string;
-  client_id: string;
+  url?: string;
   name: string;
   size_bytes: number;
   size: string;
   type: string;
 };
+
+const reportMediaEndpoint = `${environment.apiUrl}${environment.apiBaseUrl}/api/v2/person-reports/media`;
+
+function hasReportMediaUrl(url: string | undefined, documentId: string | undefined): boolean {
+  if (typeof url !== 'string') return false;
+  if (/^s3:\/\/[a-z0-9.-]+\/[^\s?#]+$/.test(url)) return true;
+  if (!documentId) return false;
+
+  const prefix = `${reportMediaEndpoint}/files/${encodeURIComponent(documentId)}/`;
+  // The API also serves older uploads whose S3 keys include a file UUID.
+  const filePath = /^(?:[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\/)?[0-9a-f]{64}$/;
+  return url.startsWith(prefix) && filePath.test(url.slice(prefix.length));
+}
+
+function sectionChanges<Fields extends object>(fields: Fields, baseline: Fields): Partial<Fields> {
+  const changes: Partial<Fields> = {};
+  for (const key of Object.keys(fields) as (keyof Fields)[]) {
+    if (JSON.stringify(fields[key]) !== JSON.stringify(baseline[key])) {
+      changes[key] = fields[key];
+    }
+  }
+  return changes;
+}
 
 @Component({
   selector: 'app-missing-person-report',
@@ -78,20 +105,26 @@ type UploadedMedia = {
   templateUrl: './missing-person-report.html',
   styleUrl: './missing-person-report.scss',
 })
-export class MissingPersonReport {
+export class MissingPersonReport implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
+  private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly uploadFiles = new Map<string, File>();
+  readonly uploadFiles = new Map<UploadedMedia, File>();
   protected readonly maxPhotoSizeMb = 5;
   protected readonly maxVideoSizeMb = 25;
   protected readonly mediaSelectionErrors = signal<string[]>([]);
+  protected readonly mediaUploadError = signal('');
+  protected readonly uploadingMedia = signal(false);
   protected readonly photoFiles: UploadedMedia[] = [];
   protected readonly videoFiles: UploadedMedia[] = [];
   /** Host integration supplies persisted workflow and listens for actionRequested. */
   readonly workflow = input<ReportWorkflow | null>(null);
   readonly reportContext = input<ReportContext | null>(null);
+  readonly reviewReason = input('');
   readonly administrator = input(false);
   readonly integrationReady = input(false);
+  readonly reportSubmitted = output<void>();
   readonly actionRequested = output<{
     action: ReportAction;
     report_id?: string;
@@ -99,8 +132,14 @@ export class MissingPersonReport {
     version?: number;
     payload: unknown;
   }>();
+  protected readonly submitted = signal(false);
+  protected readonly submitting = signal(false);
+  protected readonly submissionError = signal('');
+  protected readonly confirmingSubmission = signal(false);
   protected readonly editable = computed(
     () =>
+      !this.submitting() &&
+      !this.submitted() &&
       !this.administrator() &&
       (!this.workflow() ||
         ['DRAFT', 'REJECTED'].includes(this.workflow()!.status) ||
@@ -112,7 +151,26 @@ export class MissingPersonReport {
     allowedReportActions(this.workflow(), this.administrator()),
   );
   protected readonly selectedSection = signal(0);
+  private readonly editingFromPreview = signal<number | null>(null);
+  protected readonly sectionSaveAvailable = computed(
+    () => !!this.reportContext() && !this.workflow() && this.editable(),
+  );
   protected readonly validationShown = signal(false);
+  protected readonly reviewLoading = computed(
+    () => this.uploadingMedia() || this.reviewSections.some((section) => section.pending()),
+  );
+  protected readonly reviewLoadFailed = computed(
+    () => !this.reviewLoading() && this.reviewSections.some((section) => section.needsLoad()),
+  );
+  protected readonly submitAvailable = computed(
+    () =>
+      this.editable() &&
+      this.actions().includes('submit') &&
+      (this.integrationReady() || this.sectionSaveAvailable()) &&
+      !this.confirmingSubmission() &&
+      !this.reviewLoading() &&
+      !this.reviewLoadFailed(),
+  );
   protected readonly sections = [
     'Pictures and Videos',
     'Identity',
@@ -129,9 +187,180 @@ export class MissingPersonReport {
   @ViewChild(MatStepper) protected stepper?: MatStepper;
   protected sectionChanged(index: number): void {
     this.selectedSection.set(index);
+    if (index !== this.editingFromPreview()) this.editingFromPreview.set(null);
+    if (index === 9) {
+      this.loadPreviewSections();
+    } else {
+      const section = this.reviewSections[index];
+      if (section?.needsLoad()) section.load();
+    }
   }
   protected selectSection(index: number): void {
     if (this.stepper) this.stepper.selectedIndex = index;
+  }
+  protected loadPreviewSections(): void {
+    for (const section of this.reviewSections) {
+      if (section.needsLoad()) section.load();
+    }
+  }
+  protected editFromPreview(index: number): void {
+    this.editingFromPreview.set(index);
+    this.selectSection(index);
+  }
+  protected sectionNextLabel(index: number, label = 'Next'): string {
+    if (this.editingFromPreview() !== index) return label;
+    return this.sectionSaveAvailable() ? 'Save and return to preview' : 'Return to preview';
+  }
+  protected advanceFromSection(index: number): void {
+    if (this.editingFromPreview() === index) this.selectSection(9);
+    else this.stepper?.next();
+  }
+  private reportSection<Fields extends object>(config: {
+    index: number;
+    path: string;
+    label: string;
+    requestKey: string;
+    payload: () => Fields;
+    apply: (fields: Fields) => void;
+    validate?: () => boolean;
+  }) {
+    const empty = config.payload();
+    const baseline = signal<Fields | null | undefined>(undefined);
+    const pending = signal<'loading' | 'saving' | null>(null);
+    const errorMessage = signal('');
+    const needsLoad = computed(() => this.sectionSaveAvailable() && baseline() === undefined);
+    const actionSuffix = config.path.replaceAll('-', '_');
+    const responseKey = `${actionSuffix}_section`;
+    const label = config.label.toLowerCase();
+    const request = (
+      operation: 'get' | 'create' | 'update',
+      context: ReportContext,
+      fields: Partial<Fields> = {},
+    ) =>
+      this.http.post<Record<string, Partial<Fields> & { deleted_at?: string | null }>>(
+        `${environment.apiUrl}${environment.apiBaseUrl}/api/v2/person-reports/${config.path}`,
+        {
+          action: `${operation}_${actionSuffix}`,
+          [config.requestKey]: { ...context, ...fields },
+        },
+        { withCredentials: true },
+      );
+    const read = (context: ReportContext) =>
+      request('get', context).pipe(
+        map((response) => {
+          const section = response[responseKey];
+          if (!section || section.deleted_at) throw new Error('Section is unavailable.');
+          const saved: Partial<Fields> = section;
+          const fields = { ...empty };
+          for (const key of Object.keys(empty) as (keyof Fields)[]) {
+            fields[key] = saved[key] ?? empty[key];
+          }
+          return fields;
+        }),
+      );
+    const load = () => {
+      const context = this.reportContext();
+      if (!context || pending()) return;
+
+      pending.set('loading');
+      errorMessage.set('');
+      read(context)
+        .pipe(
+          catchError((error: unknown) => {
+            if (
+              error instanceof HttpErrorResponse &&
+              error.status === 404 &&
+              error.error?.error_message === `${config.label} section not found.`
+            ) {
+              return of(null);
+            }
+            throw error;
+          }),
+          timeout(15_000),
+          takeUntilDestroyed(this.destroyRef),
+          finalize(() => pending.set(null)),
+        )
+        .subscribe({
+          next: (saved) => {
+            if (saved) config.apply(saved);
+            baseline.set(saved ? config.payload() : null);
+          },
+          error: () => errorMessage.set(`Could not load the ${label}. Please try again.`),
+        });
+    };
+    const next = () => {
+      if (pending()) return;
+      const context = this.reportContext();
+      if (!context || !this.sectionSaveAvailable()) {
+        this.advanceFromSection(config.index);
+        return;
+      }
+      const previous = baseline();
+      if (previous === undefined) {
+        load();
+        return;
+      }
+      if (config.validate && !config.validate()) return;
+
+      const fields = config.payload();
+      const changes = previous ? sectionChanges(fields, previous) : fields;
+      errorMessage.set('');
+      if (!Object.keys(changes).length) {
+        this.advanceFromSection(config.index);
+        return;
+      }
+
+      pending.set('saving');
+      request(previous ? 'update' : 'create', context, changes)
+        .pipe(
+          map(() => fields),
+          catchError((error: unknown) => {
+            if (
+              previous ||
+              !(error instanceof HttpErrorResponse) ||
+              error.status !== 409 ||
+              error.error?.error_message !== `${config.label} section already exists.`
+            ) {
+              throw error;
+            }
+
+            // A prior attempt may have saved successfully even if its response was lost.
+            return read(context).pipe(
+              switchMap((saved) => {
+                const merged = { ...saved, ...sectionChanges(fields, empty) };
+                const patch = sectionChanges(merged, saved);
+                return Object.keys(patch).length
+                  ? request('update', context, patch).pipe(map(() => merged))
+                  : of(saved);
+              }),
+            );
+          }),
+          timeout(15_000),
+          takeUntilDestroyed(this.destroyRef),
+          finalize(() => pending.set(null)),
+        )
+        .subscribe({
+          next: (saved) => {
+            if (saved !== fields) config.apply(saved);
+            baseline.set(saved === fields ? saved : config.payload());
+            if (this.selectedSection() === config.index) this.advanceFromSection(config.index);
+          },
+          error: () => errorMessage.set(`Could not save the ${label}. Please try again.`),
+        });
+    };
+
+    return { pending, errorMessage, needsLoad, load, next };
+  }
+
+  private applyIdentity({
+    aliases,
+    ...fields
+  }: ReturnType<MissingPersonReport['identityPayload']>): void {
+    this.detailsForm.patchValue(fields);
+    this.aliases.clear();
+    for (const alias of aliases.length ? aliases : ['']) {
+      this.aliases.push(this.formBuilder.nonNullable.control(alias));
+    }
   }
   protected readonly sectionFields: string[][] = [
     [],
@@ -232,7 +461,11 @@ export class MissingPersonReport {
     );
   }
   protected requestAction(action: ReportAction): void {
-    if (!this.integrationReady() || !this.actions().includes(action)) return;
+    if (action === 'submit') {
+      if (!this.submitAvailable()) return;
+    } else if (!this.integrationReady() || !this.actions().includes(action)) {
+      return;
+    }
     if (action === 'save') {
       this.emitAction(action, this.buildReportPayload());
       return;
@@ -251,6 +484,14 @@ export class MissingPersonReport {
         );
         return;
       }
+      if (this.sectionSaveAvailable() && this.mediaWithoutUrl().length) {
+        this.mediaUploadError.set(
+          'Save Pictures and Videos before submitting so each file has an S3 URL.',
+        );
+        this.editFromPreview(0);
+        return;
+      }
+      this.confirmingSubmission.set(true);
     }
     this.dialog
       .open(ReportActionDialog, {
@@ -260,9 +501,53 @@ export class MissingPersonReport {
         autoFocus: 'first-tabbable',
       })
       .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((details) => {
-        if (details)
+        if (action === 'submit') this.confirmingSubmission.set(false);
+        if (!details) return;
+        if (action === 'submit' && this.sectionSaveAvailable()) {
+          this.submitDraft();
+        } else {
           this.emitAction(action, action === 'submit' ? this.buildReportPayload() : details);
+        }
+      });
+  }
+
+  private submitDraft(): void {
+    const context = this.reportContext();
+    if (!context || !this.submitAvailable()) return;
+
+    this.submissionError.set('');
+    this.submitting.set(true);
+    this.http
+      .post<ReportContext & { report_status: 'SUBMITTED' }>(
+        `${environment.apiUrl}${environment.apiBaseUrl}/api/v2/person-reports/submit`,
+        { action: 'submit_report', report: { ...context, ...this.buildReportPayload() } },
+        { withCredentials: true },
+      )
+      .pipe(
+        timeout(120_000),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.submitting.set(false)),
+      )
+      .subscribe({
+        next: (receipt) => {
+          if (
+            receipt?.report_status !== 'SUBMITTED' ||
+            receipt._id !== context._id ||
+            receipt.report_id !== context.report_id ||
+            receipt.user_id !== context.user_id
+          ) {
+            this.submissionError.set(
+              'The server did not confirm your submission. Please try again.',
+            );
+            return;
+          }
+          this.submitted.set(true);
+          this.selectSection(9);
+          this.reportSubmitted.emit();
+        },
+        error: () => this.submissionError.set('Could not submit the report. Please try again.'),
       });
   }
   private emitAction(action: ReportAction, payload: unknown): void {
@@ -280,6 +565,15 @@ export class MissingPersonReport {
   protected readonly mediaForm = this.formBuilder.nonNullable.group({
     mediaNotes: [''],
     consentToUseMedia: [false, Validators.requiredTrue],
+  });
+
+  protected readonly mediaSection = this.reportSection({
+    index: 0,
+    path: 'media',
+    label: 'Media',
+    requestKey: 'media',
+    payload: () => this.mediaPayload(),
+    apply: (media) => this.applyMedia(media),
   });
 
   protected readonly detailsForm = this.formBuilder.nonNullable.group({
@@ -341,6 +635,126 @@ export class MissingPersonReport {
     circumstances: [''],
     possibleDestination: [''],
   });
+
+  protected readonly identitySection = this.reportSection({
+    index: 1,
+    path: 'identity',
+    label: 'Identity',
+    requestKey: 'identity',
+    payload: () => this.identityPayload(),
+    apply: (fields) => this.applyIdentity(fields),
+    validate: () => {
+      const { firstName, lastName } = this.detailsForm.controls;
+      firstName.markAsTouched();
+      lastName.markAsTouched();
+      return firstName.valid && lastName.valid;
+    },
+  });
+
+  protected readonly physicalSection = this.reportSection({
+    index: 2,
+    path: 'physical-description',
+    label: 'Physical description',
+    requestKey: 'physicalDescription',
+    payload: () => this.physicalDescriptionPayload(),
+    apply: (fields) => this.detailsForm.patchValue(fields),
+    validate: () => {
+      const { raceEthnicityOther, hairColorOther } = this.detailsForm.controls;
+      raceEthnicityOther.markAsTouched();
+      hairColorOther.markAsTouched();
+      return this.otherDetailsValid();
+    },
+  });
+
+  protected readonly socialSection = this.reportSection({
+    index: 3,
+    path: 'social-media',
+    label: 'Social media',
+    requestKey: 'socialMedia',
+    payload: () => ({ profiles: this.filledSocialProfiles() }),
+    apply: ({ profiles }) => this.applySocialProfiles(profiles),
+  });
+
+  protected readonly educationSection = this.reportSection({
+    index: 4,
+    path: 'educational-history',
+    label: 'Educational history',
+    requestKey: 'educationalHistory',
+    payload: () => ({ records: this.filledEducationRecords() }),
+    apply: ({ records }) => this.applyEducationRecords(records),
+  });
+
+  protected readonly employmentSection = this.reportSection({
+    index: 5,
+    path: 'employment-history',
+    label: 'Employment history',
+    requestKey: 'employmentHistory',
+    payload: () => ({ records: this.filledEmploymentRecords() }),
+    apply: ({ records }) => this.applyEmploymentRecords(records),
+  });
+
+  protected readonly lastSeenSection = this.reportSection({
+    index: 6,
+    path: 'last-seen',
+    label: 'Last seen',
+    requestKey: 'lastSeen',
+    payload: () => this.lastSeenPayload(),
+    apply: (fields) => this.applyLastSeen(fields),
+    validate: () => {
+      const controls = this.sectionFields[6].map((name) => this.detailsForm.get(name)!);
+      controls.forEach((control) => control.markAllAsTouched());
+      return controls.every((control) => control.valid);
+    },
+  });
+
+  protected readonly sightingsSection = this.reportSection({
+    index: 7,
+    path: 'possible-sighting-locations',
+    label: 'Possible sighting locations',
+    requestKey: 'possibleSightingLocations',
+    payload: () => ({ records: this.filledPossibleSightings() }),
+    apply: ({ records }) => this.applyPossibleSightings(records),
+    validate: () => {
+      this.possibleSightings.markAllAsTouched();
+      return this.possibleSightings.valid;
+    },
+  });
+
+  protected readonly caseContactSection = this.reportSection({
+    index: 8,
+    path: 'case-and-contact',
+    label: 'Case and contact',
+    requestKey: 'caseAndContact',
+    payload: () => ({
+      transportation: this.detailsForm.controls.transportation.value,
+      companions: this.detailsForm.controls.companions.value,
+      records: this.caseContacts.getRawValue(),
+    }),
+    apply: ({ records, ...fields }) => {
+      this.detailsForm.patchValue(fields);
+      this.applyCaseContacts(records);
+    },
+    validate: () => {
+      this.caseContacts.markAllAsTouched();
+      return this.caseContacts.valid;
+    },
+  });
+
+  private readonly reviewSections = [
+    this.mediaSection,
+    this.identitySection,
+    this.physicalSection,
+    this.socialSection,
+    this.educationSection,
+    this.employmentSection,
+    this.lastSeenSection,
+    this.sightingsSection,
+    this.caseContactSection,
+  ];
+
+  ngOnInit(): void {
+    if (this.mediaSection.needsLoad()) this.mediaSection.load();
+  }
 
   constructor() {
     for (const [selection, detail] of [
@@ -466,14 +880,82 @@ export class MissingPersonReport {
 
   protected removePhoto(index: number): void {
     if (!this.editable()) return;
-    this.uploadFiles.delete(this.photoFiles[index]?.client_id);
+    this.uploadFiles.delete(this.photoFiles[index]);
     this.photoFiles.splice(index, 1);
   }
 
   protected removeVideo(index: number): void {
     if (!this.editable()) return;
-    this.uploadFiles.delete(this.videoFiles[index]?.client_id);
+    this.uploadFiles.delete(this.videoFiles[index]);
     this.videoFiles.splice(index, 1);
+  }
+
+  protected saveMediaAndAdvance(): void {
+    if (this.uploadingMedia() || this.mediaSection.pending()) return;
+    const context = this.reportContext();
+    if (!context || !this.sectionSaveAvailable() || this.mediaSection.needsLoad()) {
+      this.mediaSection.next();
+      return;
+    }
+
+    this.mediaUploadError.set('');
+    const pending = this.mediaWithoutUrl();
+    if (!pending.length) {
+      this.mediaSection.next();
+      return;
+    }
+    this.mediaForm.markAllAsTouched();
+    if (this.mediaForm.invalid) return;
+    if (pending.some((entry) => !this.uploadFiles.has(entry))) {
+      this.mediaUploadError.set('Remove files with missing S3 URLs and select them again.');
+      return;
+    }
+
+    this.uploadingMedia.set(true);
+    from(pending)
+      .pipe(
+        concatMap((entry) => {
+          const file = this.uploadFiles.get(entry)!;
+          const body = new FormData();
+          body.append('file', file);
+          return this.http
+            .post<{ url: string }>(`${reportMediaEndpoint}/upload`, body, {
+              withCredentials: true,
+              params: {
+                _id: context._id,
+                report_id: context.report_id,
+                kind: this.photoFiles.includes(entry) ? 'photo' : 'video',
+              },
+            })
+            .pipe(
+              timeout(120_000),
+              map((result) => {
+                if (!hasReportMediaUrl(result?.url, context._id))
+                  throw new Error('Invalid media URL');
+                entry.url = result.url;
+                this.uploadFiles.delete(entry);
+              }),
+            );
+        }),
+        toArray(),
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.uploadingMedia.set(false)),
+      )
+      .subscribe({
+        next: () => {
+          this.uploadingMedia.set(false);
+          this.mediaSection.next();
+        },
+        error: () =>
+          this.mediaUploadError.set('Could not upload every file to S3. Please try again.'),
+      });
+  }
+
+  private mediaWithoutUrl(): UploadedMedia[] {
+    const documentId = this.reportContext()?._id;
+    return [...this.photoFiles, ...this.videoFiles].filter(
+      (entry) => !hasReportMediaUrl(entry.url, documentId),
+    );
   }
 
   protected addSocialProfile(): void {
@@ -517,87 +999,130 @@ export class MissingPersonReport {
     this.requestAction('submit');
   }
 
+  private identityPayload(details = this.detailsForm.getRawValue()) {
+    return {
+      firstName: details.firstName,
+      middleName: details.middleName,
+      lastName: details.lastName,
+      aliases: details.aliases.map((value) => value.trim()).filter(Boolean),
+      dateOfBirth: details.dateOfBirth,
+      ageWhenMissing: details.ageWhenMissing,
+      currentAge: details.currentAge,
+    };
+  }
+
+  private physicalDescriptionPayload(details = this.detailsForm.getRawValue()) {
+    return {
+      gender: details.gender,
+      sexAtBirth: details.sexAtBirth,
+      raceEthnicity: details.raceEthnicity,
+      raceEthnicityOther:
+        details.raceEthnicity === 'Other' ? details.raceEthnicityOther.trim() : '',
+      height: details.height,
+      weight: details.weight,
+      hairColor: details.hairColor,
+      hairColorOther: details.hairColor === 'Other' ? details.hairColorOther.trim() : '',
+      eyeColor: details.eyeColor,
+      complexion: details.complexion,
+      scarsMarksTattoos: details.scarsMarksTattoos,
+      medicalConditions: details.medicalConditions,
+      medications: details.medications,
+      disabilities: details.disabilities,
+      languages: details.languages,
+      otherIdentifiers: details.otherIdentifiers,
+    };
+  }
+
+  private lastSeenPayload(details = this.detailsForm.getRawValue()) {
+    return {
+      classification: details.classification,
+      timezone: details.timezone.trim(),
+      lastContact: { date: details.lastContactDate, time: details.lastContactTime },
+      address: details.streetAddress,
+      locationType: details.locationType,
+      locationTypeOther: details.locationType === 'other' ? details.locationTypeOther.trim() : '',
+      lastSeenWith: {
+        name: details.lastSeenWithName,
+        relationship: details.lastSeenWithRelationship,
+        contactPhone: details.lastSeenWithPhone,
+      },
+      riskFactors: details.riskFactors,
+      riskFactorsOther: details.riskFactors.includes('other')
+        ? details.riskFactorsOther.trim()
+        : '',
+      itemsLeftBehind: details.itemsLeftBehind
+        .map((record) => ({ item: record.item.trim(), details: record.details.trim() }))
+        .filter((record) => record.item || record.details),
+      additionalContext: details.additionalContext,
+
+      date: details.lastSeenDate,
+      time: details.lastSeenTime,
+      location: details.lastSeenLocation,
+      city: details.city,
+      state: details.state,
+      country: details.country,
+      zipcode: details.zipcode,
+      coordinates: {
+        latitude: details.lastSeenLatitude,
+        longitude: details.lastSeenLongitude,
+      },
+      clothing: details.clothing,
+      accessories: details.accessories,
+      circumstances: details.circumstances,
+      possibleDestination: details.possibleDestination,
+    };
+  }
+
+  private applyLastSeen(saved: ReturnType<MissingPersonReport['lastSeenPayload']>): void {
+    this.itemsLeftBehind.clear();
+    for (const record of saved.itemsLeftBehind?.length ? saved.itemsLeftBehind : [{}]) {
+      const group = this.createLeftBehindItem();
+      group.patchValue(record);
+      this.itemsLeftBehind.push(group);
+    }
+    this.detailsForm.patchValue({
+      classification: saved.classification ?? '',
+      timezone: saved.timezone ?? '',
+      lastContactDate: saved.lastContact?.date ?? '',
+      lastContactTime: saved.lastContact?.time ?? '',
+      streetAddress: saved.address ?? '',
+      locationType: saved.locationType ?? '',
+      locationTypeOther: saved.locationTypeOther ?? '',
+      lastSeenWithName: saved.lastSeenWith?.name ?? '',
+      lastSeenWithRelationship: saved.lastSeenWith?.relationship ?? '',
+      lastSeenWithPhone: saved.lastSeenWith?.contactPhone ?? '',
+      riskFactors: saved.riskFactors ?? [],
+      riskFactorsOther: saved.riskFactorsOther ?? '',
+      additionalContext: saved.additionalContext ?? '',
+      lastSeenDate: saved.date,
+      lastSeenTime: saved.time,
+      lastSeenLocation: saved.location,
+      city: saved.city,
+      state: saved.state,
+      country: saved.country,
+      zipcode: saved.zipcode,
+      lastSeenLatitude: saved.coordinates.latitude,
+      lastSeenLongitude: saved.coordinates.longitude,
+      clothing: saved.clothing,
+      accessories: saved.accessories,
+      circumstances: saved.circumstances,
+      possibleDestination: saved.possibleDestination,
+    });
+  }
+
   buildReportPayload() {
     const details = this.detailsForm.getRawValue();
 
     return {
-      media: {
-        photos: this.photoFiles,
-        videos: this.videoFiles,
-        notes: this.mediaForm.controls.mediaNotes.value,
-        consentToUseMedia: this.mediaForm.controls.consentToUseMedia.value,
-      },
+      media: this.mediaPayload(),
       missingPersonDetails: {
-        identity: {
-          firstName: details.firstName,
-          middleName: details.middleName,
-          lastName: details.lastName,
-          aliases: details.aliases.map((value) => value.trim()).filter(Boolean),
-          dateOfBirth: details.dateOfBirth,
-          ageWhenMissing: details.ageWhenMissing,
-          currentAge: details.currentAge,
-        },
-        physicalDescription: {
-          gender: details.gender,
-          sexAtBirth: details.sexAtBirth,
-          raceEthnicity: details.raceEthnicity,
-          raceEthnicityOther:
-            details.raceEthnicity === 'Other' ? details.raceEthnicityOther.trim() : '',
-          height: details.height,
-          weight: details.weight,
-          hairColor: details.hairColor,
-          hairColorOther: details.hairColor === 'Other' ? details.hairColorOther.trim() : '',
-          eyeColor: details.eyeColor,
-          complexion: details.complexion,
-          scarsMarksTattoos: details.scarsMarksTattoos,
-          medicalConditions: details.medicalConditions,
-          medications: details.medications,
-          disabilities: details.disabilities,
-          languages: details.languages,
-          otherIdentifiers: details.otherIdentifiers,
-        },
+        identity: this.identityPayload(details),
+        physicalDescription: this.physicalDescriptionPayload(details),
         socialMediaPresence: this.filledSocialProfiles(),
         educationalHistory: this.filledEducationRecords(),
-        employmentHistory: details.employmentHistory.filter((record) =>
-          Object.values(record).some((value) => value.trim()),
-        ),
+        employmentHistory: this.filledEmploymentRecords(details.employmentHistory),
         lastSeen: {
-          classification: details.classification,
-          timezone: details.timezone.trim(),
-          lastContact: { date: details.lastContactDate, time: details.lastContactTime },
-          address: details.streetAddress,
-          locationType: details.locationType,
-          locationTypeOther:
-            details.locationType === 'other' ? details.locationTypeOther.trim() : '',
-          lastSeenWith: {
-            name: details.lastSeenWithName,
-            relationship: details.lastSeenWithRelationship,
-            contactPhone: details.lastSeenWithPhone,
-          },
-          riskFactors: details.riskFactors,
-          riskFactorsOther: details.riskFactors.includes('other')
-            ? details.riskFactorsOther.trim()
-            : '',
-          itemsLeftBehind: details.itemsLeftBehind
-            .map((record) => ({ item: record.item.trim(), details: record.details.trim() }))
-            .filter((record) => record.item || record.details),
-          additionalContext: details.additionalContext,
-
-          date: details.lastSeenDate,
-          time: details.lastSeenTime,
-          location: details.lastSeenLocation,
-          city: details.city,
-          state: details.state,
-          country: details.country,
-          zipcode: details.zipcode,
-          coordinates: {
-            latitude: details.lastSeenLatitude,
-            longitude: details.lastSeenLongitude,
-          },
-          clothing: details.clothing,
-          accessories: details.accessories,
-          circumstances: details.circumstances,
-          possibleDestination: details.possibleDestination,
+          ...this.lastSeenPayload(details),
           transportation: details.transportation,
           companions: details.companions,
         },
@@ -621,84 +1146,19 @@ export class MissingPersonReport {
     this.aliases.clear();
     for (const alias of data.identity.aliases.length ? data.identity.aliases : [''])
       this.aliases.push(this.formBuilder.nonNullable.control(alias));
-    this.employmentHistory.clear();
-    for (const record of data.employmentHistory.length ? data.employmentHistory : [{}]) {
-      const group = this.createEmployment();
-      group.patchValue(record);
-      this.employmentHistory.push(group);
-    }
-    this.caseContacts.clear();
-    for (const record of data.caseAndReporterContact.length ? data.caseAndReporterContact : [{}]) {
-      const group = this.createContact();
-      group.patchValue(record);
-      this.caseContacts.push(group);
-    }
-    this.socialProfiles.clear();
-    for (const record of data.socialMediaPresence.length ? data.socialMediaPresence : [{}]) {
-      const group = this.createSocialProfile();
-      group.patchValue(record);
-      this.socialProfiles.push(group);
-    }
-    this.educationHistory.clear();
-    for (const record of data.educationalHistory.length ? data.educationalHistory : [{}]) {
-      const group = this.createEducationRecord();
-      group.patchValue(record);
-      this.educationHistory.push(group);
-    }
-    this.possibleSightings.clear();
-    for (const record of data.possibleSightingLocations.length
-      ? data.possibleSightingLocations
-      : [{}]) {
-      const group = this.createPossibleSighting();
-      group.patchValue(record);
-      this.possibleSightings.push(group);
-    }
-    this.itemsLeftBehind.clear();
-    for (const record of data.lastSeen.itemsLeftBehind?.length
-      ? data.lastSeen.itemsLeftBehind
-      : [{}]) {
-      const group = this.createLeftBehindItem();
-      group.patchValue(record);
-      this.itemsLeftBehind.push(group);
-    }
+    this.applyEmploymentRecords(data.employmentHistory);
+    this.applyCaseContacts(data.caseAndReporterContact);
+    this.applySocialProfiles(data.socialMediaPresence);
+    this.applyEducationRecords(data.educationalHistory);
+    this.applyPossibleSightings(data.possibleSightingLocations);
+    this.applyLastSeen(data.lastSeen);
     this.detailsForm.patchValue({
-      classification: data.lastSeen.classification ?? '',
-      timezone: data.lastSeen.timezone ?? '',
-      lastContactDate: data.lastSeen.lastContact?.date ?? '',
-      lastContactTime: data.lastSeen.lastContact?.time ?? '',
-      streetAddress: data.lastSeen.address ?? '',
-      locationType: data.lastSeen.locationType ?? '',
-      locationTypeOther: data.lastSeen.locationTypeOther ?? '',
-      lastSeenWithName: data.lastSeen.lastSeenWith?.name ?? '',
-      lastSeenWithRelationship: data.lastSeen.lastSeenWith?.relationship ?? '',
-      lastSeenWithPhone: data.lastSeen.lastSeenWith?.contactPhone ?? '',
-      riskFactors: data.lastSeen.riskFactors ?? [],
-      riskFactorsOther: data.lastSeen.riskFactorsOther ?? '',
-      additionalContext: data.lastSeen.additionalContext ?? '',
       ...data.identity,
       ...data.physicalDescription,
-      lastSeenDate: data.lastSeen.date,
-      lastSeenTime: data.lastSeen.time,
-      lastSeenLocation: data.lastSeen.location,
-      city: data.lastSeen.city,
-      state: data.lastSeen.state,
-      country: data.lastSeen.country,
-      zipcode: data.lastSeen.zipcode,
-      lastSeenLatitude: data.lastSeen.coordinates.latitude,
-      lastSeenLongitude: data.lastSeen.coordinates.longitude,
-      clothing: data.lastSeen.clothing,
-      accessories: data.lastSeen.accessories,
-      circumstances: data.lastSeen.circumstances,
-      possibleDestination: data.lastSeen.possibleDestination,
       transportation: data.lastSeen.transportation,
       companions: data.lastSeen.companions,
     });
-    this.mediaForm.patchValue({
-      mediaNotes: payload.media.notes,
-      consentToUseMedia: payload.media.consentToUseMedia,
-    });
-    this.photoFiles.splice(0, this.photoFiles.length, ...payload.media.photos);
-    this.videoFiles.splice(0, this.videoFiles.length, ...payload.media.videos);
+    this.applyMedia(payload.media);
     if (!this.editable()) {
       this.detailsForm.disable({ emitEvent: false });
       this.mediaForm.disable({ emitEvent: false });
@@ -708,6 +1168,24 @@ export class MissingPersonReport {
   }
   getPayload(): ReturnType<MissingPersonReport['buildReportPayload']> {
     return this.buildReportPayload();
+  }
+
+  private mediaPayload() {
+    return {
+      photos: this.photoFiles.map((file) => ({ ...file })),
+      videos: this.videoFiles.map((file) => ({ ...file })),
+      notes: this.mediaForm.controls.mediaNotes.value,
+      consentToUseMedia: this.mediaForm.controls.consentToUseMedia.value,
+    };
+  }
+
+  private applyMedia(media: ReturnType<MissingPersonReport['mediaPayload']>): void {
+    this.mediaForm.patchValue({
+      mediaNotes: media.notes,
+      consentToUseMedia: media.consentToUseMedia,
+    });
+    this.photoFiles.splice(0, this.photoFiles.length, ...media.photos);
+    this.videoFiles.splice(0, this.videoFiles.length, ...media.videos);
   }
 
   protected mediaCount(): number {
@@ -720,16 +1198,64 @@ export class MissingPersonReport {
       .filter((profile) => Object.values(profile).some((value) => value.trim().length > 0));
   }
 
+  private applySocialProfiles(
+    profiles: ReturnType<MissingPersonReport['filledSocialProfiles']>,
+  ): void {
+    this.socialProfiles.clear();
+    for (const profile of profiles.length ? profiles : [{}]) {
+      const group = this.createSocialProfile();
+      group.patchValue(profile);
+      this.socialProfiles.push(group);
+    }
+  }
+
   protected filledEducationRecords() {
     return this.educationHistory
       .getRawValue()
       .filter((record) => Object.values(record).some((value) => value.trim().length > 0));
   }
 
+  private applyEducationRecords(
+    records: ReturnType<MissingPersonReport['filledEducationRecords']>,
+  ): void {
+    this.educationHistory.clear();
+    for (const record of records.length ? records : [{}]) {
+      const group = this.createEducationRecord();
+      group.patchValue(record);
+      this.educationHistory.push(group);
+    }
+  }
+
   protected filledPossibleSightings() {
     return this.possibleSightings
       .getRawValue()
       .filter((sighting) => Object.values(sighting).some((value) => value.trim().length > 0));
+  }
+
+  private applyPossibleSightings(
+    records: ReturnType<MissingPersonReport['filledPossibleSightings']>,
+  ): void {
+    this.possibleSightings.clear();
+    for (const record of records.length ? records : [{}]) {
+      const group = this.createPossibleSighting();
+      group.patchValue(record);
+      this.possibleSightings.push(group);
+    }
+  }
+
+  private filledEmploymentRecords(records = this.employmentHistory.getRawValue()) {
+    return records.filter((record) => Object.values(record).some((value) => value.trim()));
+  }
+
+  private applyEmploymentRecords(
+    records: ReturnType<MissingPersonReport['filledEmploymentRecords']>,
+  ): void {
+    this.employmentHistory.clear();
+    for (const record of records.length ? records : [{}]) {
+      const group = this.createEmployment();
+      group.patchValue(record);
+      this.employmentHistory.push(group);
+    }
   }
 
   protected optionLabel(options: string[][], value: string): string {
@@ -814,6 +1340,18 @@ export class MissingPersonReport {
     if (!this.editable()) return;
     if (this.caseContacts.length > 1) this.caseContacts.removeAt(index);
   }
+
+  private applyCaseContacts(
+    records: ReturnType<MissingPersonReport['caseContacts']['getRawValue']>,
+  ): void {
+    this.caseContacts.clear();
+    for (const record of records.length ? records : [{}]) {
+      const group = this.createContact();
+      group.patchValue(record);
+      this.caseContacts.push(group);
+    }
+  }
+
   private createEmployment() {
     return this.formBuilder.nonNullable.group({
       currentEmployer: [''],
@@ -896,15 +1434,14 @@ export class MissingPersonReport {
 
     collection.push(
       ...files.map((file) => {
-        const clientId = crypto.randomUUID();
-        this.uploadFiles.set(clientId, file);
-        return {
-          client_id: clientId,
+        const entry: UploadedMedia = {
           size_bytes: file.size,
           name: file.name,
           size: this.formatFileSize(file.size),
           type: file.type || 'Unknown',
         };
+        this.uploadFiles.set(entry, file);
+        return entry;
       }),
     );
 

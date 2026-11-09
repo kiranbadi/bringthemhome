@@ -6,6 +6,13 @@ export interface ReportContext {
   readonly report_id: string;
   readonly user_id: string;
 }
+export interface ReportSummary extends ReportContext {
+  name: string;
+  report_status: ReportStatus | 'APPROVED';
+  submitted_at: string | null;
+  rejection_reason: string | null;
+  canonical_path: string | null;
+}
 export interface ReportWorkflow {
   id: string;
   version: number;

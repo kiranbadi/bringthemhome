@@ -59,6 +59,14 @@
       </header>
       <nav class="account-actions" aria-label="Account actions">
         @if (isAdmin()) {
+          <a routerLink="/admin/person-reports">
+            <mat-icon aria-hidden="true">assignment_turned_in</mat-icon>
+            <span
+              ><strong>Review Missing Person Reports</strong
+              ><span>Open the administrator review queue.</span></span
+            >
+            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+          </a>
           <a routerLink="/admin/case-claims"
             ><mat-icon aria-hidden="true">fact_check</mat-icon
             ><span
@@ -67,6 +75,14 @@
             ><mat-icon aria-hidden="true">arrow_forward</mat-icon></a
           >
         }
+        <a routerLink="/account/person-reports">
+          <mat-icon aria-hidden="true">assignment</mat-icon>
+          <span
+            ><strong>My Missing Person Reports</strong
+            ><span>Check report status and respond to review feedback.</span></span
+          >
+          <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        </a>
         <a routerLink="/missing-person-report">
           <mat-icon aria-hidden="true">post_add</mat-icon>
           <span

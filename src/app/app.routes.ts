@@ -17,6 +17,14 @@ export const routes: Routes = [
     title: 'Reset Password | Bring Them Home',
   },
   {
+    path: 'admin/person-reports',
+    canActivate: [caseClaimsAdminGuard],
+    data: { requiresAuth: true, administrator: true },
+    loadComponent: () =>
+      import('./missing-person-report/report-review-page').then((m) => m.ReportReviewPage),
+    title: 'Missing Person Report Review | Bring Them Home',
+  },
+  {
     path: 'admin/case-claims',
     canActivate: [caseClaimsAdminGuard],
     data: { requiresAuth: true },
@@ -162,6 +170,21 @@ export const routes: Routes = [
   {
     path: 'myaccount',
     component: AccountDashboard,
+    canActivate: [authGuard],
+    data: { requiresAuth: true },
+  },
+  {
+    path: 'account/person-reports',
+    canActivate: [authGuard],
+    data: { requiresAuth: true },
+    loadComponent: () =>
+      import('./missing-person-report/report-review-page').then((m) => m.ReportReviewPage),
+    title: 'My Missing Person Reports | Bring Them Home',
+  },
+  {
+    path: 'missing-person-report/:documentId',
+    loadComponent: () =>
+      import('./missing-person-report/create-report-page').then((m) => m.CreateReportPage),
     canActivate: [authGuard],
     data: { requiresAuth: true },
   },

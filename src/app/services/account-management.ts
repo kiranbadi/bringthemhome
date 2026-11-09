@@ -156,7 +156,12 @@ export class AccountManagementService {
         timeout(10_000),
         catchError(() => of('')),
         map(() => undefined),
-        tap(() => this.clearLocalSession()),
+        tap(() => {
+          for (const name of ['bth_report_context', '_id', 'report_id', 'user_id']) {
+            this.document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+          }
+          this.clearLocalSession();
+        }),
         finalize(() => {
           this.logoutRequest = undefined;
         }),

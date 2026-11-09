@@ -2,13 +2,13 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, DOCUMENT, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AccountManagementService } from '../services/account-management';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 import { MissingPersonReport } from './missing-person-report';
-import { ReportContext } from './report-workflow';
+import { ReportContext, ReportSummary } from './report-workflow';
 
 const REPORT_CONTEXT_COOKIE = 'bth_report_context';
 
@@ -33,13 +33,17 @@ function matchingReportContext(
   imports: [MatButtonModule, RouterLink, NavigationHeader, MissingPersonReport],
   template: `
     @if (reportContext(); as report) {
-      <app-missing-person-report [reportContext]="report" />
+      <app-missing-person-report
+        [reportContext]="report"
+        [reviewReason]="reviewReason()"
+        (reportSubmitted)="clearDraftCookie()"
+      />
     } @else {
       <app-navigation-header />
       <main>
         <h1>Create Missing Person Report</h1>
         @if (pending()) {
-          <p role="status">Creating your report…</p>
+          <p role="status">{{ documentId ? 'Opening your report…' : 'Creating your report…' }}</p>
         } @else {
           <p role="alert">{{ error() }}</p>
           @if (signInRequired()) {
@@ -72,8 +76,10 @@ export class CreateReportPage implements OnInit {
   private readonly account = inject(AccountManagementService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
+  protected readonly documentId = inject(ActivatedRoute).snapshot.paramMap.get('documentId');
 
   protected readonly reportContext = signal<ReportContext | null>(null);
+  protected readonly reviewReason = signal('');
   protected readonly pending = signal(false);
   protected readonly error = signal('');
   protected readonly signInRequired = signal(false);
@@ -87,6 +93,11 @@ export class CreateReportPage implements OnInit {
     const email = this.account.currentUser?.email?.trim().toLowerCase();
     if (!email) {
       this.requireSignIn();
+      return;
+    }
+
+    if (this.documentId) {
+      this.openReport(this.documentId, email);
       return;
     }
 
@@ -129,6 +140,36 @@ export class CreateReportPage implements OnInit {
       });
   }
 
+  private openReport(documentId: string, email: string): void {
+    this.error.set('');
+    this.pending.set(true);
+    this.http
+      .get<ReportSummary>(
+        `${environment.apiUrl}${environment.apiBaseUrl}/api/v2/person-reports/mine/${encodeURIComponent(documentId)}`,
+        { withCredentials: true },
+      )
+      .pipe(timeout(15_000), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (report) => {
+          this.pending.set(false);
+          const context = matchingReportContext(report, email);
+          if (!context || !['DRAFT', 'REJECTED'].includes(report.report_status)) {
+            this.error.set(
+              'This report is no longer available to edit. Check My Reports for its status.',
+            );
+            return;
+          }
+          this.reviewReason.set(report.rejection_reason ?? '');
+          this.reportContext.set(context);
+        },
+        error: (error: unknown) => {
+          this.pending.set(false);
+          if (error instanceof HttpErrorResponse && error.status === 401) this.requireSignIn();
+          else this.error.set('Could not open this report. Please try again.');
+        },
+      });
+  }
+
   private readReportCookie(email: string): ReportContext | null {
     const cookies = this.document.cookie.split(';').map((cookie) => cookie.trim());
     const read = (name: string): string | undefined => {
@@ -146,6 +187,12 @@ export class CreateReportPage implements OnInit {
     } catch {
       return null;
     }
+  }
+
+  protected clearDraftCookie(): void {
+    const context = this.reportContext();
+    if (!context || this.readReportCookie(context.user_id)?._id !== context._id) return;
+    this.document.cookie = `${REPORT_CONTEXT_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
   }
 
   private requireSignIn(): void {
