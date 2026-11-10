@@ -1,4 +1,5 @@
 import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -11,6 +12,12 @@ import { casePath } from './app/core/models/case-url';
 const app = express();
 const engine = new AngularNodeAppEngine();
 const browser = resolve(dirname(fileURLToPath(import.meta.url)), '../browser');
+const apiOrigin = process.env['API_ORIGIN'] || 'http://localhost:8000';
+app.use(createProxyMiddleware({
+  target: apiOrigin,
+  changeOrigin: true,
+  pathFilter: (path) => /^\/(?:api|bringthemhome)(?:\/|$)/.test(path),
+}));
 app.use(express.static(browser, { maxAge: '1y', index: false, redirect: false }));
 app.use(async (req, res, next) => {
   try {
@@ -21,7 +28,7 @@ app.use(async (req, res, next) => {
       const id = decodeURIComponent(match[1]);
       try {
         const response = await fetch(
-          `${process.env['API_ORIGIN'] || 'http://localhost:8000'}/api/v1/missing-persons/${encodeURIComponent(id)}`,
+          `${apiOrigin}/api/v1/missing-persons/${encodeURIComponent(id)}`,
           { signal: AbortSignal.timeout(10000) },
         );
         caseStatus = response.status;
