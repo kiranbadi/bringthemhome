@@ -30,6 +30,7 @@ import {
 import { MissingPersonService } from '../core/services/missing-person.service';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 import { casePath } from '../core/models/case-url';
+import { environment } from '../../environments/environment';
 import { NaturalSearchHeroComponent } from '../features/natural-search/natural-search-hero.component';
 import { NaturalSearchService } from '../features/natural-search/natural-search.service';
 import {
@@ -53,6 +54,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsGalleryComponent implements OnInit {
+  readonly naturalLanguageSearchEnabled = environment.naturalLanguageSearchEnabled;
   private readonly caseShare = inject(CaseShareService);
   private readonly tipDialog = inject(TipDialogService);
   readonly openingTip = signal(false);
