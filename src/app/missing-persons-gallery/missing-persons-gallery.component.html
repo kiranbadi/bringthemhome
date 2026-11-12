@@ -3,19 +3,21 @@
 }
 <app-navigation-header />
 <main class="gallery-shell">
-  @defer (on immediate) {
-    <app-natural-search-hero
-      [busy]="loading() && naturalActive()"
-      [apiError]="naturalError()"
-      (retrySearch)="retry()"
-    />
-  } @placeholder {
-    <p role="status">Loading search tools…</p>
-  } @error {
-    <p role="alert">
-      Search tools could not load. <a routerLink="/advanced-search">Use advanced search</a> or
-      refresh the page to try again.
-    </p>
+  @if (naturalLanguageSearchEnabled) {
+    @defer (on immediate) {
+      <app-natural-search-hero
+        [busy]="loading() && naturalActive()"
+        [apiError]="naturalError()"
+        (retrySearch)="retry()"
+      />
+    } @placeholder {
+      <p role="status">Loading search tools…</p>
+    } @error {
+      <p role="alert">
+        Search tools could not load. <a routerLink="/advanced-search">Use advanced search</a> or
+        refresh the page to try again.
+      </p>
+    }
   }
   <header class="gallery-header">
     <div>
