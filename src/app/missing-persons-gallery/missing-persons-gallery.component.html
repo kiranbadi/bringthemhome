@@ -29,7 +29,7 @@
   </header>
 
   @if (isSearch()) {
-    <p>
+    <p class="search-actions">
       @if (!naturalActive()) {
         <a class="button" routerLink="/advanced-search" queryParamsHandling="preserve"
           >Edit search</a

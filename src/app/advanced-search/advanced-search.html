@@ -224,7 +224,25 @@
             <div class="field agency">
               <label for="agency">Agency</label>
               <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                <input id="agency" matInput formControlName="agency" />
+                <input
+                  id="agency"
+                  matInput
+                  formControlName="agency"
+                  [matAutocomplete]="agencyOptions"
+                  (focus)="loadAgencies()"
+                  maxlength="200"
+                  autocomplete="off"
+                />
+                <mat-autocomplete #agencyOptions="matAutocomplete">
+                  @for (agency of agencyLookup().options; track agency.id) {
+                    <mat-option [value]="agency.name">{{ agency.name }}</mat-option>
+                  }
+                </mat-autocomplete>
+                @if (agencyLookup().loading) {
+                  <mat-hint role="status">Loading agencies…</mat-hint>
+                } @else if (agencyLookup().error) {
+                  <mat-hint role="status">Agency suggestions are unavailable. You can type an agency name.</mat-hint>
+                }
               </mat-form-field>
             </div>
             <div class="field photo-available">

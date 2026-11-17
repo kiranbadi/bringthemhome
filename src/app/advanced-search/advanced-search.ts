@@ -6,6 +6,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Subject, catchError, map, merge, of, shareReplay, startWith, switchMap } from 'rxjs';
+import { MissingPersonService } from '../core/services/missing-person.service';
 
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
@@ -66,6 +70,7 @@ const CRITERIA_PARAMS: Record<CriteriaKey, string> = {
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    MatAutocompleteModule,
     NavigationHeader,
     ReactiveFormsModule,
   ],
@@ -146,6 +151,34 @@ export class AdvancedSearch {
     alertType: [''],
     sortBy: ['most_recent'],
   });
+
+  private readonly agencyService = inject(MissingPersonService);
+  private readonly agencyQueries = new Subject<string>();
+  private readonly agencies = this.agencyService.getAgencies().pipe(
+    map((options) => ({ options, loading: false, error: false })),
+    catchError(() => of({ options: [], loading: false, error: true })),
+    startWith({ options: [], loading: true, error: false }),
+    shareReplay({ bufferSize: 1, refCount: false }),
+  );
+  protected readonly agencyLookup = toSignal(
+    merge(this.agencyQueries, this.advancedSearchForm.controls.agency.valueChanges).pipe(
+      switchMap((query) =>
+        this.agencies.pipe(
+          map((result) => ({
+            ...result,
+            options: result.options.filter((agency) =>
+              agency.name.toLowerCase().includes(query.trim().toLowerCase()),
+            ),
+          })),
+        ),
+      ),
+    ),
+    { initialValue: { options: [], loading: false, error: false } },
+  );
+
+  protected loadAgencies(): void {
+    this.agencyQueries.next(this.advancedSearchForm.controls.agency.value);
+  }
 
   constructor() {
     const params = inject(ActivatedRoute).snapshot.queryParamMap;
