@@ -1,6 +1,8 @@
 import { vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AdvancedSearch } from './advanced-search';
 
@@ -11,7 +13,7 @@ describe('AdvancedSearch', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AdvancedSearch],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AdvancedSearch);
@@ -21,6 +23,48 @@ describe('AdvancedSearch', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('loads agency suggestions and submits the selected name as the agency filter', async () => {
+    const http = TestBed.inject(HttpTestingController);
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector<HTMLInputElement>('#agency')!;
+    input.focus();
+    input.value = 'Wake';
+    input.dispatchEvent(new Event('input'));
+    const request = http.expectOne((r) =>
+      r.url === 'http://localhost:8000/api/v1/missing-persons/agencies' &&
+      !r.params.has('q') && !r.params.has('limit'),
+    );
+    request.flush([
+      { id: 'Wake County Sheriff', name: 'Wake County Sheriff' },
+      { id: 'Durham Police', name: 'Durham Police' },
+    ]);
+    await fixture.whenStable();
+    const option = document.querySelector<HTMLElement>('mat-option');
+    expect(option?.textContent).toContain('Wake County Sheriff');
+    expect(document.querySelectorAll('mat-option')).toHaveLength(1);
+    input.value = 'DURHAM';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(document.querySelector('mat-option')?.textContent).toContain('Durham Police');
+    http.expectNone('http://localhost:8000/api/v1/missing-persons/agencies');
+    input.value = 'Wake';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    document.querySelector<HTMLElement>('mat-option')!.click();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    root.querySelector('form')!.dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    expect(navigate).toHaveBeenCalledWith(['/missing-persons'], {
+      queryParams: {
+        search: 'true', page: 1, page_size: 20,
+        agency: 'Wake County Sheriff', sort_by: 'most_recent',
+      },
+    });
+    http.match(() => true).forEach((pending) => pending.flush([]));
+    http.verify();
   });
 
   it('should render the advanced search controls', () => {
