@@ -28,7 +28,10 @@ h1 {
   scroll-margin-top: 24px;
 }
 .gallery-header p:last-child {
-  color: #52657a;
+  color: #354f6b;
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 600;
+  line-height: 1.5;
   max-width: 56ch;
 }
 .person-grid {
@@ -116,6 +119,15 @@ h2 {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+}
+.search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.search-actions .button {
+  font-size: 1.125rem;
 }
 .primary {
   background: #245b8e;

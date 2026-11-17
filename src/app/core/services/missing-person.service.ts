@@ -18,6 +18,10 @@ export class MissingPersonService {
   private readonly http = inject(HttpClient);
   private readonly endpoint = `${environment.apiUrl}/api/v1/missing-persons`;
 
+  getAgencies(): Observable<{ id: string; name: string }[]> {
+    return this.http.get<{ id: string; name: string }[]>(`${this.endpoint}/agencies`);
+  }
+
   findMissingPerson(id: string): Observable<MissingPersonDetail | null> {
     if (this.context?.caseRecord?._id === id) return of(this.context.caseRecord);
     if (this.context?.caseStatus === 404) return of(null);
