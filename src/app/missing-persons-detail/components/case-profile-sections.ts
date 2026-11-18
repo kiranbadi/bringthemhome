@@ -1,4 +1,5 @@
 import { formatLocation, stateName } from '../../core/models/us-state-display';
+import { TitleCasePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -30,6 +31,7 @@ import { CaseRecord } from './case-record';
 @Component({
   selector: 'app-case-profile-sections',
   imports: [
+    TitleCasePipe,
     MatButtonModule,
     MatDialogModule,
     MatExpansionModule,

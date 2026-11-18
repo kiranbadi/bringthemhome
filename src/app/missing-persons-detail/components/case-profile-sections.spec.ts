@@ -49,6 +49,26 @@ const sample = {
 };
 
 describe('Case profile sections', () => {
+  it('displays API name fields when demographic names are missing or blank', async () => {
+    const fixture = TestBed.createComponent(CaseProfileSections);
+    fixture.componentRef.setInput('record', {
+      _id: 'case-names', first_name: 'JANE', middle_name: 'ANN', last_name: 'DOE',
+      demographics: { legalFirstName: ' ', middleName: '', legalLastName: null },
+    });
+    await fixture.whenStable();
+    const fields = fixture.debugElement.queryAll(By.css('app-case-detail-field'));
+    for (const [label, value] of [['Legal First Name', 'Jane'], ['Middle Name', 'Ann'], ['Legal Last Name', 'Doe']]) {
+      const field = fields.find((row) => row.componentInstance.label() === label)!;
+      expect(field.nativeElement.textContent).toContain(value);
+    }
+    fixture.componentRef.setInput('record', {
+      _id: 'case-names', first_name: 'Jane',
+      demographics: { legalFirstName: 'Janet' },
+    });
+    await fixture.whenStable();
+    const first = fields.find((row) => row.componentInstance.label() === 'Legal First Name')!;
+    expect(first.nativeElement.textContent).toContain('Janet');
+  });
   beforeEach(() => TestBed.configureTestingModule({ imports: [CaseProfileSections] }));
   it('renders seven sections, with the first two expanded and the rest collapsed', async () => {
     const fixture = TestBed.createComponent(CaseProfileSections);

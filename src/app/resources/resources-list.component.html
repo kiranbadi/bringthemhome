@@ -21,6 +21,9 @@
       <p class="notice">Community confirmations are not official verification.</p>
     </div>
   </header>
+  @if (isAdmin()) {
+    <app-related-sites-admin />
+  }
   <form class="panel filters" [formGroup]="filters" (ngSubmit)="search()">
     <mat-form-field appearance="outline" subscriptSizing="dynamic"
       ><mat-label>Search resource or keyword</mat-label

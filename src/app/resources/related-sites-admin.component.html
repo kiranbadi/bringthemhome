@@ -1,0 +1,135 @@
+<div class="related-site-tools">
+  <button matButton="outlined" type="button" (click)="open('add', sitesDialog)">
+    Add Related site
+  </button>
+  <button matButton type="button" (click)="open('list', sitesDialog)">View Related sites</button>
+</div>
+
+<ng-template #sitesDialog>
+  <h2 mat-dialog-title>
+    {{ mode() === 'add' ? 'Add Related site' : 'Related Missing Person sites' }}
+  </h2>
+  <mat-dialog-content>
+    @if (usesPlaceholder) {
+      <p class="hint">Preview entries reset when the page reloads.</p>
+    }
+    @if (mode() === 'add') {
+      <ng-container *ngTemplateOutlet="siteForm" />
+    }
+    @if (message()) {
+      <p role="status">{{ message() }}</p>
+    }
+    @if (error()) {
+      <p role="alert">{{ error() }}</p>
+      <button matButton type="button" (click)="load()" [disabled]="saving() || loading()">
+        Refresh sites
+      </button>
+    }
+    @if (loading()) {
+      <p role="status">Loading sites…</p>
+    }
+    @if (mode() === 'list') {
+      <ul aria-label="Related sites">
+        @for (site of visibleSites(); track site.id) {
+          <li>
+            @if (editing() === site.id) {
+              <div class="inline-edit"><ng-container *ngTemplateOutlet="siteForm" /></div>
+            } @else {
+              <div class="site-details">
+                <strong>{{ site.name }}</strong
+                ><a [href]="site.url" target="_blank" rel="noopener noreferrer">{{ site.url }}</a>
+              </div>
+              <div class="actions">
+                @if (deleting() === site.id) {
+                  <span>Delete this site?</span>
+                  <button matButton type="button" (click)="remove(site)" [disabled]="saving()">
+                    Confirm delete
+                  </button>
+                  <button
+                    matButton
+                    type="button"
+                    (click)="deleting.set(null)"
+                    [disabled]="saving()"
+                  >
+                    Cancel
+                  </button>
+                } @else {
+                  <button
+                    matButton
+                    type="button"
+                    (click)="edit(site)"
+                    [attr.aria-label]="'Edit ' + site.name"
+                    [disabled]="saving()"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    matButton
+                    type="button"
+                    (click)="deleting.set(site.id)"
+                    [attr.aria-label]="'Delete ' + site.name"
+                    [disabled]="saving()"
+                  >
+                    Delete
+                  </button>
+                }
+              </div>
+            }
+          </li>
+        } @empty {
+          @if (!loading() && !error()) {
+            <li class="hint">No related sites added yet.</li>
+          }
+        }
+      </ul>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end" class="dialog-footer">
+    @if (mode() === 'list' && sites().length > 0) {
+      <mat-paginator
+        [length]="sites().length"
+        [pageSize]="pageSize"
+        [pageIndex]="currentPage()"
+        [hidePageSize]="true"
+        [disabled]="saving() || loading()"
+        (page)="paginate($event)"
+        aria-label="Related sites pagination"
+      />
+    }
+    <button matButton type="button" mat-dialog-close [disabled]="saving()">Close</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #siteForm>
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Site name</mat-label>
+      <input matInput formControlName="name" maxlength="200" [readonly]="saving()" />
+      @if (form.controls.name.invalid) {
+        <mat-error>Enter a site name.</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Website link</mat-label>
+      <input
+        matInput
+        type="url"
+        formControlName="url"
+        placeholder="https://example.org"
+        maxlength="2048"
+        [readonly]="saving()"
+      />
+      @if (form.controls.url.invalid) {
+        <mat-error>Enter a valid http:// or https:// link.</mat-error>
+      }
+    </mat-form-field>
+    <div class="actions">
+      <button matButton="filled" type="submit" [disabled]="saving() || loading()">
+        {{ editing() ? 'Save changes' : 'Add site' }}
+      </button>
+      @if (editing()) {
+        <button matButton type="button" (click)="cancel()" [disabled]="saving()">Cancel</button>
+      }
+    </div>
+  </form>
+</ng-template>
