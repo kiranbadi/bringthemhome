@@ -31,9 +31,9 @@
           [value]="demographics?.missingAge ?? caseRecord['age missing']"
         />
         <app-case-detail-field label="Current Age" [value]="age()" />
-        <app-case-detail-field label="Legal First Name" [value]="demographics?.legalFirstName" />
-        <app-case-detail-field label="Middle Name" [value]="demographics?.middleName" />
-        <app-case-detail-field label="Legal Last Name" [value]="demographics?.legalLastName" />
+        <app-case-detail-field label="Legal First Name" [value]="demographics?.legalFirstName?.trim() || caseRecord.first_name" />
+        <app-case-detail-field label="Middle Name" [value]="demographics?.middleName?.trim() || caseRecord.middle_name" />
+        <app-case-detail-field label="Legal Last Name" [value]="demographics?.legalLastName?.trim() || caseRecord.last_name" />
         <app-case-detail-field
           label="Chosen Name / Nickname / Alias"
           [value]="demographics?.chosenNamesNicknamesAliases"
