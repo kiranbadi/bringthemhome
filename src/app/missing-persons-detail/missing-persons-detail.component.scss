@@ -135,7 +135,6 @@ button:focus-visible {
   padding-top: 20px;
   border-top: 1px solid var(--mat-sys-outline-variant);
 }
-.case-actions .tip-link,
 .discussion-link {
   box-sizing: border-box;
   min-height: 44px;
@@ -149,6 +148,7 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
   border: 1px solid var(--mat-sys-outline-variant);
   background: var(--mat-sys-surface-container-lowest);
   color: var(--mat-sys-primary);
@@ -156,6 +156,10 @@ button:focus-visible {
 }
 .discussion-link:hover {
   background: var(--mat-sys-surface-container);
+}
+.discussion-link:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .case-actions .tip-link:hover:not(:disabled) {
   filter: brightness(0.94);
@@ -168,7 +172,9 @@ button:focus-visible {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .case-actions .tip-link {
-    grid-column: 1 / -1;
+}
+@media (max-width: 420px) {
+  .case-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

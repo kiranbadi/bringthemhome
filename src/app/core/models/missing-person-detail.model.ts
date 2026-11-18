@@ -28,6 +28,8 @@ export interface PublicAgency {
 }
 
 export interface MissingPersonDetail extends Partial<MissingPerson> {
+  person_status?: string | null;
+  report_status?: string | null;
   first_name?: string | null;
   middle_name?: string | null;
   last_name?: string | null;

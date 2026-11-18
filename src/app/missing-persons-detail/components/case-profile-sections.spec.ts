@@ -52,7 +52,7 @@ describe('Case profile sections', () => {
   it('displays API name fields when demographic names are missing or blank', async () => {
     const fixture = TestBed.createComponent(CaseProfileSections);
     fixture.componentRef.setInput('record', {
-      _id: 'case-names', first_name: 'Jane', middle_name: 'Ann', last_name: 'Doe',
+      _id: 'case-names', first_name: 'JANE', middle_name: 'ANN', last_name: 'DOE',
       demographics: { legalFirstName: ' ', middleName: '', legalLastName: null },
     });
     await fixture.whenStable();
