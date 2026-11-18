@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,13 +6,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { SearchableSelectComponent } from './searchable-select.component';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { EMPTY, Subject, catchError, combineLatest, startWith, switchMap, tap } from 'rxjs';
 import { NavigationHeader } from '../shared/navigation-header/navigation-header';
 import { AccountManagementService } from '../services/account-management';
 import { ResourceService } from './resource.service';
 import { ResourceLocationsComponent } from './resource-locations.component';
 import { ResourceCardComponent } from './resource-card.component';
+import { RelatedSitesAdminComponent } from './related-sites-admin.component';
+import { isAdministrator } from '../features/case-claims/case-claims.models';
 import { CATEGORIES, SCOPES, Page, Resource, resourceError } from './resource.models';
 
 @Component({
@@ -28,12 +30,15 @@ import { CATEGORIES, SCOPES, Page, Resource, resourceError } from './resource.mo
     MatPaginatorModule,
     ResourceLocationsComponent,
     ResourceCardComponent,
+    RelatedSitesAdminComponent,
   ],
   templateUrl: './resources-list.component.html',
   styleUrl: './resources.scss',
 })
 export class ResourcesListComponent implements OnInit {
   readonly auth = inject(AccountManagementService);
+  private readonly user = toSignal(this.auth.currentUser$, { initialValue: null });
+  readonly isAdmin = computed(() => isAdministrator(this.user()?.role));
   private readonly api = inject(ResourceService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
