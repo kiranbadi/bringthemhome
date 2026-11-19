@@ -47,9 +47,14 @@
           </div>
         </dl>
         <div class="case-actions" role="group" aria-label="Case actions">
+          @if (record.person_status !== 'FOUND' && record.report_status !== 'ARCHIVED') {
+            <button class="discussion-link" type="button" (click)="openPoster(record)" [disabled]="openingPoster()">
+              {{ openingPoster() ? 'Opening poster…' : 'Download poster' }}
+            </button>
+          }
           <button
             id="submit-tip"
-            class="tip-link"
+            class="discussion-link"
             type="button"
             [disabled]="openingTip()"
             (click)="openSubmitTip(record)"
@@ -79,6 +84,7 @@
         @if (tipError()) {
           <p role="alert">{{ tipError() }}</p>
         }
+        @if (posterError()) { <p role="alert">{{ posterError() }}</p> }
       </section>
     </article>
     <app-case-profile-sections [record]="record" />

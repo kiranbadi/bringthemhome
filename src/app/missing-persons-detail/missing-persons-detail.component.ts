@@ -1,4 +1,6 @@
 import { CaseSeoService } from '../core/seo/case-seo.service';
+import { SITE_ORIGIN } from '../core/seo/case-seo.service';
+import { MatDialog } from '@angular/material/dialog';
 import { casePath } from '../core/models/case-url';
 import { RESPONSE_INIT } from '@angular/core';
 import { publicResourceLocation } from '../resources/resource-case-location';
@@ -68,6 +70,32 @@ export class MissingPersonsDetailComponent implements OnInit {
   }
   readonly casePath = casePath;
   private readonly seo = inject(CaseSeoService);
+  private readonly posterDialog = inject(MatDialog);
+  private readonly siteOrigin = inject(SITE_ORIGIN);
+  readonly openingPoster = signal(false);
+  readonly posterError = signal('');
+
+  async openPoster(record: MissingPersonDetail) {
+    if (this.openingPoster()) return;
+    this.openingPoster.set(true);
+    this.posterError.set('');
+    try {
+      const [{ CasePosterDialog }, { posterData }] = await Promise.all([
+        import('./case-poster-dialog'), import('./case-poster'),
+      ]);
+      if (this.destroyRef.destroyed || this.person()?._id !== record._id) return;
+      const reference = this.posterDialog.open(CasePosterDialog, {
+        data: posterData(record, this.image() === this.placeholder ? null : this.image(), this.siteOrigin),
+        width: '760px', maxWidth: 'calc(100vw - 24px)', maxHeight: '95vh',
+        autoFocus: 'dialog',
+      });
+      this.destroyRef.onDestroy(() => reference.close());
+    } catch {
+      this.posterError.set('Could not open the poster. Please try again.');
+    } finally {
+      this.openingPoster.set(false);
+    }
+  }
   private readonly router = inject(Router);
   private readonly response = inject(RESPONSE_INIT, { optional: true });
   private readonly tipDialog = inject(TipDialogService);

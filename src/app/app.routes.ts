@@ -1,206 +1,228 @@
-import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth/auth.guard';
-import { caseClaimsAdminGuard } from './features/case-claims/case-claims.guard';
+import { Routes } from "@angular/router";
+import { authGuard, guestGuard } from "./core/auth/auth.guard";
+import { caseClaimsAdminGuard } from "./features/case-claims/case-claims.guard";
 
-import { MissingPersonsGalleryComponent } from './missing-persons-gallery/missing-persons-gallery.component';
-import { AccountDashboard } from './account-dashboard/account-dashboard';
-import { AdvancedSearch } from './advanced-search/advanced-search';
-import { AccountManagement } from './account-management/account-management';
-import { ContactUs } from './contact-us/contact-us';
-import { PolicyPageComponent } from './policy-page/policy-page.component';
-import { SupportUs } from './support-us/support-us';
+import { MissingPersonsGalleryComponent } from "./missing-persons-gallery/missing-persons-gallery.component";
+import { AccountDashboard } from "./account-dashboard/account-dashboard";
+import { AdvancedSearch } from "./advanced-search/advanced-search";
+import { AccountManagement } from "./account-management/account-management";
+import { ContactUs } from "./contact-us/contact-us";
+import { PolicyPageComponent } from "./policy-page/policy-page.component";
+import { SupportUs } from "./support-us/support-us";
 
 export const routes: Routes = [
   {
-    path: 'reset-password',
-    loadComponent: () => import('./reset-password/reset-password').then((m) => m.ResetPassword),
-    title: 'Reset Password | Bring Them Home',
+    path: "reset-password",
+    loadComponent: () =>
+      import("./reset-password/reset-password").then((m) => m.ResetPassword),
+    title: "Reset Password | Bring Them Home",
   },
   {
-    path: 'admin/person-reports',
+    path: "admin/person-reports",
     canActivate: [caseClaimsAdminGuard],
     data: { requiresAuth: true, administrator: true },
     loadComponent: () =>
-      import('./missing-person-report/report-review-page').then((m) => m.ReportReviewPage),
-    title: 'Missing Person Report Review | Bring Them Home',
+      import("./missing-person-report/report-review-page").then(
+        (m) => m.ReportReviewPage,
+      ),
+    title: "Missing Person Report Review | Bring Them Home",
   },
   {
-    path: 'admin/case-claims',
+    path: "admin/case-claims",
     canActivate: [caseClaimsAdminGuard],
     data: { requiresAuth: true },
     loadComponent: () =>
-      import('./features/case-claims/case-claims-admin.component').then(
+      import("./features/case-claims/case-claims-admin.component").then(
         (m) => m.CaseClaimsAdminComponent,
       ),
-    title: 'Case Claim Review | Bring Them Home',
+    title: "Case Claim Review | Bring Them Home",
   },
   {
-    path: 'photo-review',
+    path: "photo-review",
     canActivate: [authGuard],
     data: { requiresAuth: true },
     loadComponent: () =>
-      import('./features/photo-review/photo-review.component').then((m) => m.PhotoReviewComponent),
-    title: 'Photo Review | Bring Them Home',
+      import("./features/photo-review/photo-review.component").then(
+        (m) => m.PhotoReviewComponent,
+      ),
+    title: "Photo Review | Bring Them Home",
   },
   {
-    path: 'resources',
+    path: "resources",
     loadComponent: () =>
-      import('./resources/resources-list.component').then((m) => m.ResourcesListComponent),
-    title: 'Missing Persons Resources',
+      import("./resources/resources-list.component").then(
+        (m) => m.ResourcesListComponent,
+      ),
+    title: "Missing Persons Resources",
   },
   {
-    path: 'resources/new',
+    path: "resources/new",
     canActivate: [authGuard],
     data: { requiresAuth: true },
     loadComponent: () =>
-      import('./resources/resource-form.component').then((m) => m.ResourceFormComponent),
-    title: 'Add Resource',
+      import("./resources/resource-form.component").then(
+        (m) => m.ResourceFormComponent,
+      ),
+    title: "Add Resource",
   },
   {
-    path: 'resources/:id/correct',
+    path: "resources/:id/correct",
     canActivate: [authGuard],
     data: { requiresAuth: true },
     loadComponent: () =>
-      import('./resources/resource-form.component').then((m) => m.ResourceFormComponent),
-    title: 'Suggest Correction',
+      import("./resources/resource-form.component").then(
+        (m) => m.ResourceFormComponent,
+      ),
+    title: "Suggest Correction",
   },
   {
-    path: 'resources/:id',
+    path: "resources/:id",
     loadComponent: () =>
-      import('./resources/resource-detail.component').then((m) => m.ResourceDetailComponent),
-    title: 'Resource Details',
+      import("./resources/resource-detail.component").then(
+        (m) => m.ResourceDetailComponent,
+      ),
+    title: "Resource Details",
   },
   {
-    path: 'account/resource-contributions',
+    path: "account/resource-contributions",
     canActivate: [authGuard],
     data: { requiresAuth: true },
     loadComponent: () =>
-      import('./resources/my-resource-contributions.component').then(
+      import("./resources/my-resource-contributions.component").then(
         (m) => m.MyResourceContributionsComponent,
       ),
-    title: 'My Resource Contributions',
+    title: "My Resource Contributions",
   },
   {
-    path: 'terms',
+    path: "terms",
     component: PolicyPageComponent,
-    data: { policy: 'terms' },
-    title: 'Terms & Conditions | Bring Them Home',
+    data: { policy: "terms" },
+    title: "Terms & Conditions | Bring Them Home",
   },
   {
-    path: 'privacy',
+    path: "privacy",
     component: PolicyPageComponent,
-    data: { policy: 'privacy' },
-    title: 'Privacy Policy | Bring Them Home',
+    data: { policy: "privacy" },
+    title: "Privacy Policy | Bring Them Home",
   },
   {
-    path: '',
+    path: "",
+    data: { photosFirst: true },
     component: MissingPersonsGalleryComponent,
-    pathMatch: 'full',
+    pathMatch: "full",
   },
   {
-    path: 'missing-persons',
+    path: "missing-persons",
     component: MissingPersonsGalleryComponent,
   },
   {
-    path: 'missing-persons/:id/discussions',
+    path: "missing-persons/:id/discussions",
     loadComponent: () =>
-      import('./discussions/discussion-page.component').then((m) => m.DiscussionPageComponent),
+      import("./discussions/discussion-page.component").then(
+        (m) => m.DiscussionPageComponent,
+      ),
     children: [
       {
-        path: '',
-        pathMatch: 'full',
+        path: "",
+        pathMatch: "full",
         loadComponent: () =>
-          import('./discussions/case-discussion-board.component').then(
+          import("./discussions/case-discussion-board.component").then(
             (m) => m.CaseDiscussionBoardComponent,
           ),
       },
       {
-        path: ':discussionId',
+        path: ":discussionId",
         loadComponent: () =>
-          import('./discussions/discussion-detail.component').then(
+          import("./discussions/discussion-detail.component").then(
             (m) => m.DiscussionDetailComponent,
           ),
       },
     ],
   },
   {
-    path: 'missing-persons/:slug/:id',
+    path: "missing-persons/:slug/:id",
     loadComponent: () =>
-      import('./missing-persons-detail/missing-persons-detail.component').then(
+      import("./missing-persons-detail/missing-persons-detail.component").then(
         (m) => m.MissingPersonsDetailComponent,
       ),
   },
   {
-    path: 'missing-persons/:id',
+    path: "missing-persons/:id",
     loadComponent: () =>
-      import('./missing-persons-detail/missing-persons-detail.component').then(
+      import("./missing-persons-detail/missing-persons-detail.component").then(
         (m) => m.MissingPersonsDetailComponent,
       ),
   },
   {
-    path: 'advanced-search',
+    path: "advanced-search",
     component: AdvancedSearch,
   },
   {
-    path: 'missing-person/:id',
-    redirectTo: 'missing-persons/:id',
-    pathMatch: 'full',
+    path: "missing-person/:id",
+    redirectTo: "missing-persons/:id",
+    pathMatch: "full",
   },
   {
-    path: 'account-management',
+    path: "account-management",
     component: AccountManagement,
     canActivate: [guestGuard],
   },
   {
-    path: 'login',
+    path: "login",
     component: AccountManagement,
     canActivate: [guestGuard],
   },
   {
-    path: 'register',
-    redirectTo: 'account-management',
-    pathMatch: 'full',
+    path: "register",
+    redirectTo: "account-management",
+    pathMatch: "full",
   },
   {
-    path: 'account/management',
+    path: "account/management",
     component: AccountDashboard,
     canActivate: [authGuard],
     data: { requiresAuth: true },
   },
   {
-    path: 'myaccount',
+    path: "myaccount",
     component: AccountDashboard,
     canActivate: [authGuard],
     data: { requiresAuth: true },
   },
   {
-    path: 'account/person-reports',
+    path: "account/person-reports",
     canActivate: [authGuard],
     data: { requiresAuth: true },
     loadComponent: () =>
-      import('./missing-person-report/report-review-page').then((m) => m.ReportReviewPage),
-    title: 'My Missing Person Reports | Bring Them Home',
+      import("./missing-person-report/report-review-page").then(
+        (m) => m.ReportReviewPage,
+      ),
+    title: "My Missing Person Reports | Bring Them Home",
   },
   {
-    path: 'missing-person-report/:documentId',
+    path: "missing-person-report/:documentId",
     loadComponent: () =>
-      import('./missing-person-report/create-report-page').then((m) => m.CreateReportPage),
-    canActivate: [authGuard],
-    data: { requiresAuth: true },
-  },
-  {
-    path: 'missing-person-report',
-    loadComponent: () =>
-      import('./missing-person-report/create-report-page').then((m) => m.CreateReportPage),
+      import("./missing-person-report/create-report-page").then(
+        (m) => m.CreateReportPage,
+      ),
     canActivate: [authGuard],
     data: { requiresAuth: true },
   },
   {
-    path: 'support-us',
+    path: "missing-person-report",
+    loadComponent: () =>
+      import("./missing-person-report/create-report-page").then(
+        (m) => m.CreateReportPage,
+      ),
+    canActivate: [authGuard],
+    data: { requiresAuth: true },
+  },
+  {
+    path: "support-us",
     component: SupportUs,
   },
   {
-    path: 'contact-us',
+    path: "contact-us",
     component: ContactUs,
   },
 ];

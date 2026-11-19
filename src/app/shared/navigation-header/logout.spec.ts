@@ -1,65 +1,98 @@
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { vi } from 'vitest';
-import { NavigationHeader } from './navigation-header';
-import { AccountManagementService } from '../../services/account-management';
+import { TestBed } from "@angular/core/testing";
+import { provideHttpClient } from "@angular/common/http";
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from "@angular/common/http/testing";
+import { provideRouter, Router } from "@angular/router";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { vi } from "vitest";
+import { NavigationHeader } from "./navigation-header";
+import { AccountManagementService } from "../../services/account-management";
 
-const user = { id: '1', email: 'jane@example.com', full_name: 'Jane Doe', role: 'GENERAL_PUBLIC' };
+const user = {
+  id: "1",
+  email: "jane@example.com",
+  full_name: "Jane Doe",
+  role: "GENERAL_PUBLIC",
+};
 
-describe('Header logout flow', () => {
+describe("Header logout flow", () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({
       imports: [NavigationHeader],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
     });
   });
   afterEach(() => {
     TestBed.inject(HttpTestingController).verify();
     sessionStorage.clear();
-    for (const name of ['bth_csrf', 'bth_session', 'csrf_token', 'currentUser'])
+    for (const name of ["bth_csrf", "bth_session", "csrf_token", "currentUser"])
       document.cookie = `${name}=; Max-Age=0; Path=/`;
     vi.restoreAllMocks();
   });
   const button = (root: HTMLElement) =>
-    Array.from(root.querySelectorAll('button')).find((b) => b.textContent?.includes('Logout'));
+    Array.from(root.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("Logout"),
+    );
 
-  it('hides Logout for guests', async () => {
+  it("toggles the mobile navigation and closes it with Escape", async () => {
+    const fixture = TestBed.createComponent(NavigationHeader);
+    await fixture.whenStable();
+    const root: HTMLElement = fixture.nativeElement;
+    const toggle = root.querySelector<HTMLButtonElement>(".menu-toggle")!;
+    const nav = root.querySelector("nav")!;
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(nav.classList.contains("menu-open")).toBe(true);
+    toggle.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await fixture.whenStable();
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(nav.classList.contains("menu-open")).toBe(false);
+  });
+
+  it("hides Logout for guests", async () => {
     const fixture = TestBed.createComponent(NavigationHeader);
     await fixture.whenStable();
     expect(button(fixture.nativeElement)).toBeUndefined();
   });
 
-  it('uses the legacy CSRF token and leaves the session cookie to the browser', () => {
-    sessionStorage.setItem('currentUser', JSON.stringify(user));
-    sessionStorage.setItem('csrf_token', 'login-csrf');
-    document.cookie = 'bth_session=cookie-session; Path=/';
+  it("uses the legacy CSRF token and leaves the session cookie to the browser", () => {
+    sessionStorage.setItem("currentUser", JSON.stringify(user));
+    sessionStorage.setItem("csrf_token", "login-csrf");
+    document.cookie = "bth_session=cookie-session; Path=/";
     const service = TestBed.inject(AccountManagementService);
     service.logout().subscribe();
     service.logout().subscribe();
     const request = TestBed.inject(HttpTestingController).expectOne(
-      'http://localhost:8000/bringthemhome/auth/logout',
+      "http://localhost:8000/bringthemhome/auth/logout",
     );
-    expect(request.request.headers.get('X-CSRF-Token')).toBe('login-csrf');
-    expect(request.request.headers.has('bth_csrf')).toBe(false);
-    expect(request.request.headers.has('bth_session')).toBe(false);
+    expect(request.request.headers.get("X-CSRF-Token")).toBe("login-csrf");
+    expect(request.request.headers.has("bth_csrf")).toBe(false);
+    expect(request.request.headers.has("bth_session")).toBe(false);
     expect(request.request.withCredentials).toBe(true);
-    request.flush('');
+    request.flush("");
     expect(service.isAuthenticated()).toBe(false);
   });
 
-  it('clears the session when the logout server never responds', async () => {
+  it("clears the session when the logout server never responds", async () => {
     vi.useFakeTimers();
     try {
-      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      sessionStorage.setItem("currentUser", JSON.stringify(user));
       const service = TestBed.inject(AccountManagementService);
       let finished = false;
       service.logout().subscribe(() => (finished = true));
       const request = TestBed.inject(HttpTestingController).expectOne(
-        'http://localhost:8000/bringthemhome/auth/logout',
+        "http://localhost:8000/bringthemhome/auth/logout",
       );
       await vi.advanceTimersByTimeAsync(10_000);
       expect(request.cancelled).toBe(true);
@@ -72,16 +105,18 @@ describe('Header logout flow', () => {
 
   for (const status of [200, 401, 500, 0]) {
     it(`sends logout once and tears down with home navigation and toast on ${status}`, async () => {
-      sessionStorage.setItem('currentUser', JSON.stringify(user));
-      sessionStorage.setItem('bth_csrf', 'csrf-value');
-      sessionStorage.setItem('bth_session', 'session-value');
-      sessionStorage.setItem('csrf_token', 'old-csrf');
-      document.cookie = 'bth_csrf=csrf-value; Path=/';
-      document.cookie = 'bth_session=session-value; Path=/';
-      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      sessionStorage.setItem("currentUser", JSON.stringify(user));
+      sessionStorage.setItem("bth_csrf", "csrf-value");
+      sessionStorage.setItem("bth_session", "session-value");
+      sessionStorage.setItem("csrf_token", "old-csrf");
+      document.cookie = "bth_csrf=csrf-value; Path=/";
+      document.cookie = "bth_session=session-value; Path=/";
+      const navigate = vi
+        .spyOn(TestBed.inject(Router), "navigate")
+        .mockResolvedValue(true);
       const fixture = TestBed.createComponent(NavigationHeader);
       const toast = vi
-        .spyOn(fixture.debugElement.injector.get(MatSnackBar), 'open')
+        .spyOn(fixture.debugElement.injector.get(MatSnackBar), "open")
         .mockImplementation(() => undefined as never);
       await fixture.whenStable();
       const logout = button(fixture.nativeElement)!;
@@ -91,25 +126,35 @@ describe('Header logout flow', () => {
       await fixture.whenStable();
       expect(logout.disabled).toBe(true);
       const request = TestBed.inject(HttpTestingController).expectOne(
-        'http://localhost:8000/bringthemhome/auth/logout',
+        "http://localhost:8000/bringthemhome/auth/logout",
       );
-      expect(request.request.method).toBe('POST');
-      expect(request.request.body).toBe('');
+      expect(request.request.method).toBe("POST");
+      expect(request.request.body).toBe("");
       expect(request.request.withCredentials).toBe(true);
-      expect(request.request.headers.get('X-CSRF-Token')).toBe('csrf-value');
-      expect(request.request.headers.has('bth_csrf')).toBe(false);
-      expect(request.request.headers.has('bth_session')).toBe(false);
-      request.flush('', { status, statusText: status === 200 ? 'OK' : 'Error' });
+      expect(request.request.headers.get("X-CSRF-Token")).toBe("csrf-value");
+      expect(request.request.headers.has("bth_csrf")).toBe(false);
+      expect(request.request.headers.has("bth_session")).toBe(false);
+      request.flush("", {
+        status,
+        statusText: status === 200 ? "OK" : "Error",
+      });
       await fixture.whenStable();
-      for (const key of ['currentUser', 'bth_csrf', 'bth_session', 'csrf_token'])
+      for (const key of [
+        "currentUser",
+        "bth_csrf",
+        "bth_session",
+        "csrf_token",
+      ])
         expect(sessionStorage.getItem(key)).toBeNull();
       expect(document.cookie).not.toMatch(/(?:^|;\s*)bth_(csrf|session)=/);
-      expect(TestBed.inject(AccountManagementService).isAuthenticated()).toBe(false);
+      expect(TestBed.inject(AccountManagementService).isAuthenticated()).toBe(
+        false,
+      );
       expect(button(fixture.nativeElement)).toBeUndefined();
-      expect(navigate).toHaveBeenCalledWith(['/']);
+      expect(navigate).toHaveBeenCalledWith(["/"]);
       expect(toast).toHaveBeenCalledWith(
-        'You have been logged out successfully.',
-        'Close',
+        "You have been logged out successfully.",
+        "Close",
         expect.any(Object),
       );
     });
