@@ -1,45 +1,228 @@
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
 .navigation-header {
+  background: #fff;
+  color: #142644;
+  border-bottom: 1px solid #dce3ec;
+  box-shadow: 0 2px 8px #14264406;
+}
+.header-main,
+.navigation-links {
+  max-width: 1280px;
+  margin: auto;
+  padding-inline: 28px;
+}
+.header-main {
+  min-height: 88px;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 24px;
 }
-
-.brand {
-  align-items: center;
+a {
   color: inherit;
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 10px;
   text-decoration: none;
 }
-
-.brand span {
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid #005ec4;
+  outline-offset: 3px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+  white-space: nowrap;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  color: #005ec4;
+  border: 2px solid #005ec4;
+  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+}
+.brand-mark mat-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 28px;
+}
+.header-actions,
+.primary-links,
+.secondary-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.header-actions a,
+.navigation-links a,
+.navigation-links button,
+.icon-action {
+  box-sizing: border-box;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
   font-weight: 600;
 }
-
+.icon-action,
+.navigation-links button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+}
+.icon-action {
+  width: 44px;
+}
+.header-actions .account-action {
+  padding-inline: 12px;
+  border-left: 1px solid #dce3ec;
+}
+.report-action {
+  background: #005ec4;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  text-align: center;
+}
+.report-action:hover {
+  background: #004c9f;
+}
 .navigation-links {
-  align-items: center;
   display: flex;
-  flex: 1 1 auto;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  border-top: 1px solid #edf0f5;
 }
-
+.navigation-links a:not(.report-action) {
+  position: relative;
+  padding-block: 14px;
+}
+.navigation-links a:hover:not(.report-action),
+.icon-action:hover,
+.navigation-links button:hover {
+  color: #005ec4;
+  background: #f1f6fc;
+}
 .active-link {
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
+  color: #005ec4;
 }
-
-@media (max-width: 560px) {
-  .navigation-header {
-    align-items: flex-start;
-    flex-direction: column;
-    height: auto;
-    padding-block: 12px;
-  }
-
+.active-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: #005ec4;
+  left: 0;
+  right: 0;
+}
+.menu-toggle,
+.mobile-account,
+.mobile-report {
+  display: none !important;
+}
+@media (max-width: 1100px) {
+  .header-main,
   .navigation-links {
+    padding-inline: 20px;
+  }
+  .primary-links,
+  .secondary-links {
+    gap: 16px;
+  }
+  .navigation-links {
+    font-size: 14px;
+  }
+}
+@media (max-width: 900px) {
+  .header-main {
+    min-height: 72px;
+    gap: 12px;
+  }
+  .brand {
+    font-size: 24px;
+    gap: 10px;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions .account-action,
+  .header-actions .report-action {
+    display: none;
+  }
+  .menu-toggle {
+    display: inline-flex !important;
+  }
+  .navigation-links {
+    display: none;
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+    padding-block: 12px 20px;
+    font-size: 16px;
+  }
+  .navigation-links.menu-open {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .primary-links,
+  .secondary-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .navigation-links a:not(.report-action),
+  .navigation-links button {
     justify-content: flex-start;
-    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+  }
+  .secondary-links {
+    border-top: 1px solid #dce3ec;
+    padding-top: 12px;
+  }
+  .mobile-account,
+  .mobile-report {
+    display: inline-flex !important;
+  }
+  .active-link::after {
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    height: auto;
+    width: 3px;
+  }
+}
+@media (max-width: 380px) {
+  .header-main {
+    padding-inline: 12px;
+  }
+  .brand {
+    font-size: 21px;
+    gap: 7px;
   }
 }

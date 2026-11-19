@@ -1,7 +1,7 @@
-import { CaseShareService } from '../shared/case-share/case-share.service';
-import { CaseShareComponent } from '../shared/case-share/case-share.component';
-import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
-import { TitleCasePipe } from '@angular/common';
+import { CaseShareService } from "../shared/case-share/case-share.service";
+import { CaseShareComponent } from "../shared/case-share/case-share.component";
+import { TipDialogService } from "../components/submit-tip/tip-dialog.service";
+import { TitleCasePipe } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,35 +12,42 @@ import {
   computed,
   inject,
   signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { EMPTY, Subject, catchError, firstValueFrom, switchMap, tap } from 'rxjs';
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
+import {
+  EMPTY,
+  Subject,
+  catchError,
+  firstValueFrom,
+  switchMap,
+  tap,
+} from "rxjs";
 import {
   MissingPerson,
   MissingPersonSearchFilters,
   SEARCH_FILTER_KEYS,
   PaginatedMissingPersonsResponse,
-} from '../core/models/missing-person.model';
+} from "../core/models/missing-person.model";
 import {
   PERSON_PLACEHOLDER,
   personLocation,
   personReportedDate,
-} from '../core/models/missing-person-display';
-import { MissingPersonService } from '../core/services/missing-person.service';
-import { NavigationHeader } from '../shared/navigation-header/navigation-header';
-import { casePath } from '../core/models/case-url';
-import { environment } from '../../environments/environment';
-import { NaturalSearchHeroComponent } from '../features/natural-search/natural-search-hero.component';
-import { NaturalSearchService } from '../features/natural-search/natural-search.service';
+} from "../core/models/missing-person-display";
+import { MissingPersonService } from "../core/services/missing-person.service";
+import { NavigationHeader } from "../shared/navigation-header/navigation-header";
+import { casePath } from "../core/models/case-url";
+import { environment } from "../../environments/environment";
+import { NaturalSearchHeroComponent } from "../features/natural-search/natural-search-hero.component";
+import { NaturalSearchService } from "../features/natural-search/natural-search.service";
 import {
   ApiError,
   SearchPayload,
   searchError,
-} from '../features/natural-search/natural-search.models';
+} from "../features/natural-search/natural-search.models";
 
 @Component({
-  selector: 'app-missing-persons-gallery',
+  selector: "app-missing-persons-gallery",
   standalone: true,
   imports: [
     CaseShareComponent,
@@ -49,16 +56,17 @@ import {
     TitleCasePipe,
     NaturalSearchHeroComponent,
   ],
-  templateUrl: './missing-persons-gallery.component.html',
-  styleUrl: './missing-persons-gallery.component.scss',
+  templateUrl: "./missing-persons-gallery.component.html",
+  styleUrl: "./missing-persons-gallery.component.scss",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MissingPersonsGalleryComponent implements OnInit {
-  readonly naturalLanguageSearchEnabled = environment.naturalLanguageSearchEnabled;
+  readonly naturalLanguageSearchEnabled =
+    environment.naturalLanguageSearchEnabled;
   private readonly caseShare = inject(CaseShareService);
   private readonly tipDialog = inject(TipDialogService);
   readonly openingTip = signal(false);
-  readonly tipError = signal('');
+  readonly tipError = signal("");
   private readonly route = inject(ActivatedRoute);
   private filters: MissingPersonSearchFilters = {};
   readonly isSearch = signal(false);
@@ -72,13 +80,13 @@ export class MissingPersonsGalleryComponent implements OnInit {
   private readonly requests = new Subject<number>();
   private requestedPage = 1;
 
-  @ViewChild('galleryHeading') private galleryHeading?: ElementRef<HTMLElement>;
+  @ViewChild("galleryHeading") private galleryHeading?: ElementRef<HTMLElement>;
 
   readonly pageSize = 20;
   readonly response = signal<PaginatedMissingPersonsResponse | null>(null);
   readonly loading = signal(true);
-  readonly error = signal('');
-  readonly shareMessage = signal('');
+  readonly error = signal("");
+  readonly shareMessage = signal("");
   readonly records = computed(() => this.response()?.records ?? []);
   readonly currentPage = computed(() => this.response()?.current_page ?? 1);
   readonly totalPages = computed(() => this.response()?.total_pages ?? 0);
@@ -95,16 +103,23 @@ export class MissingPersonsGalleryComponent implements OnInit {
         tap((page) => {
           this.requestedPage = page;
           this.loading.set(true);
-          this.error.set('');
+          this.error.set("");
           this.naturalError.set(null);
-          this.shareMessage.set('');
+          this.shareMessage.set("");
         }),
         switchMap((page) =>
           (this.naturalPayload
             ? this.naturalService.search({ ...this.naturalPayload, page })
             : this.isSearch()
-              ? this.service.searchMissingPersons(this.filters, page, this.pageSize)
-              : this.service.getMissingPersons(page, this.pageSize)
+              ? this.service.searchMissingPersons(
+                  this.filters,
+                  page,
+                  this.pageSize,
+                )
+              : this.service.getMissingPersons(page, this.pageSize, {
+                  photosFirst:
+                    this.route.snapshot?.data["photosFirst"] === true,
+                })
           ).pipe(
             tap((response) => {
               this.response.set(response);
@@ -118,7 +133,10 @@ export class MissingPersonsGalleryComponent implements OnInit {
                 this.naturalError.set(failure);
                 this.response.set(null);
                 this.error.set(failure.message);
-              } else this.error.set('We could not load missing persons. Please try again.');
+              } else
+                this.error.set(
+                  "We could not load missing persons. Please try again.",
+                );
               return EMPTY;
             }),
           ),
@@ -126,46 +144,54 @@ export class MissingPersonsGalleryComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
-    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      this.naturalPayload = null;
-      if (params.has('nl_query')) {
-        const naturalFilters: SearchPayload['filters'] = {};
-        for (const key of [
-          'state',
-          'city',
-          'gender',
-          'date_last_seen_after',
-          'date_last_seen_before',
-        ] as const) {
-          const value = params.get(`nl_${key}`)?.trim();
-          if (value) naturalFilters[key] = value;
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        this.naturalPayload = null;
+        if (params.has("nl_query")) {
+          const naturalFilters: SearchPayload["filters"] = {};
+          for (const key of [
+            "state",
+            "city",
+            "gender",
+            "date_last_seen_after",
+            "date_last_seen_before",
+          ] as const) {
+            const value = params.get(`nl_${key}`)?.trim();
+            if (value) naturalFilters[key] = value;
+          }
+          for (const key of ["age_min", "age_max"] as const) {
+            const value = params.get(`nl_${key}`);
+            if (
+              value !== null &&
+              value !== "" &&
+              Number.isFinite(Number(value))
+            )
+              naturalFilters[key] = Number(value);
+          }
+          this.naturalPayload = {
+            query: params.get("nl_query")?.trim() ?? "",
+            mode: params.get("nl_mode") === "exact" ? "exact" : "semantic",
+            filters: naturalFilters,
+            page: 1,
+            page_size: this.pageSize,
+          };
         }
-        for (const key of ['age_min', 'age_max'] as const) {
-          const value = params.get(`nl_${key}`);
-          if (value !== null && value !== '' && Number.isFinite(Number(value)))
-            naturalFilters[key] = Number(value);
+        this.naturalActive.set(this.naturalPayload !== null);
+        const filters: Record<string, string> = {};
+        for (const key of SEARCH_FILTER_KEYS) {
+          const value = params.get(key)?.trim();
+          if (value) filters[key] = value;
         }
-        this.naturalPayload = {
-          query: params.get('nl_query')?.trim() ?? '',
-          mode: params.get('nl_mode') === 'exact' ? 'exact' : 'semantic',
-          filters: naturalFilters,
-          page: 1,
-          page_size: this.pageSize,
-        };
-      }
-      this.naturalActive.set(this.naturalPayload !== null);
-      const filters: Record<string, string> = {};
-      for (const key of SEARCH_FILTER_KEYS) {
-        const value = params.get(key)?.trim();
-        if (value) filters[key] = value;
-      }
-      this.filters = filters as MissingPersonSearchFilters;
-      this.isSearch.set(
-        this.naturalActive() || params.get('search') === 'true' || Object.keys(filters).length > 0,
-      );
-      const page = Number(params.get('page') ?? 1);
-      this.requests.next(Number.isInteger(page) && page > 0 ? page : 1);
-    });
+        this.filters = filters as MissingPersonSearchFilters;
+        this.isSearch.set(
+          this.naturalActive() ||
+            params.get("search") === "true" ||
+            Object.keys(filters).length > 0,
+        );
+        const page = Number(params.get("page") ?? 1);
+        this.requests.next(Number.isInteger(page) && page > 0 ? page : 1);
+      });
   }
 
   goToPage(page: number): void {
@@ -181,14 +207,14 @@ export class MissingPersonsGalleryComponent implements OnInit {
       void this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { page },
-        queryParamsHandling: 'merge',
+        queryParamsHandling: "merge",
       });
     } else {
       this.requests.next(page);
     }
     const heading = this.galleryHeading?.nativeElement;
     heading?.focus({ preventScroll: true });
-    heading?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+    heading?.scrollIntoView?.({ block: "start", behavior: "auto" });
   }
 
   retry(): void {
@@ -199,7 +225,9 @@ export class MissingPersonsGalleryComponent implements OnInit {
     return this.failedImages().has(person._id)
       ? this.placeholder
       : person.photo_url?.trim() ||
-          person.embedded_images?.data_urls?.[0]?.trim() ||
+          person.embedded_images?.data_urls
+            ?.find((url) => url?.trim())
+            ?.trim() ||
           this.placeholder;
   }
 
@@ -210,17 +238,21 @@ export class MissingPersonsGalleryComponent implements OnInit {
   async openSubmitTip(person: MissingPerson): Promise<void> {
     if (this.openingTip()) return;
     this.openingTip.set(true);
-    this.tipError.set('');
+    this.tipError.set("");
     try {
       const record = await firstValueFrom(
-        this.service.findMissingPerson(person._id).pipe(takeUntilDestroyed(this.destroyRef)),
+        this.service
+          .findMissingPerson(person._id)
+          .pipe(takeUntilDestroyed(this.destroyRef)),
       );
       if (this.destroyRef.destroyed) return;
-      if (!record) throw new Error('Case unavailable');
+      if (!record) throw new Error("Case unavailable");
       await this.tipDialog.open(record, this.destroyRef);
     } catch {
       if (!this.destroyRef.destroyed)
-        this.tipError.set('The tip form could not be opened. Please try again.');
+        this.tipError.set(
+          "The tip form could not be opened. Please try again.",
+        );
     } finally {
       this.openingTip.set(false);
     }
@@ -229,7 +261,12 @@ export class MissingPersonsGalleryComponent implements OnInit {
   async share(person: MissingPerson): Promise<void> {
     this.shareMessage.set(
       await this.caseShare.share(
-        this.caseShare.data(person._id, person.full_name, this.location(person), casePath(person)),
+        this.caseShare.data(
+          person._id,
+          person.full_name,
+          this.location(person),
+          casePath(person),
+        ),
       ),
     );
   }

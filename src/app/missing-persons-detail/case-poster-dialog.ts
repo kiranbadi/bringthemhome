@@ -15,7 +15,7 @@ import { CasePosterData, posterPdf, renderPoster } from './case-poster';
   selector: 'app-case-poster-dialog',
   imports: [MatDialogModule, MatButtonModule, MatCheckboxModule],
   template: `
-    <h2 mat-dialog-title>Missing person poster</h2>
+    <h2 mat-dialog-title>Missing Person Poster</h2>
     <mat-dialog-content>
       @if (loading()) {
         <p role="status">Preparing poster…</p>
@@ -27,7 +27,7 @@ import { CasePosterData, posterPdf, renderPoster } from './case-poster';
         @if (photoMissing() || data.phone === 'Not provided') {
           <div class="notice" role="status">
             @if (photoMissing()) {
-              <p>A usable photo is unavailable for this poster.</p>
+              <p>Usable photo is unavailable for this case.</p>
             }
             @if (data.phone === 'Not provided') {
               <p>The case has no public police contact number.</p>
@@ -40,7 +40,7 @@ import { CasePosterData, posterPdf, renderPoster } from './case-poster';
         <figure>
           <img
             [src]="preview"
-            [alt]="'Missing person poster for ' + data.name"
+            [alt]="'Missing Person Poster for ' + data.name"
             width="612"
             height="792"
           />
@@ -198,11 +198,11 @@ export class CasePosterDialog implements OnInit {
         }
       };
       image.src = this.image();
-      image.alt = 'Missing person poster';
+      image.alt = 'Missing Person Poster';
       content.body.append(image);
     };
     frame.srcdoc =
-      '<!doctype html><html><head><style>@page{size:letter;margin:0}html,body{margin:0}img{display:block;width:100%;height:auto}</style></head><body></body></html>';
+      '<!doctype html><html lang="en"><head><style>@page{size:letter;margin:0}html,body{margin:0}img{display:block;width:100%;height:auto}</style></head><body></body></html>';
     document.body.append(frame);
     window.setTimeout(() => frame.remove(), 60000);
   }

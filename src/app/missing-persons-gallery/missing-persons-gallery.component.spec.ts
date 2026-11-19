@@ -1,25 +1,33 @@
-import { BehaviorSubject } from 'rxjs';
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import { SubmitTipComponent } from '../components/submit-tip/submit-tip.component';
-import { vi } from 'vitest';
-import { MissingPersonsGalleryComponent } from './missing-persons-gallery.component';
+import { BehaviorSubject } from "rxjs";
+import { TestBed, ComponentFixture } from "@angular/core/testing";
+import { provideHttpClient } from "@angular/common/http";
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from "@angular/common/http/testing";
+import {
+  ActivatedRoute,
+  Router,
+  convertToParamMap,
+  provideRouter,
+} from "@angular/router";
+import { MatDialog } from "@angular/material/dialog";
+import { SubmitTipComponent } from "../components/submit-tip/submit-tip.component";
+import { vi } from "vitest";
+import { MissingPersonsGalleryComponent } from "./missing-persons-gallery.component";
 
-describe('MissingPersonsGalleryComponent', () => {
+describe("MissingPersonsGalleryComponent", () => {
   let fixture: ComponentFixture<MissingPersonsGalleryComponent>;
   let http: HttpTestingController;
   let queryParams: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
-  const endpoint = 'http://localhost:8000/api/v1/missing-persons';
+  const endpoint = "http://localhost:8000/api/v1/missing-persons";
   const record = {
-    _id: 'case-1',
-    full_name: 'JANE DOE',
+    _id: "case-1",
+    full_name: "JANE DOE",
     city: null,
-    location: 'Mecklenburg County',
-    state: 'NC',
-    'date reported': '2026-07-26',
+    location: "Mecklenburg County",
+    state: "NC",
+    "date reported": "2026-07-26",
     embedded_images: { data_urls: [] as string[] },
   };
   const page = (current = 1, records = [record]) => ({
@@ -33,13 +41,15 @@ describe('MissingPersonsGalleryComponent', () => {
   });
   const element = () => fixture.nativeElement as HTMLElement;
   const button = (label: string) =>
-    Array.from(element().querySelectorAll('button')).find((b) => b.textContent?.trim() === label)!;
+    Array.from(element().querySelectorAll("button")).find(
+      (b) => b.textContent?.trim() === label,
+    )!;
   const request = (number = 1) =>
     http.expectOne(
       (r) =>
         r.url === endpoint &&
-        r.params.get('page') === String(number) &&
-        r.params.get('page_size') === '20',
+        r.params.get("page") === String(number) &&
+        r.params.get("page_size") === "20",
     );
 
   beforeEach(async () => {
@@ -50,7 +60,10 @@ describe('MissingPersonsGalleryComponent', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: ActivatedRoute, useValue: { queryParamMap: queryParams.asObservable() } },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: queryParams.asObservable() },
+        },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -59,225 +72,305 @@ describe('MissingPersonsGalleryComponent', () => {
   });
   afterEach(() => http.verify());
 
-  it('runs natural search and preserves filters when paginating', async () => {
+  it("uses the first nonblank embedded photo", () => {
+    request().flush(page());
+    expect(
+      fixture.componentInstance.image({
+        ...record,
+        embedded_images: {
+          data_urls: ["", "  ", "data:image/png;base64,photo"],
+        },
+      }),
+    ).toBe("data:image/png;base64,photo");
+  });
+
+  it("opts into homepage ordering for pagination and retries", async () => {
+    request().flush(page());
+    TestBed.inject(ActivatedRoute).snapshot = {
+      data: { photosFirst: true },
+    } as never;
+    fixture.componentInstance.goToPage(2);
+    const next = request(2);
+    expect(next.request.params.get("photos_first")).toBe("true");
+    next.flush("Failed", { status: 500, statusText: "Error" });
+    await fixture.whenStable();
+    fixture.componentInstance.retry();
+    const retry = request(2);
+    expect(retry.request.params.get("photos_first")).toBe("true");
+    retry.flush(page(2));
+  });
+
+  it("runs natural search and preserves filters when paginating", async () => {
     request().flush(page());
     queryParams.next(
       convertToParamMap({
-        nl_query: 'teenage girl in Raleigh',
-        nl_mode: 'semantic',
-        nl_state: 'NC',
-        nl_age_min: '13',
-        page: '1',
+        nl_query: "teenage girl in Raleigh",
+        nl_mode: "semantic",
+        nl_state: "NC",
+        nl_age_min: "13",
+        page: "1",
       }),
     );
-    const search = http.expectOne('http://localhost:8000/bringthemhome/api/v1/search/natural');
+    const search = http.expectOne(
+      "http://localhost:8000/bringthemhome/api/v1/search/natural",
+    );
     expect(search.request.body).toEqual({
-      query: 'teenage girl in Raleigh',
-      mode: 'semantic',
-      filters: { state: 'NC', age_min: 13 },
+      query: "teenage girl in Raleigh",
+      mode: "semantic",
+      filters: { state: "NC", age_min: 13 },
       page: 1,
       page_size: 20,
     });
     search.flush(page());
     await fixture.whenStable();
-    expect(element().textContent).toContain('Jane Doe');
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    expect(element().textContent).toContain("Jane Doe");
+    const navigate = vi
+      .spyOn(TestBed.inject(Router), "navigate")
+      .mockResolvedValue(true);
     fixture.componentInstance.goToPage(2);
     expect(navigate).toHaveBeenCalledWith([], {
       relativeTo: TestBed.inject(ActivatedRoute),
       queryParams: { page: 2 },
-      queryParamsHandling: 'merge',
+      queryParamsHandling: "merge",
     });
     queryParams.next(
       convertToParamMap({
-        nl_query: 'teenage girl in Raleigh',
-        nl_mode: 'semantic',
-        nl_state: 'NC',
-        nl_age_min: '13',
-        page: '2',
+        nl_query: "teenage girl in Raleigh",
+        nl_mode: "semantic",
+        nl_state: "NC",
+        nl_age_min: "13",
+        page: "2",
       }),
     );
-    const next = http.expectOne('http://localhost:8000/bringthemhome/api/v1/search/natural');
+    const next = http.expectOne(
+      "http://localhost:8000/bringthemhome/api/v1/search/natural",
+    );
     expect(next.request.body.page).toBe(2);
-    expect(next.request.body.filters.state).toBe('NC');
+    expect(next.request.body.filters.state).toBe("NC");
     next.flush(page(2));
   });
 
-  it('loads page one, renders nullable location and placeholder, and links the real case identity', async () => {
-    expect(element().textContent).toContain('Loading');
+  it("loads page one, renders nullable location and placeholder, and links the real case identity", async () => {
+    expect(element().textContent).toContain("Loading");
     request().flush(page());
     await fixture.whenStable();
-    expect(element().textContent).toContain('Jane Doe');
-    expect(element().textContent).toContain('Mecklenburg County, North Carolina');
-    expect(element().querySelector('img')?.getAttribute('src')).toContain(
-      'missing-person-placeholder.svg',
+    expect(element().textContent).toContain("Jane Doe");
+    expect(element().textContent).toContain(
+      "Mecklenburg County, North Carolina",
     );
-    expect(element().querySelector('a.details-link')?.getAttribute('href')).toBe(
-      '/missing-persons/case-1',
+    expect(element().querySelector("img")?.getAttribute("src")).toContain(
+      "missing-person-placeholder.svg",
     );
-    expect(element().querySelector('button.tip-link')).toBeTruthy();
-    expect(button('Previous').disabled).toBe(true);
+    expect(
+      element().querySelector("a.details-link")?.getAttribute("href"),
+    ).toBe("/missing-persons/case-1");
+    expect(element().querySelector("button.tip-link")).toBeTruthy();
+    expect(button("Previous").disabled).toBe(true);
   });
 
-  it('opens the shared tip modal with full case details without navigating', async () => {
+  it("opens the shared tip modal with full case details without navigating", async () => {
     request().flush(page());
     await fixture.whenStable();
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate');
-    element().querySelector<HTMLButtonElement>('.tip-link')!.click();
+    const navigate = vi.spyOn(TestBed.inject(Router), "navigate");
+    element().querySelector<HTMLButtonElement>(".tip-link")!.click();
     const detail = {
       ...record,
-      contacts: { investigatingAgencies: [{ agencyName: 'Police', agencyPhone: '5551234567' }] },
+      contacts: {
+        investigatingAgencies: [
+          { agencyName: "Police", agencyPhone: "5551234567" },
+        ],
+      },
     };
     http.expectOne(`${endpoint}/case-1`).flush(detail);
     await fixture.whenStable();
-    await vi.waitFor(() => expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1));
+    await vi.waitFor(() =>
+      expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(1),
+    );
     const dialog = TestBed.inject(MatDialog).openDialogs[0];
     expect(dialog.componentInstance).toBeInstanceOf(SubmitTipComponent);
     expect(dialog.componentInstance.record).toEqual(detail);
     expect(navigate).not.toHaveBeenCalled();
     TestBed.inject(MatDialog).closeAll();
   });
-  it('shows a retryable error when tip case details cannot load', async () => {
+  it("shows a retryable error when tip case details cannot load", async () => {
     request().flush(page());
     await fixture.whenStable();
-    element().querySelector<HTMLButtonElement>('.tip-link')!.click();
-    http.expectOne(`${endpoint}/case-1`).flush({}, { status: 503, statusText: 'Unavailable' });
+    element().querySelector<HTMLButtonElement>(".tip-link")!.click();
+    http
+      .expectOne(`${endpoint}/case-1`)
+      .flush({}, { status: 503, statusText: "Unavailable" });
     await fixture.whenStable();
-    expect(element().textContent).toContain('The tip form could not be opened');
-    expect(element().querySelector<HTMLButtonElement>('.tip-link')!.disabled).toBe(false);
+    expect(element().textContent).toContain("The tip form could not be opened");
+    expect(
+      element().querySelector<HTMLButtonElement>(".tip-link")!.disabled,
+    ).toBe(false);
     expect(TestBed.inject(MatDialog).openDialogs).toHaveLength(0);
   });
 
-  it('uses server page metadata for next and previous requests and prevents out-of-range jumps', async () => {
+  it("uses server page metadata for next and previous requests and prevents out-of-range jumps", async () => {
     request().flush(page());
     await fixture.whenStable();
-    button('Next').click();
+    button("Next").click();
     await fixture.whenStable();
-    expect(button('Next').disabled).toBe(true);
+    expect(button("Next").disabled).toBe(true);
     request(2).flush(page(2));
     await fixture.whenStable();
-    expect(element().textContent).toContain('Page 2 of 2 (Total Records: 21)');
-    expect(button('Next').disabled).toBe(true);
-    const jump = element().querySelector<HTMLInputElement>('input[type="number"]')!;
-    jump.value = '3';
-    button('Go').click();
+    expect(element().textContent).toContain("Page 2 of 2 (Total Records: 21)");
+    expect(button("Next").disabled).toBe(true);
+    const jump = element().querySelector<HTMLInputElement>(
+      'input[type="number"]',
+    )!;
+    jump.value = "3";
+    button("Go").click();
     http.expectNone((r) => r.url === endpoint);
-    button('Previous').click();
+    button("Previous").click();
     await fixture.whenStable();
     request().flush(page());
   });
 
-  it('shows a retry action after a failed request and recovers to an empty state', async () => {
-    request().flush('offline', { status: 503, statusText: 'Unavailable' });
+  it("shows a retry action after a failed request and recovers to an empty state", async () => {
+    request().flush("offline", { status: 503, statusText: "Unavailable" });
     await fixture.whenStable();
-    expect(element().querySelector('[role="alert"]')?.textContent).toContain('could not load');
-    button('Try again').click();
+    expect(element().querySelector('[role="alert"]')?.textContent).toContain(
+      "could not load",
+    );
+    button("Try again").click();
     await fixture.whenStable();
-    request().flush({ ...page(1, []), total_records: 0, total_pages: 0, next_page: null });
+    request().flush({
+      ...page(1, []),
+      total_records: 0,
+      total_pages: 0,
+      next_page: null,
+    });
     await fixture.whenStable();
-    expect(element().textContent).toContain('No missing persons');
-    expect(element().querySelector('nav.pagination')).toBeNull();
+    expect(element().textContent).toContain("No missing persons");
+    expect(element().querySelector("nav.pagination")).toBeNull();
   });
 
-  it('replaces broken images and tolerates invalid dates and absent demographics', async () => {
+  it("replaces broken images and tolerates invalid dates and absent demographics", async () => {
     request().flush(
       page(1, [
         {
           ...record,
-          'date reported': 'invalid',
-          embedded_images: { data_urls: ['data:image/png;base64,broken'] },
+          "date reported": "invalid",
+          embedded_images: { data_urls: ["data:image/png;base64,broken"] },
         },
       ]),
     );
     await fixture.whenStable();
-    element().querySelector('img')!.dispatchEvent(new Event('error'));
+    element().querySelector("img")!.dispatchEvent(new Event("error"));
     await fixture.whenStable();
-    expect(element().querySelector('img')?.getAttribute('src')).toContain(
-      'missing-person-placeholder.svg',
+    expect(element().querySelector("img")?.getAttribute("src")).toContain(
+      "missing-person-placeholder.svg",
     );
-    expect(element().textContent).toContain('Date unavailable');
-    expect(element().textContent).not.toContain('undefined');
+    expect(element().textContent).toContain("Date unavailable");
+    expect(element().textContent).not.toContain("undefined");
   });
 
-  it('renders search records and retains filters when paging with detail links by id', async () => {
+  it("renders search records and retains filters when paging with detail links by id", async () => {
     request().flush(page());
     queryParams.next(
-      convertToParamMap({ search: 'true', state: 'NC', photo_available: 'false', page: '1' }),
+      convertToParamMap({
+        search: "true",
+        state: "NC",
+        photo_available: "false",
+        page: "1",
+      }),
     );
     const searchRequest = http.expectOne((r) => r.url === `${endpoint}/search`);
-    expect(searchRequest.request.params.get('state')).toBe('NC');
-    expect(searchRequest.request.params.get('photo_available')).toBe('false');
+    expect(searchRequest.request.params.get("state")).toBe("NC");
+    expect(searchRequest.request.params.get("photo_available")).toBe("false");
     searchRequest.flush({
       ...page(),
       records: [
         {
-          _id: 'search-id',
-          full_name: 'JANE DOE',
+          _id: "search-id",
+          full_name: "JANE DOE",
           photo_url: null,
-          reported_at: '2026-07-19',
+          reported_at: "2026-07-19",
           missing_since: null,
           age_when_missing: 0,
           current_age: 14,
-          sex: 'Female',
-          race: 'White',
+          sex: "Female",
+          race: "White",
           missing_from_city: null,
-          missing_from_state: 'NC',
+          missing_from_state: "NC",
         },
       ],
     });
     await fixture.whenStable();
-    expect(element().textContent).toContain('Search results');
-    expect(element().textContent).toContain('Age missing: 0');
-    expect(element().textContent).toContain('Age now: 14');
-    expect(element().textContent).toContain('Female');
-    expect(element().textContent).toContain('North Carolina');
-    expect(element().querySelector('a.details-link')?.getAttribute('href')).toBe(
-      '/missing-persons/search-id',
-    );
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-    button('Next').click();
+    expect(element().textContent).toContain("Search results");
+    expect(element().textContent).toContain("Age missing: 0");
+    expect(element().textContent).toContain("Age now: 14");
+    expect(element().textContent).toContain("Female");
+    expect(element().textContent).toContain("North Carolina");
+    expect(
+      element().querySelector("a.details-link")?.getAttribute("href"),
+    ).toBe("/missing-persons/search-id");
+    const navigate = vi
+      .spyOn(TestBed.inject(Router), "navigate")
+      .mockResolvedValue(true);
+    button("Next").click();
     expect(navigate).toHaveBeenCalledWith(
       [],
-      expect.objectContaining({ queryParams: { page: 2 }, queryParamsHandling: 'merge' }),
+      expect.objectContaining({
+        queryParams: { page: 2 },
+        queryParamsHandling: "merge",
+      }),
     );
     queryParams.next(
-      convertToParamMap({ search: 'true', state: 'NC', photo_available: 'false', page: '2' }),
+      convertToParamMap({
+        search: "true",
+        state: "NC",
+        photo_available: "false",
+        page: "2",
+      }),
     );
     const next = http.expectOne(
-      (r) => r.url === `${endpoint}/search` && r.params.get('page') === '2',
+      (r) => r.url === `${endpoint}/search` && r.params.get("page") === "2",
     );
-    expect(next.request.params.get('state')).toBe('NC');
+    expect(next.request.params.get("state")).toBe("NC");
     next.flush(page(2));
   });
 
-  it('shares through the Web Share API and copies the case link when sharing fails', async () => {
+  it("shares through the Web Share API and copies the case link when sharing fails", async () => {
     request().flush(page());
     await fixture.whenStable();
     const share = vi.fn().mockResolvedValue(undefined);
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, 'share', { configurable: true, value: share });
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: share,
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
     try {
       await fixture.componentInstance.share(record);
       expect(share).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'JANE DOE',
+          title: "JANE DOE",
           url: expect.stringMatching(/\/missing-persons\/case-1$/),
         }),
       );
       expect(writeText).not.toHaveBeenCalled();
-      share.mockRejectedValue(new Error('Unavailable'));
+      share.mockRejectedValue(new Error("Unavailable"));
       await fixture.componentInstance.share(record);
-      expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/\/missing-persons\/case-1$/));
+      expect(writeText).toHaveBeenCalledWith(
+        expect.stringMatching(/\/missing-persons\/case-1$/),
+      );
       await fixture.whenStable();
-      expect(element().querySelector('.share-status')?.textContent).toContain('copied');
-      share.mockRejectedValue(new DOMException('Cancelled', 'AbortError'));
+      expect(element().querySelector(".share-status")?.textContent).toContain(
+        "copied",
+      );
+      share.mockRejectedValue(new DOMException("Cancelled", "AbortError"));
       writeText.mockClear();
       await fixture.componentInstance.share(record);
       expect(writeText).not.toHaveBeenCalled();
     } finally {
-      Reflect.deleteProperty(navigator, 'share');
-      Reflect.deleteProperty(navigator, 'clipboard');
+      Reflect.deleteProperty(navigator, "share");
+      Reflect.deleteProperty(navigator, "clipboard");
     }
   });
 });
