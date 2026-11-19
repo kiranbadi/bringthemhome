@@ -1,38 +1,101 @@
-<mat-toolbar class="navigation-header">
-  <a class="brand" routerLink="/" aria-label="Bring Them Home">
-    <mat-icon aria-hidden="true">home</mat-icon>
-    <span>Missing Lives</span>
-  </a>
-
-  <nav class="navigation-links" aria-label="Primary navigation">
-    @for (link of links; track link.route) {
+<header class="navigation-header" (keydown.escape)="menuOpen.set(false)">
+  <div class="header-main">
+    <a
+      class="brand"
+      routerLink="/"
+      aria-label="MissingLives home"
+      (click)="menuOpen.set(false)"
+    >
+      <span class="brand-mark"
+        ><mat-icon aria-hidden="true">home</mat-icon></span
+      >
+      <span>MissingLives</span>
+    </a>
+    <div class="header-actions">
       <a
-        matButton
+        class="icon-action"
+        routerLink="/advanced-search"
+        aria-label="Find a missing person"
+        (click)="menuOpen.set(false)"
+      >
+        <mat-icon aria-hidden="true">search</mat-icon>
+      </a>
+      <a class="account-action" routerLink="/account/management"
+        ><mat-icon aria-hidden="true">person_outline</mat-icon>My Account</a
+      >
+      <a class="report-action" routerLink="/missing-person-report"
+        >Report a Missing Person</a
+      >
+      <button
+        class="icon-action menu-toggle"
+        type="button"
+        aria-controls="header-navigation"
+        [attr.aria-expanded]="menuOpen()"
+        [attr.aria-label]="menuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
+        (click)="menuOpen.set(!menuOpen())"
+      >
+        <mat-icon aria-hidden="true"
+          >{{ menuOpen() ? 'close' : 'menu' }}</mat-icon
+        >
+      </button>
+    </div>
+  </div>
+  <nav
+    id="header-navigation"
+    class="navigation-links"
+    [class.menu-open]="menuOpen()"
+    aria-label="Primary navigation"
+  >
+    <div class="primary-links">
+      @for (link of links; track link.route) {
+      <a
         [routerLink]="link.route"
         routerLinkActive="active-link"
+        ariaCurrentWhenActive="page"
         [routerLinkActiveOptions]="{ exact: true }"
+        (click)="menuOpen.set(false)"
+        >{{ link.label }}</a
       >
-        {{ link.label }}
-      </a>
-    }
-    @if (currentUser$ | async) {
+      }
+    </div>
+    <div class="secondary-links">
       <a
-        matButton
+        class="mobile-account"
+        routerLink="/account/management"
+        (click)="menuOpen.set(false)"
+        >My Account</a
+      >
+      <a
+        class="report-action mobile-report"
+        routerLink="/missing-person-report"
+        (click)="menuOpen.set(false)"
+        >Report a Missing Person</a
+      >
+      <a
+        routerLink="/support-us"
+        routerLinkActive="active-link"
+        ariaCurrentWhenActive="page"
+        (click)="menuOpen.set(false)"
+        ><mat-icon aria-hidden="true">favorite_border</mat-icon>Support Us</a
+      >
+      @if (currentUser$ | async) {
+      <a
         routerLink="/photo-review"
         routerLinkActive="active-link"
-        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        (click)="menuOpen.set(false)"
         >Photo Review</a
       >
       <button
-        matButton
         type="button"
         (click)="logout()"
         [disabled]="loggingOut()"
         [attr.aria-busy]="loggingOut()"
       >
-        <mat-icon aria-hidden="true">logout</mat-icon>
-        {{ loggingOut() ? 'Logging out…' : 'Logout' }}
+        <mat-icon aria-hidden="true">logout</mat-icon>{{ loggingOut() ? 'Logging
+        out…' : 'Logout' }}
       </button>
-    }
+      }
+    </div>
   </nav>
-</mat-toolbar>
+</header>
