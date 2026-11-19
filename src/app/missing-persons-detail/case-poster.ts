@@ -192,9 +192,9 @@ export async function renderPoster(
     true,
   );
   block(`Case reference ${data.reference}`, 64, 1242, 830, 76, 23);
-  const { toDataURL } = await import('qrcode');
+  const { default: QRCode } = await import('qrcode');
   const qr = await loadPhoto(
-    await toDataURL(data.caseUrl, { width: 260, margin: 4, errorCorrectionLevel: 'M' }),
+    await QRCode.toDataURL(data.caseUrl, { width: 260, margin: 4, errorCorrectionLevel: 'M' }),
   );
   context.drawImage(qr, 930, 1300, 230, 230);
   block('Scan for current case details', 64, 1340, 830, 42, 28, true);
