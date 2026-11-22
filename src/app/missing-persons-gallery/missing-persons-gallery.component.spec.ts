@@ -72,6 +72,18 @@ describe("MissingPersonsGalleryComponent", () => {
   });
   afterEach(() => http.verify());
 
+  it("loads root-relative thumbnails from the API and preserves absolute URLs", () => {
+    request().flush(page());
+    const thumbnail = "/thumbnails/case-1.jpg";
+    const absolute = "https://photos.example.com/case-1.jpg";
+    expect(
+      fixture.componentInstance.image({ ...record, photo_url: thumbnail }),
+    ).toBe("http://localhost:8000" + thumbnail);
+    expect(
+      fixture.componentInstance.image({ ...record, photo_url: absolute }),
+    ).toBe(absolute);
+  });
+
   it("uses the first nonblank embedded photo", () => {
     request().flush(page());
     expect(

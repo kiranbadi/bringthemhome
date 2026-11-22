@@ -222,13 +222,17 @@ export class MissingPersonsGalleryComponent implements OnInit {
   }
 
   image(person: MissingPerson): string {
-    return this.failedImages().has(person._id)
-      ? this.placeholder
-      : person.photo_url?.trim() ||
-          person.embedded_images?.data_urls
-            ?.find((url) => url?.trim())
-            ?.trim() ||
-          this.placeholder;
+    if (this.failedImages().has(person._id)) return this.placeholder;
+
+    const photoUrl = person.photo_url?.trim();
+    if (photoUrl?.startsWith("/") && !photoUrl.startsWith("//")) {
+      return new URL(photoUrl, environment.apiUrl).href;
+    }
+    return (
+      photoUrl ||
+      person.embedded_images?.data_urls?.find((url) => url?.trim())?.trim() ||
+      this.placeholder
+    );
   }
 
   imageFailed(person: MissingPerson): void {
