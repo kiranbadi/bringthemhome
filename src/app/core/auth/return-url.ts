@@ -3,6 +3,7 @@ export function safeReturnUrl(value: string | null | undefined): string | null {
   if (!value || /[\\\r\n]/.test(value)) return null;
   return /^\/missing-persons\/(?:[^/?#]+\/)?[^/?#]+(?:#case-claims)?$/.test(value) ||
     value === '/admin/case-claims' ||
+    value === '/admin/source-check' ||
     value === '/missing-person-report'
     ? value
     : null;

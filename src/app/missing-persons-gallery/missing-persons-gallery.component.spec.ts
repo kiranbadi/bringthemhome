@@ -164,10 +164,11 @@ describe("MissingPersonsGalleryComponent", () => {
 
   it("loads page one, renders nullable location and placeholder, and links the real case identity", async () => {
     expect(element().textContent).toContain("Loading");
-    request().flush(page());
+    const listRecord = { ...record, state: "SC", missing_from_state: "NC" };
+    request().flush(page(1, [listRecord]));
     await fixture.whenStable();
     expect(element().textContent).toContain("Jane Doe");
-    expect(element().textContent).toContain(
+    expect(element().querySelector(".person-card .location")?.textContent).toBe(
       "Mecklenburg County, North Carolina",
     );
     expect(element().querySelector("img")?.getAttribute("src")).toContain(

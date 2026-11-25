@@ -1,0 +1,92 @@
+<app-navigation-header />
+<main class="source-check">
+  <a matButton routerLink="/myaccount">Back to My Account</a>
+  <h1>Case Status Validation</h1>
+  <p>
+    Check MissingLives case statuses against the North Carolina Missing Person
+    Center source.
+  </p>
+  <button
+    matButton="filled"
+    type="button"
+    (click)="start()"
+    [disabled]="tracking() || !!jobId()"
+  >
+    Run source check
+  </button>
+  <button
+    matButton="outlined"
+    type="button"
+    (click)="confirmDeletion()"
+    [disabled]="tracking() || !!jobId()"
+  >
+    Remove expired cases
+  </button>
+  @if (tracking()) {
+    <p role="status">
+      @if (polling()) {
+        Checking job status…
+      } @else if (jobKind() === "deletion") {
+        Case deletion in progress…
+      } @else {
+        Source check in progress…
+      }
+    </p>
+  }
+  @if (jobError()) {
+    <p role="alert">{{ jobError() }}</p>
+    @if (jobId()) {
+      <button matButton="outlined" type="button" (click)="resumeTracking()">
+        Check status again
+      </button>
+    }
+  }
+  @if (outcome(); as result) {
+    <section aria-labelledby="source-check-outcome">
+      <h2 id="source-check-outcome">
+        {{
+          jobKind() === "deletion" ? "Case deletion outcome" : "Check outcome"
+        }}
+      </h2>
+      <p role="status">{{ outcomes[result.status] }}</p>
+      @if (result.counts; as counts) {
+        <ul>
+          @for (count of counts | keyvalue; track count.key) {
+            <li>
+              {{ count.key.replaceAll("_", " ") }}
+              {{ count.value ?? "Unavailable" }}
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <section
+    aria-labelledby="source-check-results"
+    [attr.aria-busy]="loadingResults()"
+  >
+    <h2 id="source-check-results">Latest findings</h2>
+    <button
+      matButton="outlined"
+      type="button"
+      (click)="loadResults()"
+      [disabled]="loadingResults()"
+    >
+      Refresh results
+    </button>
+    @if (loadingResults()) {
+      <p role="status">Loading findings…</p>
+    }
+    @if (resultsError()) {
+      <p role="alert">{{ resultsError() }}</p>
+    }
+    @if (results(); as response) {
+      @if (response.data === null || isEmptyList(response.data)) {
+        <p>No findings returned.</p>
+      } @else {
+        <pre>{{ response.data | json }}</pre>
+      }
+    }
+  </section>
+</main>

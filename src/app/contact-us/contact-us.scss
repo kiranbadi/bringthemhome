@@ -298,21 +298,32 @@
   font-size: clamp(1.125rem, 2.3vw, 1.5rem);
 }
 
-.team-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
-  gap: 16px;
-  margin: 24px 0;
+.team-profiles {
+  margin: 0;
   padding: 0;
   list-style: none;
+  text-align: center;
+}
+
+.team-panel p {
+  font-size: clamp(1.125rem, 1rem + 0.4vw, 1.375rem);
 }
 
 .team-card {
-  padding: 24px;
+  display: grid;
+  gap: clamp(20px, 4vw, 40px);
+  align-items: start;
+  margin-block: 24px;
+  padding: clamp(16px, 3vw, 24px);
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 16px;
   background: var(--mat-sys-surface-container-lowest);
-  text-align: center;
+}
+
+@media (min-width: 760px) {
+  .team-card {
+    grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
+  }
 }
 
 .team-portrait {
