@@ -191,35 +191,63 @@
         The MissingLives team supports people using the site, answers questions about reports, and
         welcomes inquiries from volunteers and community partners.
       </p>
-      <ul class="team-grid">
-        @for (profile of teamProfiles; track profile) {
-          <li class="team-card">
-            <div class="team-portrait">
-              @if (profile.photoUrl) {
-                <img [src]="profile.photoUrl" alt="" width="160" height="160" loading="lazy" />
-              } @else {
-                <mat-icon aria-hidden="true">person</mat-icon>
+      <div class="team-card">
+        <ul class="team-profiles">
+          @for (profile of teamProfiles; track profile) {
+            <li>
+              <div class="team-portrait">
+                @if (profile.photoUrl) {
+                  <img [src]="profile.photoUrl" alt="" width="160" height="160" loading="lazy" />
+                } @else {
+                  <mat-icon aria-hidden="true">person</mat-icon>
+                }
+              </div>
+              <h3>
+                @if (profile.profileUrl) {
+                  <a [href]="profile.profileUrl">{{ profile.name }}</a>
+                } @else {
+                  {{ profile.name }}
+                }
+              </h3>
+              @if (profile.role) {
+                <p class="team-role">{{ profile.role }}</p>
               }
-            </div>
-            <h3>
-              @if (profile.profileUrl) {
-                <a [href]="profile.profileUrl">{{ profile.name }}</a>
-              } @else {
-                {{ profile.name }}
+              @if (profile.description) {
+                <p>{{ profile.description }}</p>
               }
-            </h3>
-            @if (profile.role) {
-              <p class="team-role">{{ profile.role }}</p>
-            }
-            @if (profile.description) {
-              <p>{{ profile.description }}</p>
-            }
-          </li>
-        }
-      </ul>
-      <button matButton="filled" type="button" (click)="messagePanel.focus()">
-        Get in touch <mat-icon iconPositionEnd aria-hidden="true">arrow_forward</mat-icon>
-      </button>
+              @if (profile.linkedinUrl) {
+                <a matButton [href]="profile.linkedinUrl">LinkedIn</a>
+              }
+            </li>
+          }
+        </ul>
+        <section class="founder-story" aria-labelledby="founder-story-title">
+          <h3 id="founder-story-title"><strong>What inspired MissingLives</strong></h3>
+          <p>
+            The inspiration behind this platform came from a simple yet powerful moment during a
+            visit to local Walmart store. As I walked through the store, I noticed photographs of missing
+            children displayed on a bulletin board. Each photograph represented a life, a family,
+            and a story filled with uncertainty and hope. I couldn't help but wonder how technology
+            could make a difference in reuniting these individuals with their loved ones.
+          </p>
+          <p>
+            That moment stayed with me and eventually inspired me to turn an idea into something
+            meaningful. With a background in software engineering and a passion for using technology
+            to solve real-world problems, I started building this platform to bring missing-person
+            information together, improve visibility, and make it easier for communities to help.
+          </p>
+          <p>
+            What began as a simple observation has grown into a mission driven by one belief -
+            <strong>
+              Every missing person matters, and every family deserves hope, answers, and the chance
+              to be reunited with their loved ones.
+            </strong>
+          </p>
+          <button matButton="filled" type="button" (click)="messagePanel.focus()">
+            Get in touch <mat-icon iconPositionEnd aria-hidden="true">arrow_forward</mat-icon>
+          </button>
+        </section>
+      </div>
     </section>
   </div>
 </main>

@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { casePath } from '../core/models/case-url';
 import { RESPONSE_INIT } from '@angular/core';
 import { publicResourceLocation } from '../resources/resource-case-location';
+import { safeWebUrl } from '../resources/resource.models';
 import { formatLocation } from '../core/models/us-state-display';
 import { CaseShareComponent } from '../shared/case-share/case-share.component';
 import { TipDialogService } from '../components/submit-tip/tip-dialog.service';
@@ -111,6 +112,7 @@ export class MissingPersonsDetailComponent implements OnInit {
   readonly tipError = signal('');
   readonly placeholder = PERSON_PLACEHOLDER;
   readonly resourceLocation = publicResourceLocation;
+  readonly sourceUrl = computed(() => safeWebUrl(this.person()?.source_url ?? null));
   readonly location = (record: MissingPersonDetail) =>
     formatLocation(record.summary?.lastKnownLocation) || personLocation(record);
   readonly reportedDate = (record: MissingPersonDetail) =>
