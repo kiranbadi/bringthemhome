@@ -10,6 +10,19 @@ main {
   margin: auto;
   min-height: calc(100vh - 64px);
 }
+.case-heading-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.case-heading-row h2 {
+  margin: 0;
+  color: #123f73;
+  font-size: clamp(1.5rem, 3vw, 2.125rem);
+  font-weight: 750;
+  line-height: 1.2;
+}
 .person-summary {
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
@@ -54,6 +67,9 @@ h1 {
   font: var(--mat-sys-headline-medium);
   margin: 4px 0 12px;
   overflow-wrap: anywhere;
+}
+#person-name {
+  color: #00645c;
 }
 .eyebrow {
   color: var(--mat-sys-primary);
@@ -134,6 +150,12 @@ button:focus-visible {
   gap: 12px;
   padding-top: 20px;
   border-top: 1px solid var(--mat-sys-outline-variant);
+}
+.case-action-intro {
+  flex-basis: 100%;
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
 }
 .discussion-link {
   box-sizing: border-box;

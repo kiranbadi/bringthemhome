@@ -76,10 +76,13 @@ export class ContactUs {
     description?: string;
     photoUrl?: string;
     profileUrl?: string;
+    linkedinUrl?: string;
   }> = [
     {
       name: 'Kiran Badi',
+      role: 'Technical Advisor',
       profileUrl: 'https://www.vasanti.org/',
+      linkedinUrl: 'https://www.linkedin.com/in/kiran-badi',
       photoUrl: '/team/featured-portrait.jpg',
     },
   ];

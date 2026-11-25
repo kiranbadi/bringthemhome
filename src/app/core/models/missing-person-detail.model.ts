@@ -36,6 +36,7 @@ export interface MissingPersonDetail extends Partial<MissingPerson> {
   image_urls?: string[] | null;
   _id: string;
   source?: string | null;
+  source_url?: string | null;
   caseNumber?: string | null;
   caseStatus?: string | null;
   lastUpdated?: string | null;

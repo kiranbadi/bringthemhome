@@ -1,6 +1,13 @@
 <app-navigation-header />
 <main>
-  <a routerLink="/">← Back to missing persons</a>
+  @let currentCase = person();
+  @let isActiveCase = currentCase && currentCase.person_status !== 'FOUND' && currentCase.report_status !== 'ARCHIVED';
+  <header class="case-heading-row">
+    <a routerLink="/">← Back to missing persons</a>
+    @if (!loading() && !error() && currentCase && isActiveCase) {
+      <h2>Help bring {{ name(currentCase) | titlecase }} home</h2>
+    }
+  </header>
   @if (loading()) {
     <p role="status">Loading case…</p>
   } @else if (error()) {
@@ -46,8 +53,18 @@
             <dd>{{ reportedDate(record) }}</dd>
           </div>
         </dl>
+        @if (sourceUrl(); as url) {
+          <p>
+            <a class="case-source-link" [href]="url" target="_blank" rel="noopener noreferrer"
+              >View original source (opens in a new tab)</a
+            >
+          </p>
+        }
         <div class="case-actions" role="group" aria-label="Case actions">
-          @if (record.person_status !== 'FOUND' && record.report_status !== 'ARCHIVED') {
+          @if (isActiveCase) {
+            <p class="case-action-intro">
+              Have information? Submit a tip. You can also share this case or download a poster.
+            </p>
             <button class="discussion-link" type="button" (click)="openPoster(record)" [disabled]="openingPoster()">
               {{ openingPoster() ? 'Opening poster…' : 'Download poster' }}
             </button>

@@ -12,6 +12,16 @@ import { SupportUs } from "./support-us/support-us";
 
 export const routes: Routes = [
   {
+    path: "admin/source-check",
+    canActivate: [caseClaimsAdminGuard],
+    data: { requiresAuth: true, administrator: true },
+    loadComponent: () =>
+      import("./features/source-check/source-check.component").then(
+        (m) => m.SourceCheckComponent,
+      ),
+    title: "Case Status Validation | Bring Them Home",
+  },
+  {
     path: "reset-password",
     loadComponent: () =>
       import("./reset-password/reset-password").then((m) => m.ResetPassword),

@@ -39,6 +39,37 @@ describe('MissingPersonsDetailComponent', () => {
     http.verify();
   });
 
+  it('opens the case source in a new tab', async () => {
+    const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+    await fixture.whenStable();
+    const source = 'https://example.org/cases/123?ref=public';
+    TestBed.inject(HttpTestingController).expectOne(endpoint).flush({
+      _id: 'abc-123',
+      source_url: source,
+    });
+    await fixture.whenStable();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a.case-source-link');
+    expect(link?.getAttribute('href')).toBe(source);
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it.each([null, '', '   ', undefined, 'javascript:alert(1)'])(
+    'omits the case source link for %j',
+    async (source_url) => {
+      const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
+      await fixture.whenStable();
+      TestBed.inject(HttpTestingController).expectOne(endpoint).flush({
+        _id: 'abc-123',
+        source_url,
+      });
+      await fixture.whenStable();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('a.case-source-link')).toBeNull();
+    },
+  );
+
   it('loads one detail response for summary and all seven sections and preserves Submit Tip', async () => {
     const fixture = TestBed.createComponent(MissingPersonsDetailComponent);
     await fixture.whenStable();
